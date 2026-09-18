@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "case": "workshop-storage-settings-v1",
+  "screen": "storage-settings",
+  "reference": {
+    "filename": "W2-14-storage-settings.png",
+    "viewport": [1672, 941],
+    "sourcePolicy": "visual-target-only"
+  },
+  "semanticElements": {
+    "settings.root": "WorkshopStorageSettingsBenchmark",
+    "settings.toolbar": "TopCommandBar",
+    "settings.workspace": "SettingsWorkspace",
+    "settings.navigation": "SettingsNavigation",
+    "settings.navigation.general": "GeneralNavItem",
+    "settings.main": "SettingsMain",
+    "settings.storageOverview": "StorageOverviewPanel",
+    "settings.storageOverview.totalUsage": "TotalUsageCard",
+    "settings.storageOverview.projects": "ProjectsStorageCard",
+    "settings.storageOverview.assets": "AssetsStorageCard",
+    "settings.storageOverview.cache": "CacheStorageCard",
+    "settings.storageOverview.backups": "BackupsStorageCard",
+    "settings.keyLocations": "KeyLocationsPanel",
+    "settings.application": "ApplicationSettingsPanel",
+    "settings.application.general": "GeneralSettingsColumn",
+    "settings.application.behavior": "BehaviorSettingsColumn",
+    "settings.application.quickActions": "SettingsQuickActions",
+    "settings.storageManagement": "StorageManagementPanel",
+    "settings.storageManagement.table": "StorageDriveTable",
+    "settings.storageManagement.insights": "StorageInsightsPanel",
+    "settings.inspector": "StorageLocationInspector",
+    "settings.console": "ActivityConsole",
+    "settings.activeTasks": "ActiveTasksPanel"
+  },
+  "authoringIntent": {
+    "layout": "dense-responsive-settings-grid",
+    "fixedRegions": {
+      "navigationWidth": 188,
+      "inspectorWidth": 300
+    },
+    "notes": [
+      "The center settings surface is the flexible region.",
+      "Storage Overview is a mixed Auto/star card composition.",
+      "Application Settings is a three-column form layout.",
+      "Storage Management must preserve table density without forcing unnecessary scrolling.",
+      "The reference image is validation-only and must not be embedded as UI."
+    ]
+  }
+}
