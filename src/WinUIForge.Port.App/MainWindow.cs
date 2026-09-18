@@ -528,8 +528,7 @@ public sealed class MainWindow : Window
 
         propertyPanel.Children.Add(new TextBlock
         {
-            Text = identityText + $"
-Source: line {sourceElement.Line}, column {sourceElement.Column}",
+            Text = identityText + $"\nSource: line {sourceElement.Line}, column {sourceElement.Column}",
             Foreground = MutedBrush,
             TextWrapping = TextWrapping.Wrap
         });
@@ -613,8 +612,7 @@ Source: line {sourceElement.Line}, column {sourceElement.Column}",
 
         propertyPanel.Children.Add(new TextBlock
         {
-            Text = $"Parent: {context.ParentLabel}
-Mode: {context.Mode}",
+            Text = $"Parent: {context.ParentLabel}\nMode: {context.Mode}",
             Foreground = MutedBrush,
             TextWrapping = TextWrapping.Wrap
         });
@@ -770,7 +768,7 @@ Mode: {context.Mode}",
 
             status.Text = normalized is null
                 ? $"Removed {context.AttributeName}."
-                : $"Committed {context.AttributeName}="{normalized}".";
+                : $"Committed {context.AttributeName}=\"{normalized}\".";
         }
         catch (Exception ex)
         {
