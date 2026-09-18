@@ -4,7 +4,10 @@
   "screen": "dashboard",
   "reference": {
     "filename": "W2-01-dashboard.png",
-    "viewport": [1672, 941],
+    "viewport": [
+      1672,
+      941
+    ],
     "sourcePolicy": "visual-target-only"
   },
   "semanticElements": {
@@ -15,9 +18,7 @@
     "dashboard.main": "DashboardMain",
     "dashboard.heading": "DashboardHeading",
     "dashboard.metrics": "MetricCards",
-    "dashboard.metrics.activeProjects": "ActiveProjectsMetric",
     "dashboard.metrics.queuedJobs": "QueuedJobsMetric",
-    "dashboard.metrics.workers": "WorkersMetric",
     "dashboard.metrics.assetsProcessed": "AssetsProcessedMetric",
     "dashboard.metrics.workerHealth": "WorkerHealthMetric",
     "dashboard.recentActivity": "RecentActivityPanel",
@@ -26,17 +27,20 @@
     "dashboard.quickActions.newProject": "QuickActionNewProject",
     "dashboard.workerStatus": "WorkerStatusPanel",
     "dashboard.inspector": "ProjectInspector",
-    "dashboard.console": "ActivityConsole"
+    "dashboard.console": "ActivityConsole",
+    "dashboard.metrics.activeJobs": "ActiveJobsMetric"
   },
   "authoringIntent": {
     "layout": "responsive-grid",
     "fixedRegions": {
-      "localPaneWidth": 224,
-      "inspectorWidth": 259
+      "localPaneWidth": 210,
+      "inspectorWidth": 280
     },
     "notes": [
       "The center workspace must remain the flexible region.",
-      "Quick Actions are top-aligned in two-column rows.",
+      "The global shell is two-level: 60 px global navigation plus 84 px command surface.",
+      "The benchmark KPI row contains four cards.",
+      "Quick Actions are top-aligned above a shorter Worker Status panel.",
       "The image reference is validation-only and must not be embedded as UI."
     ]
   }
