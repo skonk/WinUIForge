@@ -10,7 +10,12 @@ var tests = new List<(string Name, Action Run)>
     ("remove-property-preserves-document", RemovePropertyPreservesDocument),
     ("attribute-escaping", AttributeEscaping),
     ("utf8-utf16-position-roundtrip", Utf8Utf16PositionRoundtrip),
-    ("unknown-element", UnknownElement)
+    ("unknown-element", UnknownElement),
+    ("unnamed-node-identity", UnnamedNodeIdentity),
+    ("insert-delete-structural-edit", InsertDeleteStructuralEdit),
+    ("reorder-structural-edit", ReorderStructuralEdit),
+    ("reparent-structural-edit", ReparentStructuralEdit),
+    ("history-undo-redo", HistoryUndoRedo)
 };
 
 var failed = 0;
@@ -173,3 +178,89 @@ static void Check(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
 }
+
+
+static void UnnamedNodeIdentity()
+{
+    var doc = new ForgeXamlDocument(StructuralFixture());
+    var columns = doc.Elements.Where(x => x.TypeName == "ColumnDefinition").ToList();
+    Check(columns.Count == 2, "column definitions discovered");
+    Check(columns.All(x => !string.IsNullOrWhiteSpace(x.Identity)), "unnamed identities exist");
+    Check(columns[0].Identity != columns[1].Identity, "unnamed identities are unique");
+    Check(doc.FindByIdentity(columns[1].Identity)?.GetType() == typeof(ForgeXamlElement), "identity lookup");
+}
+
+static void InsertDeleteStructuralEdit()
+{
+    var doc = new ForgeXamlDocument(StructuralFixture());
+    var edit = doc.InsertChild(
+        doc.FindByName("ContentStack")!.Identity,
+        "<Button x:Name=\"GeneratedButton\" Content=\"Generated\"/>");
+
+    Check(edit.Changed, "insert changed");
+    Check(doc.FindByName("GeneratedButton") is not null, "inserted button discovered");
+    Check(doc.Text.Contains("GeneratedButton", StringComparison.Ordinal), "insert source");
+
+    var remove = doc.RemoveElement(doc.FindByName("GeneratedButton")!.Identity);
+    Check(remove.Changed, "delete changed");
+    Check(doc.FindByName("GeneratedButton") is null, "button removed");
+    Check(new ForgeXamlDocument(doc.Text).Root.Name == "RootGrid", "document remains valid");
+}
+
+static void ReorderStructuralEdit()
+{
+    var doc = new ForgeXamlDocument(StructuralFixture());
+    var button = doc.FindByName("ActionButton")!;
+    var edit = doc.ReorderElement(button.Identity, -1);
+
+    Check(edit.Changed, "reorder changed");
+    var stack = doc.FindByName("ContentStack")!;
+    Check(stack.ContentChildren[0].Name == "ActionButton", "button moved before heading");
+    Check(stack.ContentChildren[1].Name == "HeadingText", "heading moved after button");
+}
+
+static void ReparentStructuralEdit()
+{
+    var doc = new ForgeXamlDocument(StructuralFixture());
+    var edit = doc.MoveElement(
+        doc.FindByName("ActionButton")!.Identity,
+        doc.FindByName("TargetGrid")!.Identity);
+
+    Check(edit.Changed, "reparent changed");
+    Check(doc.FindByName("ActionButton")?.Parent?.Name == "TargetGrid", "button parent changed");
+    Check(new ForgeXamlDocument(doc.Text).FindByName("ActionButton") is not null, "reparented source valid");
+}
+
+static void HistoryUndoRedo()
+{
+    var history = new ForgeEditHistory();
+    history.Record("Change text", "A", "B", "name:A", "name:B");
+
+    Check(history.CanUndo, "can undo");
+    var before = history.Undo();
+    Check(before?.Source == "A", "undo source");
+    Check(before?.SelectionIdentity == "name:A", "undo selection");
+    Check(history.CanRedo, "can redo");
+
+    var after = history.Redo();
+    Check(after?.Source == "B", "redo source");
+    Check(after?.SelectionIdentity == "name:B", "redo selection");
+}
+
+static string StructuralFixture() =>
+    """
+    <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+          x:Name="RootGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="200"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel x:Name="ContentStack">
+            <TextBlock x:Name="HeadingText" Text="Heading"/>
+            <Button x:Name="ActionButton" Content="Go"/>
+        </StackPanel>
+        <Grid x:Name="TargetGrid">
+        </Grid>
+    </Grid>
+    """;

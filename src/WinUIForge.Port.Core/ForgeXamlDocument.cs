@@ -11,6 +11,7 @@ public sealed class ForgeXamlDocument
     XDocument document = null!;
     List<ForgeXamlElement> elements = [];
     Dictionary<string, ForgeXamlElement> elementsByName = new(StringComparer.Ordinal);
+    Dictionary<string, ForgeXamlElement> elementsByIdentity = new(StringComparer.Ordinal);
 
     public ForgeXamlDocument(string text)
     {
@@ -29,6 +30,11 @@ public sealed class ForgeXamlDocument
             ? null
             : elementsByName.GetValueOrDefault(name);
 
+    public ForgeXamlElement? FindByIdentity(string? identity) =>
+        string.IsNullOrWhiteSpace(identity)
+            ? null
+            : elementsByIdentity.GetValueOrDefault(identity);
+
     public ForgeXamlElement? FindAtSourceIndex(int sourceIndex)
     {
         if (sourceIndex < 0 || sourceIndex > Text.Length) return null;
@@ -45,16 +51,40 @@ public sealed class ForgeXamlDocument
             .FirstOrDefault(x => string.Equals(x.Name, attributeName, StringComparison.Ordinal))
             ?.Value;
 
+    public string? GetAttributeByIdentity(string identity, string attributeName) =>
+        FindByIdentity(identity)?.Attributes
+            .FirstOrDefault(x => string.Equals(x.Name, attributeName, StringComparison.Ordinal))
+            ?.Value;
+
     public bool HasAttribute(string elementName, string attributeName) =>
         FindByName(elementName)?.Attributes.Any(x => string.Equals(x.Name, attributeName, StringComparison.Ordinal)) == true;
 
+    public string CreateUniqueName(string typeName)
+    {
+        var prefix = typeName.Contains('.') ? typeName[(typeName.LastIndexOf('.') + 1)..] : typeName;
+        var i = 1;
+        while (FindByName(prefix + i) is not null) i++;
+        return prefix + i;
+    }
+
     public ForgeXamlEdit SetAttribute(string elementName, string attributeName, string? value)
+    {
+        var element = FindByName(elementName)
+            ?? throw new InvalidOperationException($"No authored XAML element named '{elementName}' exists.");
+        return SetAttributeCore(element, attributeName, value);
+    }
+
+    public ForgeXamlEdit SetAttributeByIdentity(string identity, string attributeName, string? value)
+    {
+        var element = FindByIdentity(identity)
+            ?? throw new InvalidOperationException($"No authored XAML element '{identity}' exists.");
+        return SetAttributeCore(element, attributeName, value);
+    }
+
+    ForgeXamlEdit SetAttributeCore(ForgeXamlElement element, string attributeName, string? value)
     {
         if (string.IsNullOrWhiteSpace(attributeName))
             throw new ArgumentException("Attribute name is required.", nameof(attributeName));
-
-        var element = FindByName(elementName)
-            ?? throw new InvalidOperationException($"No authored XAML element named '{elementName}' exists.");
 
         var existing = element.Attributes
             .FirstOrDefault(x => string.Equals(x.Name, attributeName, StringComparison.Ordinal));
@@ -65,7 +95,7 @@ public sealed class ForgeXamlDocument
         if (string.IsNullOrWhiteSpace(value))
         {
             if (existing is null)
-                return new ForgeXamlEdit(elementName, attributeName, null, null, false, before, before);
+                return new ForgeXamlEdit(element.Identity, attributeName, null, null, false, before, before);
 
             var removeStart = existing.StartIndex;
             while (removeStart > element.StartIndex &&
@@ -74,11 +104,9 @@ public sealed class ForgeXamlDocument
                 removeStart--;
             }
 
-            // Preserve a multiline attribute's newline/indentation by removing only
-            // horizontal whitespace plus the attribute itself.
             Text = Text.Remove(removeStart, existing.EndIndex - removeStart);
             edit = new ForgeXamlEdit(
-                elementName,
+                element.Identity,
                 attributeName,
                 existing.Value,
                 null,
@@ -95,7 +123,7 @@ public sealed class ForgeXamlDocument
                            .Insert(existing.ValueStartIndex, EscapeAttributeValue(normalized));
 
                 edit = new ForgeXamlEdit(
-                    elementName,
+                    element.Identity,
                     attributeName,
                     existing.Value,
                     normalized,
@@ -106,11 +134,10 @@ public sealed class ForgeXamlDocument
             else
             {
                 var insertion = BuildAttributeInsertion(element, attributeName, normalized);
-                var insertAt = element.StartTagCloseIndex;
-                Text = Text.Insert(insertAt, insertion);
+                Text = Text.Insert(element.StartTagCloseIndex, insertion);
 
                 edit = new ForgeXamlEdit(
-                    elementName,
+                    element.Identity,
                     attributeName,
                     null,
                     normalized,
@@ -124,6 +151,171 @@ public sealed class ForgeXamlDocument
         return edit;
     }
 
+    public ForgeStructuralEdit InsertChild(string parentIdentity, string xamlFragment)
+    {
+        var parent = FindByIdentity(parentIdentity)
+            ?? throw new InvalidOperationException($"Parent '{parentIdentity}' was not found.");
+
+        if (!CanContainDesignChildren(parent.TypeName))
+            throw new InvalidOperationException($"{parent.TypeName} is not a supported design container.");
+
+        if (parent.IsSelfClosing)
+            throw new InvalidOperationException($"Self-closing {parent.TypeName} must be expanded before adding children.");
+
+        if (parent.TypeName == "Border" && parent.ContentChildren.Count > 0)
+            throw new InvalidOperationException("Border can contain only one design child.");
+
+        var fragmentDoc = new ForgeXamlDocument(WrapFragment(xamlFragment));
+        var fragmentRoot = fragmentDoc.Root.ContentChildren.SingleOrDefault()
+            ?? throw new InvalidOperationException("Toolbox fragment must contain exactly one root element.");
+
+        var childName = fragmentRoot.Name;
+        var childType = fragmentRoot.TypeName;
+        var indent = GetPreferredChildIndent(parent);
+        var formatted = ReindentFragment(xamlFragment.Trim(), indent);
+        var insertion = Environment.NewLine + formatted + Environment.NewLine + GetIndentAt(parent.StartIndex);
+
+        var before = Text;
+        Text = Text.Insert(parent.EndTagStartIndex, insertion);
+        Reparse();
+
+        var inserted = !string.IsNullOrWhiteSpace(childName)
+            ? FindByName(childName)
+            : FindNewestChild(parentIdentity, childType);
+
+        return new ForgeStructuralEdit(
+            "Insert",
+            before,
+            Text,
+            parentIdentity,
+            inserted?.Identity,
+            true);
+    }
+
+    public ForgeStructuralEdit RemoveElement(string identity)
+    {
+        var node = FindByIdentity(identity)
+            ?? throw new InvalidOperationException($"Element '{identity}' was not found.");
+
+        if (ReferenceEquals(node, Root))
+            throw new InvalidOperationException("The root XAML element cannot be deleted.");
+
+        var before = Text;
+        Text = Text.Remove(node.StartIndex, node.FullEndIndex - node.StartIndex);
+        Reparse();
+
+        return new ForgeStructuralEdit("Delete", before, Text, identity, node.Parent?.Identity, true);
+    }
+
+    public ForgeStructuralEdit ReorderElement(string identity, int offset)
+    {
+        var node = FindByIdentity(identity)
+            ?? throw new InvalidOperationException($"Element '{identity}' was not found.");
+        var parent = node.Parent
+            ?? throw new InvalidOperationException("The root element cannot be reordered.");
+
+        var siblings = parent.ContentChildren.ToList();
+        var current = siblings.IndexOf(node);
+        if (current < 0) throw new InvalidOperationException("Element is not a design child of its parent.");
+
+        var destination = Math.Clamp(current + offset, 0, siblings.Count - 1);
+        if (destination == current)
+            return new ForgeStructuralEdit("Reorder", Text, Text, identity, identity, false);
+
+        var target = siblings[destination];
+        var fragment = Text[node.StartIndex..node.FullEndIndex];
+        var indent = GetIndentAt(node.StartIndex);
+        var before = Text;
+        var removedLength = node.FullEndIndex - node.StartIndex;
+
+        Text = Text.Remove(node.StartIndex, removedLength);
+
+        int insertAt;
+        string insertion;
+
+        if (destination < current)
+        {
+            insertAt = target.StartIndex;
+            if (node.StartIndex < target.StartIndex) insertAt -= removedLength;
+            insertion = fragment + Environment.NewLine + indent;
+        }
+        else
+        {
+            insertAt = target.FullEndIndex;
+            if (node.StartIndex < target.FullEndIndex) insertAt -= removedLength;
+            insertion = Environment.NewLine + indent + fragment;
+        }
+
+        Text = Text.Insert(insertAt, insertion);
+        Reparse();
+
+        var selectionIdentity = !string.IsNullOrWhiteSpace(node.Name)
+            ? FindByName(node.Name)?.Identity
+            : FindClosestIdentity(node.TypeName, node.Parent?.Identity);
+
+        return new ForgeStructuralEdit("Reorder", before, Text, identity, selectionIdentity, true);
+    }
+
+    public ForgeStructuralEdit MoveElement(string identity, string newParentIdentity)
+    {
+        var node = FindByIdentity(identity)
+            ?? throw new InvalidOperationException($"Element '{identity}' was not found.");
+        var target = FindByIdentity(newParentIdentity)
+            ?? throw new InvalidOperationException($"Target parent '{newParentIdentity}' was not found.");
+
+        if (ReferenceEquals(node, Root))
+            throw new InvalidOperationException("The root XAML element cannot be reparented.");
+        if (!CanContainDesignChildren(target.TypeName))
+            throw new InvalidOperationException($"{target.TypeName} is not a supported design container.");
+        if (target.IsDescendantOf(node))
+            throw new InvalidOperationException("An element cannot be moved into its own descendant.");
+        if (target.TypeName == "Border" && target.ContentChildren.Count > 0 && !ReferenceEquals(node.Parent, target))
+            throw new InvalidOperationException("Border can contain only one design child.");
+
+        if (ReferenceEquals(node.Parent, target))
+            return new ForgeStructuralEdit("Reparent", Text, Text, identity, identity, false);
+
+        var fragment = Text[node.StartIndex..node.FullEndIndex];
+        var targetStart = target.StartIndex;
+        var targetIdentityWas = target.Identity;
+        var before = Text;
+        var removedLength = node.FullEndIndex - node.StartIndex;
+
+        Text = Text.Remove(node.StartIndex, removedLength);
+        Reparse();
+
+        ForgeXamlElement? reparsedTarget = FindByIdentity(targetIdentityWas);
+        if (reparsedTarget is null)
+        {
+            var adjustedStart = targetStart - (node.StartIndex < targetStart ? removedLength : 0);
+            reparsedTarget = elements.FirstOrDefault(x => x.StartIndex == adjustedStart);
+        }
+
+        if (reparsedTarget is null)
+            throw new InvalidOperationException("Target parent could not be resolved after source removal.");
+
+        if (reparsedTarget.IsSelfClosing)
+            throw new InvalidOperationException("Self-closing targets cannot receive children yet.");
+
+        var indent = GetPreferredChildIndent(reparsedTarget);
+        var formatted = ReindentFragment(fragment.Trim(), indent);
+        var insertion = Environment.NewLine + formatted + Environment.NewLine + GetIndentAt(reparsedTarget.StartIndex);
+        Text = Text.Insert(reparsedTarget.EndTagStartIndex, insertion);
+        Reparse();
+
+        var newIdentity = !string.IsNullOrWhiteSpace(node.Name)
+            ? FindByName(node.Name)?.Identity
+            : elements
+                .Where(x => x.TypeName == node.TypeName && x.Parent?.Identity == reparsedTarget.Identity)
+                .OrderByDescending(x => x.StartIndex)
+                .FirstOrDefault()?.Identity;
+
+        return new ForgeStructuralEdit("Reparent", before, Text, identity, newIdentity, true);
+    }
+
+    public static bool CanContainDesignChildren(string typeName) =>
+        typeName is "Grid" or "StackPanel" or "Canvas" or "RelativePanel" or "Border" or "ScrollViewer";
+
     void Reparse()
     {
         document = XDocument.Parse(
@@ -134,21 +326,34 @@ public sealed class ForgeXamlDocument
             throw new InvalidOperationException("XAML document has no root element.");
 
         var lineStarts = BuildLineStarts(Text);
+        var spans = BuildElementSpans(Text, lineStarts)
+            .ToDictionary(x => x.StartIndex);
+
         var all = new List<ForgeXamlElement>();
+        Root = BuildNode(
+            document.Root,
+            parent: null,
+            siblingOrdinal: 0,
+            lineStarts,
+            spans,
+            all);
 
-        Root = BuildNode(document.Root, parent: null, lineStarts, all);
         elements = all.OrderBy(x => x.StartIndex).ToList();
-
         elementsByName = elements
             .Where(x => !string.IsNullOrWhiteSpace(x.Name))
             .GroupBy(x => x.Name!, StringComparer.Ordinal)
+            .ToDictionary(x => x.Key, x => x.First(), StringComparer.Ordinal);
+        elementsByIdentity = elements
+            .GroupBy(x => x.Identity, StringComparer.Ordinal)
             .ToDictionary(x => x.Key, x => x.First(), StringComparer.Ordinal);
     }
 
     ForgeXamlElement BuildNode(
         XElement element,
         ForgeXamlElement? parent,
+        int siblingOrdinal,
         IReadOnlyList<int> lineStarts,
+        IReadOnlyDictionary<int, ElementSpan> spans,
         List<ForgeXamlElement> all)
     {
         var lineInfo = (IXmlLineInfo)element;
@@ -156,29 +361,59 @@ public sealed class ForgeXamlDocument
             ? LineColumnToIndex(lineStarts, lineInfo.LineNumber, lineInfo.LinePosition, Text.Length)
             : 0;
 
-        var tagEnd = FindStartTagEnd(Text, startIndex);
-        var closeIndex = FindStartTagCloseIndex(Text, startIndex, tagEnd);
-        var attributes = ParseAttributes(Text, startIndex, tagEnd);
+        var span = spans.GetValueOrDefault(startIndex)
+            ?? throw new InvalidOperationException($"Could not locate source span for {element.Name.LocalName}.");
+
+        var attributes = ParseAttributes(Text, span.StartIndex, span.StartTagEndIndex);
+        var name = GetAuthoredName(element);
+        var xKey = element.Attribute(XamlNamespace + "Key")?.Value;
+        var identity = BuildIdentity(parent, element.Name.LocalName, siblingOrdinal, name, xKey);
 
         var node = new ForgeXamlElement(
-            GetAuthoredName(element),
+            identity,
+            name,
+            xKey,
             element.Name.LocalName,
             lineInfo.HasLineInfo() ? lineInfo.LineNumber : 0,
             lineInfo.HasLineInfo() ? lineInfo.LinePosition : 0,
-            startIndex,
-            tagEnd,
-            closeIndex,
+            span.StartIndex,
+            span.StartTagEndIndex,
+            span.StartTagCloseIndex,
+            span.EndTagStartIndex,
+            span.FullEndIndex,
+            span.IsSelfClosing,
             parent?.Depth + 1 ?? 0,
             parent,
             attributes);
 
         all.Add(node);
 
+        var counters = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var child in element.Elements())
-            node.Children.Add(BuildNode(child, node, lineStarts, all));
+        {
+            var localName = child.Name.LocalName;
+            var ordinal = counters.GetValueOrDefault(localName);
+            counters[localName] = ordinal + 1;
+            node.Children.Add(BuildNode(child, node, ordinal, lineStarts, spans, all));
+        }
 
         return node;
     }
+
+    ForgeXamlElement? FindNewestChild(string parentIdentity, string typeName)
+    {
+        var parent = FindByIdentity(parentIdentity);
+        return parent?.Children
+            .Where(x => x.TypeName == typeName)
+            .OrderByDescending(x => x.StartIndex)
+            .FirstOrDefault();
+    }
+
+    string? FindClosestIdentity(string typeName, string? parentIdentity) =>
+        elements
+            .Where(x => x.TypeName == typeName && x.Parent?.Identity == parentIdentity)
+            .OrderBy(x => x.StartIndex)
+            .FirstOrDefault()?.Identity;
 
     string BuildAttributeInsertion(ForgeXamlElement element, string attributeName, string value)
     {
@@ -188,13 +423,10 @@ public sealed class ForgeXamlDocument
         if (!tagText.Contains('\n'))
             return $" {attributeName}=\"{escaped}\"";
 
-        var closeLineStart = Text.LastIndexOf('\n', Math.Max(element.StartIndex, element.StartTagCloseIndex - 1));
         var elementLineStart = Text.LastIndexOf('\n', Math.Max(0, element.StartIndex - 1)) + 1;
-
         var baseIndentLength = element.StartIndex - elementLineStart;
         var attributeIndent = new string(' ', Math.Max(0, baseIndentLength + 4));
 
-        // If an existing attribute line has deeper indentation, preserve that style.
         var lastAttribute = element.Attributes.LastOrDefault();
         if (lastAttribute is not null)
         {
@@ -205,6 +437,115 @@ public sealed class ForgeXamlDocument
         }
 
         return Environment.NewLine + attributeIndent + $"{attributeName}=\"{escaped}\"";
+    }
+
+    string GetPreferredChildIndent(ForgeXamlElement parent)
+    {
+        var existing = parent.Children.FirstOrDefault();
+        if (existing is not null)
+            return GetIndentAt(existing.StartIndex);
+
+        return GetIndentAt(parent.StartIndex) + "    ";
+    }
+
+    string GetIndentAt(int index)
+    {
+        var lineStart = Text.LastIndexOf('\n', Math.Max(0, index - 1)) + 1;
+        var length = Math.Max(0, index - lineStart);
+        var prefix = Text.Substring(lineStart, length);
+        return new string(prefix.TakeWhile(ch => ch is ' ' or '\t').ToArray());
+    }
+
+    static string ReindentFragment(string fragment, string indent)
+    {
+        var lines = fragment.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        if (lines.Length == 1) return indent + lines[0].Trim();
+
+        var nonEmpty = lines.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+        var common = nonEmpty.Count == 0
+            ? 0
+            : nonEmpty.Min(x => x.TakeWhile(ch => ch is ' ' or '\t').Count());
+
+        return string.Join(
+            Environment.NewLine,
+            lines.Select((line, i) =>
+            {
+                var normalized = line.Length >= common ? line[common..] : line.TrimStart();
+                return indent + normalized;
+            }));
+    }
+
+    static string WrapFragment(string fragment) =>
+        "<Grid xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\" " +
+        "xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\">" +
+        fragment +
+        "</Grid>";
+
+    static string BuildIdentity(
+        ForgeXamlElement? parent,
+        string typeName,
+        int ordinal,
+        string? name,
+        string? xKey)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+            return "name:" + name;
+
+        var parentIdentity = parent?.Identity ?? "root";
+        if (!string.IsNullOrWhiteSpace(xKey))
+            return $"{parentIdentity}/key:{xKey}";
+
+        return $"{parentIdentity}/{typeName}[{ordinal}]";
+    }
+
+    static IReadOnlyList<ElementSpan> BuildElementSpans(string text, IReadOnlyList<int> lineStarts)
+    {
+        var settings = new XmlReaderSettings
+        {
+            DtdProcessing = DtdProcessing.Prohibit,
+            IgnoreComments = false,
+            IgnoreWhitespace = false
+        };
+
+        var spans = new List<ElementSpan>();
+        var stack = new Stack<int>();
+
+        using var reader = XmlReader.Create(new StringReader(text), settings);
+        var lineInfo = (IXmlLineInfo)reader;
+
+        while (reader.Read())
+        {
+            if (reader.NodeType == XmlNodeType.Element)
+            {
+                var start = LineColumnToIndex(lineStarts, lineInfo.LineNumber, lineInfo.LinePosition, text.Length);
+                var tagEnd = FindStartTagEnd(text, start);
+                var close = FindStartTagCloseIndex(text, start, tagEnd);
+                var span = new ElementSpan(
+                    start,
+                    tagEnd,
+                    close,
+                    reader.IsEmptyElement ? tagEnd : -1,
+                    reader.IsEmptyElement ? tagEnd + 1 : -1,
+                    reader.IsEmptyElement);
+
+                spans.Add(span);
+                if (!reader.IsEmptyElement)
+                    stack.Push(spans.Count - 1);
+            }
+            else if (reader.NodeType == XmlNodeType.EndElement && stack.Count > 0)
+            {
+                var index = stack.Pop();
+                var endStart = LineColumnToIndex(lineStarts, lineInfo.LineNumber, lineInfo.LinePosition, text.Length);
+                var endEnd = FindStartTagEnd(text, endStart);
+                spans[index] = spans[index] with
+                {
+                    EndTagStartIndex = endStart,
+                    FullEndIndex = endEnd + 1
+                };
+            }
+        }
+
+        return spans;
     }
 
     static IReadOnlyList<ForgeXamlAttribute> ParseAttributes(string text, int startIndex, int tagEnd)
@@ -321,46 +662,88 @@ public sealed class ForgeXamlDocument
         if (i > startIndex && text[i] == '/') return i;
         return tagEnd;
     }
+
+    sealed record ElementSpan(
+        int StartIndex,
+        int StartTagEndIndex,
+        int StartTagCloseIndex,
+        int EndTagStartIndex,
+        int FullEndIndex,
+        bool IsSelfClosing);
 }
 
 public sealed class ForgeXamlElement
 {
     public ForgeXamlElement(
+        string identity,
         string? name,
+        string? xKey,
         string typeName,
         int line,
         int column,
         int startIndex,
         int startTagEndIndex,
         int startTagCloseIndex,
+        int endTagStartIndex,
+        int fullEndIndex,
+        bool isSelfClosing,
         int depth,
         ForgeXamlElement? parent,
         IReadOnlyList<ForgeXamlAttribute> attributes)
     {
+        Identity = identity;
         Name = name;
+        XKey = xKey;
         TypeName = typeName;
         Line = line;
         Column = column;
         StartIndex = startIndex;
         StartTagEndIndex = startTagEndIndex;
         StartTagCloseIndex = startTagCloseIndex;
+        EndTagStartIndex = endTagStartIndex;
+        FullEndIndex = fullEndIndex;
+        IsSelfClosing = isSelfClosing;
         Depth = depth;
         Parent = parent;
         Attributes = attributes;
     }
 
+    public string Identity { get; }
     public string? Name { get; }
+    public string? XKey { get; }
     public string TypeName { get; }
     public int Line { get; }
     public int Column { get; }
     public int StartIndex { get; }
     public int StartTagEndIndex { get; }
     public int StartTagCloseIndex { get; }
+    public int EndTagStartIndex { get; }
+    public int FullEndIndex { get; }
+    public bool IsSelfClosing { get; }
     public int Depth { get; }
     public ForgeXamlElement? Parent { get; }
     public IReadOnlyList<ForgeXamlAttribute> Attributes { get; }
     public List<ForgeXamlElement> Children { get; } = [];
-    public string DisplayName => string.IsNullOrWhiteSpace(Name) ? TypeName : $"{Name} [{TypeName}]";
+    public IReadOnlyList<ForgeXamlElement> ContentChildren =>
+        Children.Where(x => !x.IsPropertyElement).ToList();
+    public bool IsPropertyElement => TypeName.Contains('.', StringComparison.Ordinal);
+    public string DisplayName =>
+        !string.IsNullOrWhiteSpace(Name)
+            ? $"{Name} [{TypeName}]"
+            : !string.IsNullOrWhiteSpace(XKey)
+                ? $"{XKey} [{TypeName}]"
+                : TypeName;
+
+    public bool IsDescendantOf(ForgeXamlElement possibleAncestor)
+    {
+        for (var current = Parent; current is not null; current = current.Parent)
+        {
+            if (ReferenceEquals(current, possibleAncestor) ||
+                string.Equals(current.Identity, possibleAncestor.Identity, StringComparison.Ordinal))
+                return true;
+        }
+        return false;
+    }
 }
 
 public sealed record ForgeXamlAttribute(
@@ -372,10 +755,18 @@ public sealed record ForgeXamlAttribute(
     int ValueEndIndex);
 
 public sealed record ForgeXamlEdit(
-    string ElementName,
+    string ElementIdentity,
     string AttributeName,
     string? OldValue,
     string? NewValue,
     bool Changed,
     string Before,
     string After);
+
+public sealed record ForgeStructuralEdit(
+    string Kind,
+    string Before,
+    string After,
+    string? PreviousSelectionIdentity,
+    string? NextSelectionIdentity,
+    bool Changed);
