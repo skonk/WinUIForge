@@ -157,6 +157,12 @@ public sealed class MainWindow : Window
     double resizeStartHeight;
     double resizeOriginalWidth;
     double resizeOriginalHeight;
+    HorizontalAlignment resizeOriginalHorizontalAlignment;
+    VerticalAlignment resizeOriginalVerticalAlignment;
+    bool resizePreviewAnchoredHorizontal;
+    bool resizePreviewAnchoredVertical;
+
+    const double ResizeAxisThreshold = 1.5;
 
     static readonly SolidColorBrush WindowBrush = Brush(23, 27, 29);
     static readonly SolidColorBrush PanelBrush = Brush(34, 37, 42);
@@ -1524,24 +1530,62 @@ public sealed class MainWindow : Window
         resizeStartHeight = height;
         resizeOriginalWidth = selectedFrameworkElement.Width;
         resizeOriginalHeight = selectedFrameworkElement.Height;
+        resizeOriginalHorizontalAlignment = selectedFrameworkElement.HorizontalAlignment;
+        resizeOriginalVerticalAlignment = selectedFrameworkElement.VerticalAlignment;
+        resizePreviewAnchoredHorizontal = false;
+        resizePreviewAnchoredVertical = false;
     }
 
     void UpdateResizePreview()
     {
-        if (selectedFrameworkElement is null) return;
+        if (selectedFrameworkElement is null ||
+            document?.FindByIdentity(selectedElementIdentity) is not { } source)
+            return;
 
-        var width = Math.Max(8, resizeStartWidth + resizeDeltaX);
-        var height = Math.Max(8, resizeStartHeight + resizeDeltaY);
+        var widthChanged = Math.Abs(resizeDeltaX) >= ResizeAxisThreshold;
+        var heightChanged = Math.Abs(resizeDeltaY) >= ResizeAxisThreshold;
 
-        selectedFrameworkElement.Width = width;
-        selectedFrameworkElement.Height = height;
+        // A bottom-right handle anchors the visual top-left. WinUI can reposition
+        // an implicitly Stretch-aligned child as soon as Width/Height becomes
+        // explicit, so temporarily make the cross-axis anchor explicit where
+        // required. The same property is committed with the final resize.
+        if (widthChanged &&
+            !resizePreviewAnchoredHorizontal &&
+            ShouldAnchorHorizontalOnResize(source))
+        {
+            selectedFrameworkElement.HorizontalAlignment = HorizontalAlignment.Left;
+            resizePreviewAnchoredHorizontal = true;
+        }
 
-        // Force the designer subtree through layout so centred/aligned controls
-        // visibly move as their temporary size changes.
+        if (heightChanged &&
+            !resizePreviewAnchoredVertical &&
+            ShouldAnchorVerticalOnResize(source))
+        {
+            selectedFrameworkElement.VerticalAlignment = VerticalAlignment.Top;
+            resizePreviewAnchoredVertical = true;
+        }
+
+        if (widthChanged)
+            selectedFrameworkElement.Width = Math.Max(8, resizeStartWidth + resizeDeltaX);
+        else
+            selectedFrameworkElement.Width = resizeOriginalWidth;
+
+        if (heightChanged)
+            selectedFrameworkElement.Height = Math.Max(8, resizeStartHeight + resizeDeltaY);
+        else
+            selectedFrameworkElement.Height = resizeOriginalHeight;
+
         previewStage.UpdateLayout();
         UpdateSelectionChromeFromRuntime();
 
-        status.Text = $"Live resize preview {width:0} × {height:0}";
+        var widthText = widthChanged
+            ? Math.Max(8, resizeStartWidth + resizeDeltaX).ToString("0", CultureInfo.InvariantCulture)
+            : "Auto";
+        var heightText = heightChanged
+            ? Math.Max(8, resizeStartHeight + resizeDeltaY).ToString("0", CultureInfo.InvariantCulture)
+            : "Auto";
+
+        status.Text = $"Live resize preview {widthText} × {heightText}";
     }
 
     void CompleteResizePreview()
@@ -1549,7 +1593,7 @@ public sealed class MainWindow : Window
         var previewElement = selectedFrameworkElement;
         designerManipulating = false;
 
-        if (Math.Abs(resizeDeltaX) < 0.5 && Math.Abs(resizeDeltaY) < 0.5)
+        if (!HasResizeAxisChange())
         {
             RestoreResizePreview(previewElement);
             DrawSelection();
@@ -1563,13 +1607,75 @@ public sealed class MainWindow : Window
         }
     }
 
+    bool HasResizeAxisChange() =>
+        Math.Abs(resizeDeltaX) >= ResizeAxisThreshold ||
+        Math.Abs(resizeDeltaY) >= ResizeAxisThreshold;
+
     void RestoreResizePreview(FrameworkElement? element)
     {
         if (element is null) return;
 
         element.Width = resizeOriginalWidth;
         element.Height = resizeOriginalHeight;
+        element.HorizontalAlignment = resizeOriginalHorizontalAlignment;
+        element.VerticalAlignment = resizeOriginalVerticalAlignment;
+        resizePreviewAnchoredHorizontal = false;
+        resizePreviewAnchoredVertical = false;
         previewStage.UpdateLayout();
+    }
+
+    static bool ShouldAnchorHorizontalOnResize(ForgeXamlElement source)
+    {
+        if (HasAuthoredNonStretchAlignment(source, "HorizontalAlignment"))
+            return false;
+
+        if (source.Parent is null)
+            return false;
+
+        if (source.Parent.TypeName == "StackPanel")
+        {
+            var orientation = source.Parent.Attributes
+                .FirstOrDefault(x => x.Name == "Orientation")?.Value ?? "Vertical";
+            return !string.Equals(orientation, "Horizontal", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return source.Parent.TypeName is
+            "Grid" or
+            "Border" or
+            "ScrollViewer" or
+            "RelativePanel";
+    }
+
+    static bool ShouldAnchorVerticalOnResize(ForgeXamlElement source)
+    {
+        if (HasAuthoredNonStretchAlignment(source, "VerticalAlignment"))
+            return false;
+
+        if (source.Parent is null)
+            return false;
+
+        if (source.Parent.TypeName == "StackPanel")
+        {
+            var orientation = source.Parent.Attributes
+                .FirstOrDefault(x => x.Name == "Orientation")?.Value ?? "Vertical";
+            return string.Equals(orientation, "Horizontal", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return source.Parent.TypeName is
+            "Grid" or
+            "Border" or
+            "ScrollViewer" or
+            "RelativePanel";
+    }
+
+    static bool HasAuthoredNonStretchAlignment(ForgeXamlElement source, string attributeName)
+    {
+        var value = source.Attributes
+            .FirstOrDefault(x => string.Equals(x.Name, attributeName, StringComparison.Ordinal))
+            ?.Value;
+
+        return !string.IsNullOrWhiteSpace(value) &&
+               !string.Equals(value, "Stretch", StringComparison.OrdinalIgnoreCase);
     }
 
     static Thumb CreateHandle(string tooltip)
@@ -1590,21 +1696,42 @@ public sealed class MainWindow : Window
     {
         if (document is null ||
             selectedFrameworkElement is null ||
-            string.IsNullOrWhiteSpace(selectedElementIdentity))
+            string.IsNullOrWhiteSpace(selectedElementIdentity) ||
+            document.FindByIdentity(selectedElementIdentity) is not { } source)
             return false;
 
-        if (Math.Abs(resizeDeltaX) < 0.5 && Math.Abs(resizeDeltaY) < 0.5)
+        var widthChanged = Math.Abs(resizeDeltaX) >= ResizeAxisThreshold;
+        var heightChanged = Math.Abs(resizeDeltaY) >= ResizeAxisThreshold;
+        if (!widthChanged && !heightChanged)
             return false;
 
         try
         {
             var identity = selectedElementIdentity;
             var before = document.Text;
-            var width = Math.Max(8, resizeStartWidth + resizeDeltaX);
-            var height = Math.Max(8, resizeStartHeight + resizeDeltaY);
 
-            document.SetAttributeByIdentity(identity, "Width", Number(width));
-            document.SetAttributeByIdentity(identity, "Height", Number(height));
+            if (widthChanged)
+            {
+                var width = Math.Max(8, resizeStartWidth + resizeDeltaX);
+                document.SetAttributeByIdentity(identity, "Width", Number(width));
+
+                if (ShouldAnchorHorizontalOnResize(source))
+                    document.SetAttributeByIdentity(identity, "HorizontalAlignment", "Left");
+            }
+
+            // Re-resolve after a source edit because ForgeXamlDocument reparses
+            // and replaces its element instances after each attribute mutation.
+            source = document.FindByIdentity(identity) ?? source;
+
+            if (heightChanged)
+            {
+                var height = Math.Max(8, resizeStartHeight + resizeDeltaY);
+                document.SetAttributeByIdentity(identity, "Height", Number(height));
+
+                source = document.FindByIdentity(identity) ?? source;
+                if (ShouldAnchorVerticalOnResize(source))
+                    document.SetAttributeByIdentity(identity, "VerticalAlignment", "Top");
+            }
 
             history.Record(
                 "Resize element",
