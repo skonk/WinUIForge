@@ -79,9 +79,24 @@ No screenshot-as-UI shortcut is required.
 
 The reference contains real project thumbnails/preview imagery. The benchmark second pass uses semantic placeholder panels because implementation assets were intentionally excluded from reconstruction input. That difference should be classified as **content asset unavailable**, not as a WinUI layout failure.
 
-## Forge limitations found so far
+## Forge limitations / product findings
 
-The benchmark itself has not yet exposed a blocking authoring limitation. The earlier move/resize feedback issues were fixed before this comparison pass.
+### Dense Visual Tree navigation
+
+The second-pass dashboard contains hundreds of authored XAML nodes. The original flat Visual Tree remained technically correct but became inefficient for production-density correction because unnamed Grid/property nodes overwhelmed the meaningful semantic regions.
+
+Benchmark-driven Forge change:
+
+- add a Visual Tree text filter;
+- add **Named only** mode;
+- default the Workshop benchmark to Named only;
+- preserve the full tree for low-level source work.
+
+Implemented in Forge commit `4f03754160569e5ede999b34e67d274f4ac6cd1a`.
+
+This is classified as an **editability / Forge authoring limitation**, not an AI reconstruction error.
+
+The earlier move/resize feedback issues were fixed before this comparison pass.
 
 ## Corrections
 
