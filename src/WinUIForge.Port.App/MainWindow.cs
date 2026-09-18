@@ -12,16 +12,7 @@ namespace WinUIForge.Port.App;
 
 public sealed class MainWindow : Window
 {
-    readonly TextBox sourceEditor = new()
-    {
-        AcceptsReturn = true,
-        TextWrapping = TextWrapping.NoWrap,
-        FontFamily = new FontFamily("Consolas"),
-        FontSize = 13,
-        Padding = new Thickness(12),
-        VerticalAlignment = VerticalAlignment.Stretch,
-        HorizontalAlignment = HorizontalAlignment.Stretch
-    };
+    readonly ForgeSourceEditor sourceEditor = new();
 
     readonly TreeView visualTree = new()
     {
@@ -273,10 +264,7 @@ public sealed class MainWindow : Window
             renderTimer.Start();
         };
 
-        sourceEditor.AddHandler(
-            UIElement.PointerReleasedEvent,
-            new PointerEventHandler(OnSourcePointerReleased),
-            true);
+        sourceEditor.CaretMoved += (_, _) => OnSourceCaretMoved();
 
         visualTree.ItemInvoked += OnVisualTreeItemInvoked;
 
@@ -333,15 +321,13 @@ public sealed class MainWindow : Window
         }
     }
 
-    void OnSourcePointerReleased(object sender, PointerRoutedEventArgs e)
+    void OnSourceCaretMoved()
     {
-        sourceEditor.DispatcherQueue.TryEnqueue(() =>
-        {
-            if (document is null) return;
-            var mapped = document.FindAtSourceIndex(sourceEditor.SelectionStart);
-            if (mapped is not null && coordinator.TryGetRuntimeElement(mapped.Id, out _))
-                SelectAuthoredElement(mapped.Id, revealSource: false);
-        });
+        if (document is null) return;
+
+        var mapped = document.FindAtSourceIndex(sourceEditor.CaretIndex);
+        if (mapped is not null && coordinator.TryGetRuntimeElement(mapped.Id, out _))
+            SelectAuthoredElement(mapped.Id, revealSource: false);
     }
 
     void OnVisualTreeItemInvoked(TreeView sender, TreeViewItemInvokedEventArgs args)
@@ -430,7 +416,7 @@ public sealed class MainWindow : Window
         SyncVisualTreeSelection(sourceElement.Id);
 
         if (revealSource)
-            sourceEditor.Select(sourceElement.StartIndex, 0);
+            sourceEditor.RevealIndex(sourceElement.StartIndex);
 
         DrawSelection();
         status.Text = $"Selected {sourceElement.DisplayName} · source ↔ runtime mapping active.";

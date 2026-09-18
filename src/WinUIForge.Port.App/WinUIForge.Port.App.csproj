@@ -18,6 +18,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <PackageReference Include="WinUIEdit" Version="0.0.5-prerelease" />
     <ProjectReference Include="../WinUIForge.Port.Core/WinUIForge.Port.Core.csproj" />
   </ItemGroup>
 </Project>
