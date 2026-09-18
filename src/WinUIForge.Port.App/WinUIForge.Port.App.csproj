@@ -29,5 +29,11 @@
     <Content Include="..\..\benchmarks\workshop-dashboard-v1\Screen.forge.json"
              Link="Benchmarks\workshop-dashboard-v1\Screen.forge.json"
              CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\benchmarks\workshop-storage-settings-v1\Screen.xaml"
+             Link="Benchmarks\workshop-storage-settings-v1\Screen.xaml"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\benchmarks\workshop-storage-settings-v1\Screen.forge.json"
+             Link="Benchmarks\workshop-storage-settings-v1\Screen.forge.json"
+             CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
