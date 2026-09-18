@@ -53,6 +53,26 @@ No screenshot-as-UI shortcut is required.
 - [x] Project Inspector expanded with visual-preview placeholder and richer details;
 - [x] bottom console separated from branded JLA3D / CONDUIT footer.
 
+## Second runtime comparison — observations
+
+The second-pass 50% overlay shows a substantial improvement in structural fidelity:
+
+- the five-card KPI row now reads as the same composition as the target;
+- the three parallel lower content regions are in the correct structural relationship;
+- the navigation and inspector rails are much closer to the target proportions;
+- the console/footer split now matches the target hierarchy;
+- the remaining visual mismatch is no longer dominated by an incorrect layout model.
+
+The largest remaining differences are now:
+
+- real thumbnail / preview imagery versus semantic placeholders;
+- iconography (current reconstruction uses lightweight text/glyph substitutes);
+- fine typography and text density;
+- local spacing/padding and a few panel-height/proportion differences;
+- finer inspector content/detail matching.
+
+This is the desired benchmark transition: corrections are becoming **tuning**, not hierarchy reconstruction.
+
 ## Second runtime comparison checklist
 
 ### Geometry
@@ -98,6 +118,29 @@ This is classified as an **editability / Forge authoring limitation**, not an AI
 
 The earlier move/resize feedback issues were fixed before this comparison pass.
 
+### Rebuild-free XAML iteration
+
+The benchmark also confirmed that rebuilding Forge between every XAML revision would unnecessarily recreate the same slow loop the tool is intended to replace.
+
+Benchmark-driven Forge change:
+
+- **Open XAML…** loads a real file directly;
+- **Reload XAML** rereads external/AI edits;
+- **Save XAML** persists visual Forge corrections;
+- the Workshop benchmark prefers the live repository `Screen.xaml` over its packaged fallback.
+
+This allows:
+
+~~~text
+AI edits XAML
+    -> git pull
+    -> Reload XAML
+    -> visual comparison/correction
+    -> Save XAML
+~~~
+
+without rebuilding the Workshop application and, for normal XAML iterations, without rebuilding Forge.
+
 ## Corrections
 
-Second pass is ready for runtime overlay review.
+Second pass has completed its first runtime overlay review. Iterative visual tuning is active.
