@@ -664,6 +664,7 @@ public sealed class MainWindow : Window
         {
             var source = File.ReadAllText(currentSourceFilePath);
             lastSavedSourceText = source;
+            LoadForgeSidecar(currentSourceFilePath);
 
             history.Clear();
             selectedElementIdentity = null;
@@ -728,6 +729,754 @@ public sealed class MainWindow : Window
 
         return null;
     }
+
+    void LoadForgeSidecar(string xamlPath)
+    {
+        semanticElements.Clear();
+        currentForgeSidecarPath = null;
+        currentReviewCase = Path.GetFileNameWithoutExtension(xamlPath);
+
+        var directory = Path.GetDirectoryName(xamlPath);
+        if (string.IsNullOrWhiteSpace(directory))
+            return;
+
+        var sidecarPath = Path.Combine(
+            directory,
+            Path.GetFileNameWithoutExtension(xamlPath) + ".forge.json");
+
+        if (!File.Exists(sidecarPath))
+            return;
+
+        try
+        {
+            using var json = JsonDocument.Parse(File.ReadAllText(sidecarPath));
+            var root = json.RootElement;
+
+            if (root.TryGetProperty("case", out var caseElement) &&
+                caseElement.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(caseElement.GetString()))
+            {
+                currentReviewCase = caseElement.GetString()!;
+            }
+
+            if (root.TryGetProperty("semanticElements", out var semantic) &&
+                semantic.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in semantic.EnumerateObject())
+                {
+                    if (property.Value.ValueKind != JsonValueKind.String)
+                        continue;
+
+                    var name = property.Value.GetString();
+                    if (!string.IsNullOrWhiteSpace(name))
+                        semanticElements[property.Name] = name!;
+                }
+            }
+
+            currentForgeSidecarPath = sidecarPath;
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Forge sidecar warning: " + ex.Message;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.Orange);
+        }
+    }
+
+    void DrawAllHighlights(bool force = false)
+    {
+        allHighlightsLayer.Children.Clear();
+
+        var enabled = force || highlightAllCheckBox.IsChecked == true;
+        allHighlightsLayer.Visibility = enabled
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        if (!enabled || document is null)
+            return;
+
+        IEnumerable<ForgeXamlElement> candidates;
+
+        if (semanticElements.Count > 0)
+        {
+            var names = semanticElements.Values
+                .ToHashSet(StringComparer.Ordinal);
+
+            candidates = document.Elements.Where(x =>
+                !string.IsNullOrWhiteSpace(x.Name) &&
+                names.Contains(x.Name!));
+        }
+        else
+        {
+            candidates = document.Elements.Where(x =>
+                !string.IsNullOrWhiteSpace(x.Name) &&
+                x.TypeName is "Grid" or "Border" or "StackPanel" or "Canvas" or "ScrollViewer");
+        }
+
+        var highlightBrush = new SolidColorBrush(Color.FromArgb(190, 249, 116, 25));
+        var labelBackground = new SolidColorBrush(Color.FromArgb(220, 23, 27, 29));
+
+        foreach (var source in candidates.Take(64))
+        {
+            if (string.Equals(source.Identity, document.Root.Identity, StringComparison.Ordinal))
+                continue;
+
+            if (string.IsNullOrWhiteSpace(source.Name) ||
+                !coordinator.TryGetVisual(source.Name, out var element))
+                continue;
+
+            try
+            {
+                var transform = element.TransformToVisual(previewStage);
+                var point = transform.TransformPoint(new Point(0, 0));
+                var width = Math.Max(1, element.ActualWidth);
+                var height = Math.Max(1, element.ActualHeight);
+
+                if (width < 18 || height < 14)
+                    continue;
+
+                var outline = new Border
+                {
+                    Width = width,
+                    Height = height,
+                    BorderBrush = highlightBrush,
+                    BorderThickness = new Thickness(1.5),
+                    IsHitTestVisible = false
+                };
+                Canvas.SetLeft(outline, point.X);
+                Canvas.SetTop(outline, point.Y);
+                allHighlightsLayer.Children.Add(outline);
+
+                if (width >= 70 && height >= 26)
+                {
+                    var label = new Border
+                    {
+                        Background = labelBackground,
+                        BorderBrush = highlightBrush,
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(3),
+                        Padding = new Thickness(4, 1, 4, 1),
+                        IsHitTestVisible = false,
+                        Child = new TextBlock
+                        {
+                            Text = source.Name,
+                            Foreground = AccentBrush,
+                            FontSize = 10
+                        }
+                    };
+
+                    Canvas.SetLeft(label, Math.Max(0, point.X + 3));
+                    Canvas.SetTop(label, Math.Max(0, point.Y + 3));
+                    allHighlightsLayer.Children.Add(label);
+                }
+            }
+            catch
+            {
+                // A transient layout pass should not prevent other semantic
+                // regions from being highlighted.
+            }
+        }
+    }
+
+    async Task ExportReviewPackageAsync()
+    {
+        if (document is null || previewContent.Content is not UIElement)
+        {
+            status.Text = "Render a valid XAML design before exporting a review package.";
+            return;
+        }
+
+        exportReviewPackageButton.IsEnabled = false;
+
+        var tempRoot = Path.Combine(
+            Path.GetTempPath(),
+            "WinUIForge",
+            "review-" + Guid.NewGuid().ToString("N"));
+
+        try
+        {
+            status.Text = "Exporting review package…";
+            previewStage.UpdateLayout();
+            Directory.CreateDirectory(tempRoot);
+
+            var sourceDirectory = Path.Combine(tempRoot, "source");
+            var referenceDirectory = Path.Combine(tempRoot, "reference");
+            var renderDirectory = Path.Combine(tempRoot, "render");
+            var geometryDirectory = Path.Combine(tempRoot, "geometry");
+            var diagnosticsDirectory = Path.Combine(tempRoot, "diagnostics");
+
+            Directory.CreateDirectory(sourceDirectory);
+            Directory.CreateDirectory(referenceDirectory);
+            Directory.CreateDirectory(renderDirectory);
+            Directory.CreateDirectory(geometryDirectory);
+            Directory.CreateDirectory(diagnosticsDirectory);
+
+            await File.WriteAllTextAsync(
+                Path.Combine(sourceDirectory, "Screen.xaml"),
+                sourceEditor.Text);
+
+            if (!string.IsNullOrWhiteSpace(currentForgeSidecarPath) &&
+                File.Exists(currentForgeSidecarPath))
+            {
+                File.Copy(
+                    currentForgeSidecarPath,
+                    Path.Combine(sourceDirectory, "Screen.forge.json"),
+                    overwrite: true);
+            }
+
+            string? originalReferenceRelativePath = null;
+            if (!string.IsNullOrWhiteSpace(referenceSourceFilePath) &&
+                File.Exists(referenceSourceFilePath))
+            {
+                var extension = Path.GetExtension(referenceSourceFilePath);
+                if (string.IsNullOrWhiteSpace(extension))
+                    extension = ".png";
+
+                var destinationName = "reference-original" + extension.ToLowerInvariant();
+                File.Copy(
+                    referenceSourceFilePath,
+                    Path.Combine(referenceDirectory, destinationName),
+                    overwrite: true);
+
+                originalReferenceRelativePath = "reference/" + destinationName;
+            }
+
+            await CaptureReviewImagesAsync(tempRoot);
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
+            await File.WriteAllTextAsync(
+                Path.Combine(geometryDirectory, "layout.json"),
+                JsonSerializer.Serialize(BuildLayoutSnapshot(), jsonOptions));
+
+            await File.WriteAllTextAsync(
+                Path.Combine(geometryDirectory, "hierarchy.json"),
+                JsonSerializer.Serialize(BuildHierarchySnapshot(), jsonOptions));
+
+            await File.WriteAllTextAsync(
+                Path.Combine(geometryDirectory, "bounds.svg"),
+                BuildBoundsSvg());
+
+            await File.WriteAllTextAsync(
+                Path.Combine(diagnosticsDirectory, "render-diagnostics.json"),
+                JsonSerializer.Serialize(new
+                {
+                    renderedAtUtc = DateTimeOffset.UtcNow,
+                    authoredElementCount = document.Elements.Count,
+                    namedRuntimeMappings = coordinator.MappedCount,
+                    diagnostics = diagnostics.Text,
+                    referenceLoaded = referenceOverlay.Source is not null,
+                    semanticRegionCount = semanticElements.Count
+                }, jsonOptions));
+
+            await File.WriteAllTextAsync(
+                Path.Combine(diagnosticsDirectory, "environment.json"),
+                JsonSerializer.Serialize(new
+                {
+                    operatingSystem = Environment.OSVersion.ToString(),
+                    dotnet = Environment.Version.ToString(),
+                    machine = Environment.MachineName,
+                    viewport = new
+                    {
+                        width = previewStage.Width,
+                        height = previewStage.Height
+                    },
+                    theme = shellRoot.ActualTheme.ToString()
+                }, jsonOptions));
+
+            var dirty = !string.IsNullOrWhiteSpace(currentSourceFilePath) &&
+                        !string.Equals(sourceEditor.Text, lastSavedSourceText, StringComparison.Ordinal);
+
+            var manifest = new
+            {
+                schema = 1,
+                tool = "WinUIForge",
+                packageType = "forge-review",
+                @case = currentReviewCase,
+                exportedAtUtc = DateTimeOffset.UtcNow,
+                viewport = new
+                {
+                    logicalWidth = previewStage.Width,
+                    logicalHeight = previewStage.Height,
+                    displayMode = viewportDisplayMode.SelectedItem as string ?? "Fit"
+                },
+                source = new
+                {
+                    filename = "source/Screen.xaml",
+                    sidecar = File.Exists(Path.Combine(sourceDirectory, "Screen.forge.json"))
+                        ? "source/Screen.forge.json"
+                        : null,
+                    hasUnsavedChanges = dirty
+                },
+                reference = new
+                {
+                    original = originalReferenceRelativePath,
+                    normalized = referenceOverlay.Source is not null
+                        ? "reference/reference-normalized.png"
+                        : null,
+                    originalWidth = referencePixelWidth,
+                    originalHeight = referencePixelHeight
+                },
+                renders = new
+                {
+                    clean = "render/render-clean.png",
+                    highlighted = "render/render-highlighted.png",
+                    comparison50 = referenceOverlay.Source is not null
+                        ? "render/comparison-50pct.png"
+                        : null
+                },
+                geometry = new
+                {
+                    layout = "geometry/layout.json",
+                    hierarchy = "geometry/hierarchy.json",
+                    bounds = "geometry/bounds.svg"
+                }
+            };
+
+            await File.WriteAllTextAsync(
+                Path.Combine(tempRoot, "manifest.json"),
+                JsonSerializer.Serialize(manifest, jsonOptions));
+
+            await File.WriteAllTextAsync(
+                Path.Combine(tempRoot, "README.md"),
+                BuildReviewReadme());
+
+            var downloads = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Downloads",
+                "WinUIForge Reviews");
+            Directory.CreateDirectory(downloads);
+
+            var safeCase = SanitizeFileName(currentReviewCase);
+            var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+            var zipPath = Path.Combine(
+                downloads,
+                $"{safeCase}_{stamp}.forge-review.zip");
+
+            ZipFile.CreateFromDirectory(
+                tempRoot,
+                zipPath,
+                CompressionLevel.Optimal,
+                includeBaseDirectory: false);
+
+            status.Text = $"Review package exported: {Path.GetFileName(zipPath)}";
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"/select,\"{zipPath}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception explorerError)
+            {
+                diagnostics.Text =
+                    $"Review package exported successfully. Explorer could not be opened: {explorerError.Message}";
+                diagnostics.Foreground = MutedBrush;
+            }
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Review export error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Could not export review package: " + ex.Message;
+        }
+        finally
+        {
+            exportReviewPackageButton.IsEnabled = true;
+
+            try
+            {
+                if (Directory.Exists(tempRoot))
+                    Directory.Delete(tempRoot, recursive: true);
+            }
+            catch
+            {
+                // Temporary cleanup failure must not hide an otherwise successful
+                // review export.
+            }
+        }
+    }
+
+    async Task CaptureReviewImagesAsync(string packageRoot)
+    {
+        var renderDirectory = Path.Combine(packageRoot, "render");
+        var referenceDirectory = Path.Combine(packageRoot, "reference");
+
+        var oldReferenceVisibility = referenceOverlay.Visibility;
+        var oldReferenceOpacity = referenceOverlay.Opacity;
+        var oldHighlightsVisibility = allHighlightsLayer.Visibility;
+        var oldSelectionVisibility = selectionLayer.Visibility;
+        var oldContentVisibility = previewContent.Visibility;
+
+        try
+        {
+            selectionLayer.Visibility = Visibility.Collapsed;
+            previewContent.Visibility = Visibility.Visible;
+
+            referenceOverlay.Visibility = Visibility.Collapsed;
+            allHighlightsLayer.Visibility = Visibility.Collapsed;
+            previewStage.UpdateLayout();
+            await SaveElementPngAsync(
+                previewStage,
+                Path.Combine(renderDirectory, "render-clean.png"));
+
+            DrawAllHighlights(force: true);
+            referenceOverlay.Visibility = Visibility.Collapsed;
+            allHighlightsLayer.Visibility = Visibility.Visible;
+            previewStage.UpdateLayout();
+            await SaveElementPngAsync(
+                previewStage,
+                Path.Combine(renderDirectory, "render-highlighted.png"));
+
+            if (referenceOverlay.Source is not null)
+            {
+                previewContent.Visibility = Visibility.Collapsed;
+                allHighlightsLayer.Visibility = Visibility.Collapsed;
+                referenceOverlay.Visibility = Visibility.Visible;
+                referenceOverlay.Opacity = 1;
+                previewStage.UpdateLayout();
+
+                await SaveElementPngAsync(
+                    previewStage,
+                    Path.Combine(referenceDirectory, "reference-normalized.png"));
+
+                previewContent.Visibility = Visibility.Visible;
+                referenceOverlay.Opacity = 0.5;
+                previewStage.UpdateLayout();
+
+                await SaveElementPngAsync(
+                    previewStage,
+                    Path.Combine(renderDirectory, "comparison-50pct.png"));
+            }
+        }
+        finally
+        {
+            previewContent.Visibility = oldContentVisibility;
+            referenceOverlay.Visibility = oldReferenceVisibility;
+            referenceOverlay.Opacity = oldReferenceOpacity;
+            allHighlightsLayer.Visibility = oldHighlightsVisibility;
+            selectionLayer.Visibility = oldSelectionVisibility;
+
+            DrawAllHighlights();
+            DrawSelection();
+        }
+    }
+
+    async Task SaveElementPngAsync(UIElement element, string path)
+    {
+        var width = Math.Max(1, (int)Math.Round(previewStage.Width));
+        var height = Math.Max(1, (int)Math.Round(previewStage.Height));
+
+        var target = new RenderTargetBitmap();
+        await target.RenderAsync(element, width, height);
+
+        var buffer = await target.GetPixelsAsync();
+        var bytes = new byte[checked((int)buffer.Length)];
+        using (var reader = DataReader.FromBuffer(buffer))
+            reader.ReadBytes(bytes);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllBytesAsync(path, Array.Empty<byte>());
+
+        var file = await StorageFile.GetFileFromPathAsync(path);
+        using var stream = await file.OpenAsync(FileAccessMode.ReadWrite);
+        stream.Size = 0;
+
+        var encoder = await BitmapEncoder.CreateAsync(
+            BitmapEncoder.PngEncoderId,
+            stream);
+
+        encoder.SetPixelData(
+            BitmapPixelFormat.Bgra8,
+            BitmapAlphaMode.Premultiplied,
+            (uint)target.PixelWidth,
+            (uint)target.PixelHeight,
+            96,
+            96,
+            bytes);
+
+        await encoder.FlushAsync();
+    }
+
+    object BuildLayoutSnapshot()
+    {
+        if (document is null)
+            return Array.Empty<object>();
+
+        var entries = new List<object>();
+
+        foreach (var source in document.Elements.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
+        {
+            if (string.IsNullOrWhiteSpace(source.Name) ||
+                !coordinator.TryGetVisual(source.Name, out var element))
+                continue;
+
+            try
+            {
+                var transform = element.TransformToVisual(previewStage);
+                var point = transform.TransformPoint(new Point(0, 0));
+
+                object? text = null;
+                if (element is TextBlock textBlock)
+                {
+                    text = new
+                    {
+                        value = textBlock.Text,
+                        fontSize = textBlock.FontSize,
+                        fontWeight = textBlock.FontWeight.Weight,
+                        wrapping = textBlock.TextWrapping.ToString(),
+                        trimming = textBlock.TextTrimming.ToString(),
+                        foreground = BrushValue(textBlock.Foreground)
+                    };
+                }
+                else if (element is Control control)
+                {
+                    text = new
+                    {
+                        fontSize = control.FontSize,
+                        fontWeight = control.FontWeight.Weight,
+                        foreground = BrushValue(control.Foreground)
+                    };
+                }
+
+                object appearance = element switch
+                {
+                    Border border => new
+                    {
+                        background = BrushValue(border.Background),
+                        borderBrush = BrushValue(border.BorderBrush),
+                        borderThickness = ThicknessValue(border.BorderThickness),
+                        cornerRadius = new
+                        {
+                            topLeft = border.CornerRadius.TopLeft,
+                            topRight = border.CornerRadius.TopRight,
+                            bottomRight = border.CornerRadius.BottomRight,
+                            bottomLeft = border.CornerRadius.BottomLeft
+                        },
+                        opacity = border.Opacity
+                    },
+                    Panel panel => new
+                    {
+                        background = BrushValue(panel.Background),
+                        opacity = panel.Opacity
+                    },
+                    Control control => new
+                    {
+                        background = BrushValue(control.Background),
+                        foreground = BrushValue(control.Foreground),
+                        opacity = control.Opacity
+                    },
+                    _ => new
+                    {
+                        opacity = element.Opacity
+                    }
+                };
+
+                entries.Add(new
+                {
+                    identity = source.Identity,
+                    name = source.Name,
+                    type = source.TypeName,
+                    parent = new
+                    {
+                        identity = source.Parent?.Identity,
+                        name = source.Parent?.Name,
+                        type = source.Parent?.TypeName
+                    },
+                    source = new
+                    {
+                        line = source.Line,
+                        column = source.Column
+                    },
+                    bounds = new
+                    {
+                        x = point.X,
+                        y = point.Y,
+                        width = element.ActualWidth,
+                        height = element.ActualHeight
+                    },
+                    desiredSize = new
+                    {
+                        width = element.DesiredSize.Width,
+                        height = element.DesiredSize.Height
+                    },
+                    layout = new
+                    {
+                        width = double.IsNaN(element.Width) ? null : element.Width,
+                        height = double.IsNaN(element.Height) ? null : element.Height,
+                        minWidth = element.MinWidth,
+                        minHeight = element.MinHeight,
+                        maxWidth = double.IsInfinity(element.MaxWidth) ? null : element.MaxWidth,
+                        maxHeight = double.IsInfinity(element.MaxHeight) ? null : element.MaxHeight,
+                        margin = ThicknessValue(element.Margin),
+                        horizontalAlignment = element.HorizontalAlignment.ToString(),
+                        verticalAlignment = element.VerticalAlignment.ToString(),
+                        grid = new
+                        {
+                            row = Grid.GetRow(element),
+                            column = Grid.GetColumn(element),
+                            rowSpan = Grid.GetRowSpan(element),
+                            columnSpan = Grid.GetColumnSpan(element)
+                        },
+                        canvas = new
+                        {
+                            left = double.IsNaN(Canvas.GetLeft(element)) ? null : Canvas.GetLeft(element),
+                            top = double.IsNaN(Canvas.GetTop(element)) ? null : Canvas.GetTop(element)
+                        }
+                    },
+                    appearance,
+                    text
+                });
+            }
+            catch
+            {
+                // A single transient or non-transformable element should not
+                // invalidate the full review package.
+            }
+        }
+
+        return entries;
+    }
+
+    object BuildHierarchySnapshot()
+    {
+        if (document is null)
+            return Array.Empty<object>();
+
+        return document.Elements.Select(source => new
+        {
+            identity = source.Identity,
+            name = source.Name,
+            key = source.XKey,
+            type = source.TypeName,
+            depth = source.Depth,
+            parentIdentity = source.Parent?.Identity,
+            parentName = source.Parent?.Name,
+            line = source.Line,
+            column = source.Column
+        }).ToArray();
+    }
+
+    string BuildBoundsSvg()
+    {
+        var width = Math.Max(1, previewStage.Width);
+        var height = Math.Max(1, previewStage.Height);
+        var builder = new StringBuilder();
+
+        builder.AppendLine(
+            $"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{Number(width)}\" height=\"{Number(height)}\" viewBox=\"0 0 {Number(width)} {Number(height)}\">");
+        builder.AppendLine("  <rect width=\"100%\" height=\"100%\" fill=\"none\"/>");
+
+        if (document is not null)
+        {
+            IEnumerable<ForgeXamlElement> candidates;
+            if (semanticElements.Count > 0)
+            {
+                var names = semanticElements.Values.ToHashSet(StringComparer.Ordinal);
+                candidates = document.Elements.Where(x =>
+                    !string.IsNullOrWhiteSpace(x.Name) &&
+                    names.Contains(x.Name!));
+            }
+            else
+            {
+                candidates = document.Elements.Where(x =>
+                    !string.IsNullOrWhiteSpace(x.Name));
+            }
+
+            foreach (var source in candidates.Take(128))
+            {
+                if (string.IsNullOrWhiteSpace(source.Name) ||
+                    !coordinator.TryGetVisual(source.Name, out var element))
+                    continue;
+
+                try
+                {
+                    var transform = element.TransformToVisual(previewStage);
+                    var point = transform.TransformPoint(new Point(0, 0));
+                    var elementWidth = Math.Max(1, element.ActualWidth);
+                    var elementHeight = Math.Max(1, element.ActualHeight);
+                    var name = XmlEscape(source.Name);
+
+                    builder.AppendLine(
+                        $"  <rect x=\"{Number(point.X)}\" y=\"{Number(point.Y)}\" width=\"{Number(elementWidth)}\" height=\"{Number(elementHeight)}\" fill=\"none\" stroke=\"#F97419\" stroke-width=\"1.5\"/>");
+                    builder.AppendLine(
+                        $"  <text x=\"{Number(point.X + 3)}\" y=\"{Number(point.Y + 12)}\" fill=\"#F97419\" font-size=\"10\" font-family=\"Segoe UI, sans-serif\">{name}</text>");
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        builder.AppendLine("</svg>");
+        return builder.ToString();
+    }
+
+    string BuildReviewReadme() =>
+        $"""
+        # WinUI Forge review package
+
+        Case: {currentReviewCase}
+        Viewport: {previewStage.Width:0} x {previewStage.Height:0}
+
+        This archive is intended for visual + structural review.
+
+        ## Primary files
+
+        - `source/Screen.xaml` — authoritative XAML at export time.
+        - `source/Screen.forge.json` — semantic sidecar when available.
+        - `reference/reference-original.*` — untouched reference image when available.
+        - `reference/reference-normalized.png` — reference rendered into the exact Forge viewport.
+        - `render/render-clean.png` — clean WinUI render without designer chrome.
+        - `render/render-highlighted.png` — WinUI render with semantic Highlight All frames.
+        - `render/comparison-50pct.png` — exact 50% reference overlay when a reference is loaded.
+        - `geometry/layout.json` — runtime bounds and resolved layout properties for named elements.
+        - `geometry/hierarchy.json` — authored XAML hierarchy.
+        - `geometry/bounds.svg` — exact semantic bounds in viewport coordinates.
+        - `diagnostics/*` — render and environment context.
+
+        The reference image is validation input only. It is not embedded into the authored UI.
+        """;
+
+    static object ThicknessValue(Thickness value) => new
+    {
+        left = value.Left,
+        top = value.Top,
+        right = value.Right,
+        bottom = value.Bottom
+    };
+
+    static string? BrushValue(Brush? brush) =>
+        brush is SolidColorBrush solid
+            ? $"#{solid.Color.A:X2}{solid.Color.R:X2}{solid.Color.G:X2}{solid.Color.B:X2}"
+            : brush?.ToString();
+
+    static string SanitizeFileName(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars().ToHashSet();
+        var builder = new StringBuilder(value.Length);
+
+        foreach (var character in value)
+            builder.Append(invalid.Contains(character) ? '-' : character);
+
+        var result = builder.ToString().Trim();
+        return string.IsNullOrWhiteSpace(result)
+            ? "winui-forge-review"
+            : result;
+    }
+
+    static string XmlEscape(string value) =>
+        value
+            .Replace("&", "&amp;", StringComparison.Ordinal)
+            .Replace("<", "&lt;", StringComparison.Ordinal)
+            .Replace(">", "&gt;", StringComparison.Ordinal)
+            .Replace("\"", "&quot;", StringComparison.Ordinal)
+            .Replace("'", "&apos;", StringComparison.Ordinal);
 
     async Task LoadReferenceAsync()
     {
@@ -833,6 +1582,7 @@ public sealed class MainWindow : Window
         previewStage.DispatcherQueue.TryEnqueue(() =>
         {
             previewStage.UpdateLayout();
+            DrawAllHighlights();
             DrawSelection();
         });
 
