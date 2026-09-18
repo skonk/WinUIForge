@@ -17,7 +17,11 @@ public sealed class MainWindow : Window
 {
     readonly ForgeSourceEditor sourceEditor = new();
 
-    readonly Grid previewStage = new();
+    readonly Grid previewStage = new()
+    {
+        Width = 1672,
+        Height = 941
+    };
     readonly ContentControl previewContent = new()
     {
         HorizontalContentAlignment = HorizontalAlignment.Stretch,
@@ -25,7 +29,7 @@ public sealed class MainWindow : Window
     };
     readonly Image referenceOverlay = new()
     {
-        Stretch = Stretch.Fill,
+        Stretch = Stretch.Uniform,
         IsHitTestVisible = false,
         Opacity = 0.5,
         Visibility = Visibility.Collapsed,
@@ -33,6 +37,23 @@ public sealed class MainWindow : Window
         VerticalAlignment = VerticalAlignment.Stretch
     };
     readonly Canvas selectionLayer = new() { IsHitTestVisible = true };
+    readonly Grid previewViewportShell = new() { Clip = new RectangleGeometry() };
+    readonly Viewbox previewViewbox = new()
+    {
+        Stretch = Stretch.Uniform,
+        StretchDirection = StretchDirection.Both,
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        VerticalAlignment = VerticalAlignment.Stretch
+    };
+    readonly ScrollViewer previewScrollViewer = new()
+    {
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        HorizontalScrollMode = ScrollMode.Enabled,
+        VerticalScrollMode = ScrollMode.Enabled,
+        ZoomMode = ZoomMode.Disabled,
+        Visibility = Visibility.Collapsed
+    };
 
     readonly Button loadReferenceButton = new() { Content = "Load reference…" };
     readonly CheckBox referenceVisibleCheckBox = new() { Content = "Overlay", IsEnabled = false };
@@ -48,6 +69,39 @@ public sealed class MainWindow : Window
     readonly TextBlock referenceInfo = new()
     {
         Text = "No reference image loaded.",
+        TextWrapping = TextWrapping.Wrap
+    };
+    readonly TextBox viewportWidthBox = new()
+    {
+        Text = "1672",
+        Width = 72,
+        Header = "Width"
+    };
+    readonly TextBox viewportHeightBox = new()
+    {
+        Text = "941",
+        Width = 72,
+        Header = "Height"
+    };
+    readonly ComboBox viewportDisplayMode = new()
+    {
+        Width = 96,
+        Header = "View"
+    };
+    readonly Button applyViewportButton = new()
+    {
+        Content = "Apply viewport",
+        VerticalAlignment = VerticalAlignment.Bottom
+    };
+    readonly Button useReferenceSizeButton = new()
+    {
+        Content = "Use reference size",
+        IsEnabled = false,
+        VerticalAlignment = VerticalAlignment.Bottom
+    };
+    readonly TextBlock viewportInfo = new()
+    {
+        Text = "Logical viewport 1672 × 941 · Fit",
         TextWrapping = TextWrapping.Wrap
     };
 
@@ -79,6 +133,8 @@ public sealed class MainWindow : Window
     FrameworkElement? selectedFrameworkElement;
     bool suppressSourceTextChanged;
     bool suppressTreeSelection;
+    int referencePixelWidth;
+    int referencePixelHeight;
 
     double moveDeltaX;
     double moveDeltaY;
@@ -103,6 +159,9 @@ public sealed class MainWindow : Window
         AppWindow.TitleBar.ForegroundColor = Color.FromArgb(255, 242, 243, 245);
         AppWindow.TitleBar.ButtonBackgroundColor = Color.FromArgb(255, 23, 27, 29);
         AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(255, 242, 243, 245);
+
+        viewportDisplayMode.ItemsSource = new[] { "Fit", "Fill", "1:1" };
+        viewportDisplayMode.SelectedIndex = 0;
 
         Content = BuildShell();
         WireEvents();
@@ -195,6 +254,7 @@ public sealed class MainWindow : Window
         var previewHost = new Grid { Background = WindowBrush };
         previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         previewHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         previewHost.Children.Add(SectionHeader(
             "WinUI 3 designer",
@@ -233,6 +293,37 @@ public sealed class MainWindow : Window
         Grid.SetRow(referenceTools, 1);
         previewHost.Children.Add(referenceTools);
 
+        var viewportTools = new Grid
+        {
+            Background = PanelBrush,
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(12, 6, 12, 8),
+            ColumnSpacing = 12
+        };
+        viewportTools.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        viewportTools.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        viewportInfo.Foreground = MutedBrush;
+        viewportInfo.VerticalAlignment = VerticalAlignment.Center;
+        viewportTools.Children.Add(viewportInfo);
+
+        var viewportCommands = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        viewportCommands.Children.Add(viewportWidthBox);
+        viewportCommands.Children.Add(viewportHeightBox);
+        viewportCommands.Children.Add(viewportDisplayMode);
+        viewportCommands.Children.Add(applyViewportButton);
+        viewportCommands.Children.Add(useReferenceSizeButton);
+        Grid.SetColumn(viewportCommands, 1);
+        viewportTools.Children.Add(viewportCommands);
+        Grid.SetRow(viewportTools, 2);
+        previewHost.Children.Add(viewportTools);
+
         var previewFrame = new Border
         {
             Margin = new Thickness(18),
@@ -245,8 +336,12 @@ public sealed class MainWindow : Window
         previewStage.Children.Add(previewContent);
         previewStage.Children.Add(referenceOverlay);
         previewStage.Children.Add(selectionLayer);
-        previewFrame.Child = previewStage;
-        Grid.SetRow(previewFrame, 2);
+
+        previewViewbox.Child = previewStage;
+        previewViewportShell.Children.Add(previewViewbox);
+        previewViewportShell.Children.Add(previewScrollViewer);
+        previewFrame.Child = previewViewportShell;
+        Grid.SetRow(previewFrame, 3);
         previewHost.Children.Add(previewFrame);
         Grid.SetColumn(previewHost, 1);
         workspace.Children.Add(previewHost);
@@ -343,6 +438,9 @@ public sealed class MainWindow : Window
         referenceVisibleCheckBox.Checked += (_, _) => UpdateReferenceOverlay();
         referenceVisibleCheckBox.Unchecked += (_, _) => UpdateReferenceOverlay();
         referenceOpacitySlider.ValueChanged += (_, _) => UpdateReferenceOverlay();
+        applyViewportButton.Click += (_, _) => ApplyViewportFromInputs();
+        useReferenceSizeButton.Click += (_, _) => UseReferenceViewport();
+        viewportDisplayMode.SelectionChanged += (_, _) => ApplyViewportDisplayMode();
 
         previewStage.SizeChanged += (_, _) => DrawSelection();
         previewStage.AddHandler(
@@ -382,12 +480,18 @@ public sealed class MainWindow : Window
                 await bitmap.SetSourceAsync(stream);
 
             referenceOverlay.Source = bitmap;
+            referencePixelWidth = bitmap.PixelWidth;
+            referencePixelHeight = bitmap.PixelHeight;
             referenceVisibleCheckBox.IsEnabled = true;
             referenceOpacitySlider.IsEnabled = true;
+            useReferenceSizeButton.IsEnabled = referencePixelWidth > 0 && referencePixelHeight > 0;
             referenceVisibleCheckBox.IsChecked = true;
 
             referenceInfo.Text =
-                $"{file.Name} · {bitmap.PixelWidth} × {bitmap.PixelHeight} · normalized to the current designer viewport";
+                $"{file.Name} · {referencePixelWidth} × {referencePixelHeight} · aspect ratio preserved";
+
+            if (referencePixelWidth > 0 && referencePixelHeight > 0)
+                SetBenchmarkViewport(referencePixelWidth, referencePixelHeight);
 
             UpdateReferenceOverlay();
             status.Text =
@@ -409,6 +513,88 @@ public sealed class MainWindow : Window
             referenceVisibleCheckBox.IsChecked == true
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+    }
+
+    void ApplyViewportFromInputs()
+    {
+        if (!double.TryParse(viewportWidthBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var width) ||
+            !double.TryParse(viewportHeightBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var height))
+        {
+            status.Text = "Viewport width and height must be numeric.";
+            return;
+        }
+
+        SetBenchmarkViewport(width, height);
+    }
+
+    void UseReferenceViewport()
+    {
+        if (referencePixelWidth <= 0 || referencePixelHeight <= 0)
+            return;
+
+        SetBenchmarkViewport(referencePixelWidth, referencePixelHeight);
+    }
+
+    void SetBenchmarkViewport(double width, double height)
+    {
+        if (width < 64 || height < 64 || width > 7680 || height > 4320)
+        {
+            status.Text = "Benchmark viewport must be between 64 × 64 and 7680 × 4320.";
+            return;
+        }
+
+        previewStage.Width = width;
+        previewStage.Height = height;
+        viewportWidthBox.Text = Number(width);
+        viewportHeightBox.Text = Number(height);
+        UpdateViewportInfo();
+
+        previewStage.DispatcherQueue.TryEnqueue(() =>
+        {
+            previewStage.UpdateLayout();
+            DrawSelection();
+        });
+
+        status.Text = $"Benchmark viewport set to {width:0} × {height:0}.";
+    }
+
+    void ApplyViewportDisplayMode()
+    {
+        var mode = viewportDisplayMode.SelectedItem as string ?? "Fit";
+
+        if (mode == "1:1")
+        {
+            if (ReferenceEquals(previewViewbox.Child, previewStage))
+                previewViewbox.Child = null;
+
+            if (!ReferenceEquals(previewScrollViewer.Content, previewStage))
+                previewScrollViewer.Content = previewStage;
+
+            previewViewbox.Visibility = Visibility.Collapsed;
+            previewScrollViewer.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            if (ReferenceEquals(previewScrollViewer.Content, previewStage))
+                previewScrollViewer.Content = null;
+
+            if (!ReferenceEquals(previewViewbox.Child, previewStage))
+                previewViewbox.Child = previewStage;
+
+            previewViewbox.Stretch = mode == "Fill" ? Stretch.UniformToFill : Stretch.Uniform;
+            previewViewbox.Visibility = Visibility.Visible;
+            previewScrollViewer.Visibility = Visibility.Collapsed;
+        }
+
+        UpdateViewportInfo();
+        previewStage.DispatcherQueue.TryEnqueue(DrawSelection);
+    }
+
+    void UpdateViewportInfo()
+    {
+        var mode = viewportDisplayMode.SelectedItem as string ?? "Fit";
+        viewportInfo.Text =
+            $"Logical viewport {previewStage.Width:0} × {previewStage.Height:0} · {mode} · WinUI is measured at logical size";
     }
 
     void BuildToolbox()
