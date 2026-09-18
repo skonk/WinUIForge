@@ -4,12 +4,19 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO.Compression;
 using System.Numerics;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Windows.Storage.Pickers;
 using WinUIForge.Port.Core;
 using Windows.Foundation;
 using Windows.Graphics;
+using Windows.Graphics.Imaging;
+using Windows.Storage;
+using Windows.Storage.Streams;
 using Windows.UI;
 
 namespace WinUIForge.Port.App;
@@ -37,6 +44,7 @@ public sealed class MainWindow : Window
         HorizontalAlignment = HorizontalAlignment.Stretch,
         VerticalAlignment = VerticalAlignment.Stretch
     };
+    readonly Canvas allHighlightsLayer = new() { IsHitTestVisible = false, Visibility = Visibility.Collapsed };
     readonly Canvas selectionLayer = new() { IsHitTestVisible = true };
     readonly Grid previewViewportShell = new();
     readonly Viewbox previewViewbox = new()
@@ -58,7 +66,9 @@ public sealed class MainWindow : Window
 
     readonly Button loadWorkshopBenchmarkButton = new() { Content = "Load W2 benchmark" };
     readonly Button loadReferenceButton = new() { Content = "Load reference…" };
+    readonly Button exportReviewPackageButton = new() { Content = "Export review package" };
     readonly CheckBox referenceVisibleCheckBox = new() { Content = "Overlay", IsEnabled = false };
+    readonly CheckBox highlightAllCheckBox = new() { Content = "Highlight all" };
     readonly Slider referenceOpacitySlider = new()
     {
         Minimum = 0.1,
@@ -152,7 +162,11 @@ public sealed class MainWindow : Window
     string? selectedElementIdentity;
     FrameworkElement? selectedFrameworkElement;
     string? currentSourceFilePath;
+    string? currentForgeSidecarPath;
+    string? referenceSourceFilePath;
+    string currentReviewCase = "winui-forge-review";
     string lastSavedSourceText = string.Empty;
+    readonly Dictionary<string, string> semanticElements = new(StringComparer.Ordinal);
     bool currentSourceFileReadOnly;
     bool suppressSourceTextChanged;
     bool suppressTreeSelection;
@@ -330,7 +344,9 @@ public sealed class MainWindow : Window
         };
         referenceCommands.Children.Add(loadWorkshopBenchmarkButton);
         referenceCommands.Children.Add(loadReferenceButton);
+        referenceCommands.Children.Add(exportReviewPackageButton);
         referenceCommands.Children.Add(referenceVisibleCheckBox);
+        referenceCommands.Children.Add(highlightAllCheckBox);
         referenceCommands.Children.Add(new TextBlock
         {
             Text = "Opacity",
@@ -385,6 +401,7 @@ public sealed class MainWindow : Window
         previewStage.Background = ElevatedBrush;
         previewStage.Children.Add(previewContent);
         previewStage.Children.Add(referenceOverlay);
+        previewStage.Children.Add(allHighlightsLayer);
         previewStage.Children.Add(selectionLayer);
 
         previewViewbox.Child = previewStage;
@@ -529,14 +546,21 @@ public sealed class MainWindow : Window
 
         loadWorkshopBenchmarkButton.Click += (_, _) => LoadWorkshopBenchmark();
         loadReferenceButton.Click += async (_, _) => await LoadReferenceAsync();
+        exportReviewPackageButton.Click += async (_, _) => await ExportReviewPackageAsync();
         referenceVisibleCheckBox.Checked += (_, _) => UpdateReferenceOverlay();
         referenceVisibleCheckBox.Unchecked += (_, _) => UpdateReferenceOverlay();
+        highlightAllCheckBox.Checked += (_, _) => DrawAllHighlights();
+        highlightAllCheckBox.Unchecked += (_, _) => DrawAllHighlights();
         referenceOpacitySlider.ValueChanged += (_, _) => UpdateReferenceOverlay();
         applyViewportButton.Click += (_, _) => ApplyViewportFromInputs();
         useReferenceSizeButton.Click += (_, _) => UseReferenceViewport();
         viewportDisplayMode.SelectionChanged += (_, _) => ApplyViewportDisplayMode();
 
-        previewStage.SizeChanged += (_, _) => DrawSelection();
+        previewStage.SizeChanged += (_, _) =>
+        {
+            DrawAllHighlights();
+            DrawSelection();
+        };
         previewStage.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(OnPreviewPointerPressed),
@@ -622,6 +646,7 @@ public sealed class MainWindow : Window
         currentSourceFilePath = path;
         currentSourceFileReadOnly = readOnly;
         lastSavedSourceText = source;
+        LoadForgeSidecar(path);
 
         history.Clear();
         selectedElementIdentity = null;
@@ -729,6 +754,7 @@ public sealed class MainWindow : Window
                 return;
             }
 
+            referenceSourceFilePath = result.Path;
             var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(result.Path);
             var bitmap = new BitmapImage();
             using (var stream = await file.OpenReadAsync())
@@ -936,6 +962,7 @@ public sealed class MainWindow : Window
         status.Text = "Source, preview, Visual Tree, Toolbox and inspector are synchronized.";
 
         RebuildVisualTree();
+        DrawAllHighlights();
 
         if (!string.IsNullOrWhiteSpace(previousSelection) &&
             document.FindByIdentity(previousSelection) is not null)
