@@ -37,7 +37,7 @@ public sealed class MainWindow : Window
         VerticalAlignment = VerticalAlignment.Stretch
     };
     readonly Canvas selectionLayer = new() { IsHitTestVisible = true };
-    readonly Grid previewViewportShell = new() { Clip = new RectangleGeometry() };
+    readonly Grid previewViewportShell = new();
     readonly Viewbox previewViewbox = new()
     {
         Stretch = Stretch.Uniform,
