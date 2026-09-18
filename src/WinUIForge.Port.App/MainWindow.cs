@@ -5,7 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Globalization;
-using Windows.Storage.Pickers;
+using Microsoft.Windows.Storage.Pickers;
 using WinUIForge.Port.Core;
 using Windows.Foundation;
 using Windows.Graphics;
@@ -355,18 +355,28 @@ public sealed class MainWindow : Window
     {
         try
         {
-            var picker = new FileOpenPicker();
+            status.Text = "Opening reference image picker…";
+
+            // Windows App SDK 1.8+ provides a desktop-native picker that is
+            // parented directly with AppWindow.Id. This is the preferred WinUI 3
+            // path and avoids the legacy IInitializeWithWindow interop route.
+            var picker = new FileOpenPicker(AppWindow.Id)
+            {
+                Title = "Choose a benchmark reference image"
+            };
             picker.FileTypeFilter.Add(".png");
             picker.FileTypeFilter.Add(".jpg");
             picker.FileTypeFilter.Add(".jpeg");
             picker.FileTypeFilter.Add(".bmp");
 
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+            var result = await picker.PickSingleFileAsync();
+            if (result is null)
+            {
+                status.Text = "Reference image selection cancelled.";
+                return;
+            }
 
-            var file = await picker.PickSingleFileAsync();
-            if (file is null) return;
-
+            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(result.Path);
             var bitmap = new BitmapImage();
             using (var stream = await file.OpenReadAsync())
                 await bitmap.SetSourceAsync(stream);
@@ -385,6 +395,8 @@ public sealed class MainWindow : Window
         }
         catch (Exception ex)
         {
+            diagnostics.Text = "Reference picker error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
             status.Text = "Could not load reference image: " + ex.Message;
         }
     }
