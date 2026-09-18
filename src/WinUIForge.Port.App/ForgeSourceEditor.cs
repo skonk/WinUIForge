@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Text;
 using WinUIEditor;
+using WinUIForge.Port.Core;
 
 namespace WinUIForge.Port.App;
 
@@ -49,7 +49,7 @@ internal sealed class ForgeSourceEditor : Grid
         get
         {
             var text = ReadText();
-            return Utf8BytePositionToUtf16Index(
+            return ForgeTextPosition.Utf8BytePositionToUtf16Index(
                 text,
                 control.Editor.CurrentPos);
         }
@@ -59,7 +59,7 @@ internal sealed class ForgeSourceEditor : Grid
     {
         var text = ReadText();
         var clamped = Math.Clamp(utf16Index, 0, text.Length);
-        var bytePosition = Utf16IndexToUtf8BytePosition(text, clamped);
+        var bytePosition = ForgeTextPosition.Utf16IndexToUtf8BytePosition(text, clamped);
 
         suppressCaretNotification = true;
         control.Editor.GotoPos(bytePosition);
@@ -131,28 +131,5 @@ internal sealed class ForgeSourceEditor : Grid
             // The editor remains usable if a prerelease package changes this optional
             // defaults helper. Core text/caret APIs are the required contract.
         }
-    }
-
-    internal static long Utf16IndexToUtf8BytePosition(string text, int utf16Index)
-    {
-        utf16Index = Math.Clamp(utf16Index, 0, text.Length);
-        return Encoding.UTF8.GetByteCount(text.AsSpan(0, utf16Index));
-    }
-
-    internal static int Utf8BytePositionToUtf16Index(string text, long bytePosition)
-    {
-        var bytes = Encoding.UTF8.GetBytes(text);
-        var clamped = (int)Math.Clamp(bytePosition, 0, bytes.LongLength);
-
-        // Scintilla gives valid code-point boundaries. Be defensive if a future editor
-        // hands us a byte offset in the middle of a UTF-8 sequence.
-        while (clamped > 0 &&
-               clamped < bytes.Length &&
-               (bytes[clamped] & 0b1100_0000) == 0b1000_0000)
-        {
-            clamped--;
-        }
-
-        return Encoding.UTF8.GetCharCount(bytes, 0, clamped);
     }
 }

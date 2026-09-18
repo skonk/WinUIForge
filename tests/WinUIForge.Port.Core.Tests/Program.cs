@@ -8,6 +8,7 @@ var tests = new List<(string Name, Action Run)>
     ("minimal-property-add", MinimalPropertyAdd),
     ("minimal-property-remove", MinimalPropertyRemove),
     ("unnamed-elements-get-stable-paths", UnnamedElementsGetStablePaths),
+    ("utf8-editor-position-roundtrip", Utf8EditorPositionRoundtrip),
     ("unknown-element", UnknownElement)
 };
 
@@ -100,6 +101,32 @@ static void UnnamedElementsGetStablePaths()
 
     Check(unnamedText.Id.Contains("TextBlock[", StringComparison.Ordinal), "path identity");
     Check(doc.FindById(unnamedText.Id) == unnamedText, "id lookup");
+}
+
+static void Utf8EditorPositionRoundtrip()
+{
+    const string text = "<TextBlock Text=\"Café 🛠 ruins\"/>";
+    for (var i = 0; i <= text.Length; i++)
+    {
+        // Do not test the interior UTF-16 code unit of a surrogate pair because no
+        // valid editor caret can land there.
+        if (i > 0 && i < text.Length &&
+            char.IsHighSurrogate(text[i - 1]) &&
+            char.IsLowSurrogate(text[i]))
+        {
+            continue;
+        }
+
+        var bytes = ForgeTextPosition.Utf16IndexToUtf8BytePosition(text, i);
+        var roundtrip = ForgeTextPosition.Utf8BytePositionToUtf16Index(text, bytes);
+        Check(roundtrip == i, $"UTF position roundtrip at {i}");
+    }
+
+    var emojiIndex = text.IndexOf("🛠", StringComparison.Ordinal);
+    var emojiByte = ForgeTextPosition.Utf16IndexToUtf8BytePosition(text, emojiIndex);
+    Check(
+        ForgeTextPosition.Utf8BytePositionToUtf16Index(text, emojiByte + 1) == emojiIndex,
+        "mid-sequence byte clamps to emoji start");
 }
 
 static void UnknownElement()
