@@ -2,7 +2,7 @@
 
 > **Purpose:** Measure and improve how reliably ChatGPT/Codex can translate a visual UI reference into real, editable WinUI 3 structure.
 >
-> **Status:** Planned validation track.
+> **Status:** Active validation track — first Workshop Stage B case running (2026-09-18).
 >
 > **Run when:** Basic designer authoring exists (add, move/resize, Grid/StackPanel/container editing) and before the AI/.wforge workflow is considered mature.
 
@@ -238,6 +238,18 @@ This should improve:
 - examples;
 - schemas;
 - agent instructions.
+
+## Active case
+
+The first live Stage B case is now:
+
+~~~text
+benchmarks/workshop-dashboard-v1/
+reference: W2-01-dashboard.png
+viewport: 1672 x 941
+~~~
+
+The first pass rendered successfully and the first overlay review already produced both reconstruction corrections and one Forge editability improvement (dense Visual Tree filtering / Named only mode).
 
 ## Benchmark stages
 
