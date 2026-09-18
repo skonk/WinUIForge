@@ -147,6 +147,11 @@ public sealed class MainWindow : Window
     double manipulationStartWidth;
     double manipulationStartHeight;
 
+    Point movePointerStart;
+    Point resizePointerStart;
+    uint? movePointerId;
+    uint? resizePointerId;
+
     double moveDeltaX;
     double moveDeltaY;
     Vector3 moveStartTranslation;
@@ -1372,27 +1377,29 @@ public sealed class MainWindow : Window
             selectionLayer.Children.Add(selectionOutline);
 
             selectionMoveHandle = CreateHandle("Move / reorder");
-            selectionMoveHandle.DragStarted += (_, _) =>
-                BeginMovePreview(point.X, point.Y, width, height);
-            selectionMoveHandle.DragDelta += (_, args) =>
-            {
-                moveDeltaX += args.HorizontalChange;
-                moveDeltaY += args.VerticalChange;
-                UpdateMovePreview();
-            };
-            selectionMoveHandle.DragCompleted += (_, _) => CompleteMovePreview();
+            selectionMoveHandle.PointerPressed += (_, args) =>
+                BeginMovePointerDrag(selectionMoveHandle, args, point.X, point.Y, width, height);
+            selectionMoveHandle.PointerMoved += (_, args) =>
+                ContinueMovePointerDrag(args);
+            selectionMoveHandle.PointerReleased += (_, args) =>
+                EndMovePointerDrag(selectionMoveHandle, args);
+            selectionMoveHandle.PointerCanceled += (_, args) =>
+                CancelMovePointerDrag(selectionMoveHandle, args);
+            selectionMoveHandle.PointerCaptureLost += (_, _) =>
+                CancelMovePointerDrag(null, null);
             selectionLayer.Children.Add(selectionMoveHandle);
 
             selectionResizeHandle = CreateHandle("Resize");
-            selectionResizeHandle.DragStarted += (_, _) =>
-                BeginResizePreview(width, height);
-            selectionResizeHandle.DragDelta += (_, args) =>
-            {
-                resizeDeltaX += args.HorizontalChange;
-                resizeDeltaY += args.VerticalChange;
-                UpdateResizePreview();
-            };
-            selectionResizeHandle.DragCompleted += (_, _) => CompleteResizePreview();
+            selectionResizeHandle.PointerPressed += (_, args) =>
+                BeginResizePointerDrag(selectionResizeHandle, args, width, height);
+            selectionResizeHandle.PointerMoved += (_, args) =>
+                ContinueResizePointerDrag(args);
+            selectionResizeHandle.PointerReleased += (_, args) =>
+                EndResizePointerDrag(selectionResizeHandle, args);
+            selectionResizeHandle.PointerCanceled += (_, args) =>
+                CancelResizePointerDrag(selectionResizeHandle, args);
+            selectionResizeHandle.PointerCaptureLost += (_, _) =>
+                CancelResizePointerDrag(null, null);
             selectionLayer.Children.Add(selectionResizeHandle);
 
             UpdateSelectionChrome(point.X, point.Y, width, height);
@@ -1430,11 +1437,7 @@ public sealed class MainWindow : Window
             Canvas.SetTop(selectionMoveHandle, y - 6);
         }
 
-        // Do not move the Thumb that currently owns the resize drag. Moving the
-        // active Thumb changes its own coordinate frame under a scaled Viewbox
-        // and can feed false deltas back into DragDelta. The live element and
-        // outline still track continuously.
-        if (!preserveResizeHandle && selectionResizeHandle is not null)
+        if (selectionResizeHandle is not null)
         {
             Canvas.SetLeft(selectionResizeHandle, x + width - 6);
             Canvas.SetTop(selectionResizeHandle, y + height - 6);
@@ -1460,6 +1463,64 @@ public sealed class MainWindow : Window
         {
             // Keep the last valid live-preview chrome if layout is between passes.
         }
+    }
+
+    void BeginMovePointerDrag(
+        Thumb handle,
+        PointerRoutedEventArgs args,
+        double x,
+        double y,
+        double width,
+        double height)
+    {
+        if (selectedFrameworkElement is null) return;
+
+        movePointerId = args.Pointer.PointerId;
+        movePointerStart = args.GetCurrentPoint(previewStage).Position;
+        handle.CapturePointer(args.Pointer);
+        args.Handled = true;
+
+        BeginMovePreview(x, y, width, height);
+    }
+
+    void ContinueMovePointerDrag(PointerRoutedEventArgs args)
+    {
+        if (movePointerId != args.Pointer.PointerId) return;
+
+        var current = args.GetCurrentPoint(previewStage).Position;
+        moveDeltaX = current.X - movePointerStart.X;
+        moveDeltaY = current.Y - movePointerStart.Y;
+        UpdateMovePreview();
+        args.Handled = true;
+    }
+
+    void EndMovePointerDrag(Thumb handle, PointerRoutedEventArgs args)
+    {
+        if (movePointerId != args.Pointer.PointerId) return;
+
+        var current = args.GetCurrentPoint(previewStage).Position;
+        moveDeltaX = current.X - movePointerStart.X;
+        moveDeltaY = current.Y - movePointerStart.Y;
+
+        movePointerId = null;
+        handle.ReleasePointerCapture(args.Pointer);
+        args.Handled = true;
+        CompleteMovePreview();
+    }
+
+    void CancelMovePointerDrag(Thumb? handle, PointerRoutedEventArgs? args)
+    {
+        if (movePointerId is null) return;
+
+        movePointerId = null;
+        if (handle is not null && args is not null)
+            handle.ReleasePointerCapture(args.Pointer);
+
+        if (selectedFrameworkElement is not null)
+            selectedFrameworkElement.Translation = moveStartTranslation;
+
+        designerManipulating = false;
+        DrawSelection();
     }
 
     void BeginMovePreview(double x, double y, double width, double height)
@@ -1529,6 +1590,61 @@ public sealed class MainWindow : Window
         // CommitMove may intentionally make no source change (small drag,
         // constrained Border, edge of StackPanel). In those cases restore the
         // chrome to the actual runtime bounds immediately.
+        DrawSelection();
+    }
+
+    void BeginResizePointerDrag(
+        Thumb handle,
+        PointerRoutedEventArgs args,
+        double width,
+        double height)
+    {
+        if (selectedFrameworkElement is null) return;
+
+        resizePointerId = args.Pointer.PointerId;
+        resizePointerStart = args.GetCurrentPoint(previewStage).Position;
+        handle.CapturePointer(args.Pointer);
+        args.Handled = true;
+
+        BeginResizePreview(width, height);
+    }
+
+    void ContinueResizePointerDrag(PointerRoutedEventArgs args)
+    {
+        if (resizePointerId != args.Pointer.PointerId) return;
+
+        var current = args.GetCurrentPoint(previewStage).Position;
+        resizeDeltaX = current.X - resizePointerStart.X;
+        resizeDeltaY = current.Y - resizePointerStart.Y;
+        UpdateResizePreview();
+        args.Handled = true;
+    }
+
+    void EndResizePointerDrag(Thumb handle, PointerRoutedEventArgs args)
+    {
+        if (resizePointerId != args.Pointer.PointerId) return;
+
+        var current = args.GetCurrentPoint(previewStage).Position;
+        resizeDeltaX = current.X - resizePointerStart.X;
+        resizeDeltaY = current.Y - resizePointerStart.Y;
+        UpdateResizePreview();
+
+        resizePointerId = null;
+        handle.ReleasePointerCapture(args.Pointer);
+        args.Handled = true;
+        CompleteResizePreview();
+    }
+
+    void CancelResizePointerDrag(Thumb? handle, PointerRoutedEventArgs? args)
+    {
+        if (resizePointerId is null) return;
+
+        resizePointerId = null;
+        if (handle is not null && args is not null)
+            handle.ReleasePointerCapture(args.Pointer);
+
+        designerManipulating = false;
+        RestoreResizePreview(selectedFrameworkElement);
         DrawSelection();
     }
 
@@ -1604,8 +1720,18 @@ public sealed class MainWindow : Window
 
         UpdateResizeAxes();
 
+        var keepAutoHeight = ShouldKeepAutoHeightOnResize(source);
         var widthChanged = resizeWidthActive;
-        var heightChanged = resizeHeightActive;
+        var heightChanged = resizeHeightActive && !keepAutoHeight;
+
+        // TextBlock is content-sized vertically by default. Unless the author
+        // already supplied Height, resizing changes its width and lets wrapping
+        // determine the natural height instead of clipping the text.
+        if (keepAutoHeight)
+        {
+            resizeHeightActive = false;
+            selectedFrameworkElement.Height = double.NaN;
+        }
 
         // A bottom-right handle anchors the visual top-left. WinUI can reposition
         // an implicitly Stretch-aligned child as soon as Width/Height becomes
@@ -1638,7 +1764,7 @@ public sealed class MainWindow : Window
             selectedFrameworkElement.Height = resizeOriginalHeight;
 
         previewStage.UpdateLayout();
-        UpdateSelectionChromeFromRuntime(preserveResizeHandle: true);
+        UpdateSelectionChromeFromRuntime();
 
         var widthText = widthChanged
             ? Math.Max(8, resizeStartWidth + resizeDeltaX).ToString("0", CultureInfo.InvariantCulture)
@@ -1686,6 +1812,10 @@ public sealed class MainWindow : Window
         resizeHeightActive = false;
         previewStage.UpdateLayout();
     }
+
+    static bool ShouldKeepAutoHeightOnResize(ForgeXamlElement source) =>
+        string.Equals(source.TypeName, "TextBlock", StringComparison.Ordinal) &&
+        !source.Attributes.Any(x => string.Equals(x.Name, "Height", StringComparison.Ordinal));
 
     static bool ShouldAnchorHorizontalOnResize(ForgeXamlElement source)
     {
@@ -1763,8 +1893,9 @@ public sealed class MainWindow : Window
             document.FindByIdentity(selectedElementIdentity) is not { } source)
             return false;
 
+        var keepAutoHeight = ShouldKeepAutoHeightOnResize(source);
         var widthChanged = resizeWidthActive;
-        var heightChanged = resizeHeightActive;
+        var heightChanged = resizeHeightActive && !keepAutoHeight;
         if (!widthChanged && !heightChanged)
             return false;
 
@@ -1989,6 +2120,8 @@ public sealed class MainWindow : Window
         selectedElementIdentity = null;
         selectedFrameworkElement = null;
         designerManipulating = false;
+        movePointerId = null;
+        resizePointerId = null;
         selectionOutline = null;
         selectionMoveHandle = null;
         selectionResizeHandle = null;
