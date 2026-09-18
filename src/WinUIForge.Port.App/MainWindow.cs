@@ -133,6 +133,9 @@ public sealed class MainWindow : Window
     readonly TextBlock diagnostics = new() { TextWrapping = TextWrapping.Wrap };
     readonly TextBlock status = new() { TextWrapping = TextWrapping.NoWrap };
 
+    readonly Button openSourceFileButton = new() { Content = "Open XAML…" };
+    readonly Button reloadSourceFileButton = new() { Content = "Reload XAML", IsEnabled = false };
+    readonly Button saveSourceFileButton = new() { Content = "Save XAML", IsEnabled = false };
     readonly Button undoButton = new() { Content = "Undo", IsEnabled = false };
     readonly Button redoButton = new() { Content = "Redo", IsEnabled = false };
     readonly Button deleteButton = new() { Content = "Delete", IsEnabled = false };
@@ -148,6 +151,9 @@ public sealed class MainWindow : Window
     ForgeXamlDocument? document;
     string? selectedElementIdentity;
     FrameworkElement? selectedFrameworkElement;
+    string? currentSourceFilePath;
+    string lastSavedSourceText = string.Empty;
+    bool currentSourceFileReadOnly;
     bool suppressSourceTextChanged;
     bool suppressTreeSelection;
     bool designerManipulating;
@@ -256,14 +262,12 @@ public sealed class MainWindow : Window
             Orientation = Orientation.Horizontal,
             Spacing = 8
         };
-        undoButton.Click += (_, _) => Undo();
-        redoButton.Click += (_, _) => Redo();
-        deleteButton.Click += (_, _) => DeleteSelected();
-        renderButton.Click += (_, _) => RenderSource();
-
         renderButton.Background = AccentBrush;
         renderButton.Foreground = WindowBrush;
 
+        commands.Children.Add(openSourceFileButton);
+        commands.Children.Add(reloadSourceFileButton);
+        commands.Children.Add(saveSourceFileButton);
         commands.Children.Add(undoButton);
         commands.Children.Add(redoButton);
         commands.Children.Add(deleteButton);
@@ -498,6 +502,7 @@ public sealed class MainWindow : Window
             // cannot overwrite newer manual work.
             history.Clear();
             UpdateHistoryButtons();
+            UpdateSourceFileButtons();
 
             renderTimer.Stop();
             renderTimer.Start();
@@ -512,6 +517,10 @@ public sealed class MainWindow : Window
         visualTreeFilter.TextChanged += (_, _) => RebuildVisualTree();
         visualTreeNamedOnly.Checked += (_, _) => RebuildVisualTree();
         visualTreeNamedOnly.Unchecked += (_, _) => RebuildVisualTree();
+
+        openSourceFileButton.Click += async (_, _) => await OpenSourceFileAsync();
+        reloadSourceFileButton.Click += (_, _) => ReloadCurrentSourceFile();
+        saveSourceFileButton.Click += (_, _) => SaveCurrentSourceFile();
 
         loadWorkshopBenchmarkButton.Click += (_, _) => LoadWorkshopBenchmark();
         loadReferenceButton.Click += async (_, _) => await LoadReferenceAsync();
@@ -533,26 +542,30 @@ public sealed class MainWindow : Window
     {
         try
         {
-            var path = Path.Combine(
+            var repositoryPath = FindRepositoryFile(
+                "benchmarks",
+                "workshop-dashboard-v1",
+                "Screen.xaml");
+
+            var packagedPath = Path.Combine(
                 AppContext.BaseDirectory,
                 "Benchmarks",
                 "workshop-dashboard-v1",
                 "Screen.xaml");
 
+            var path = repositoryPath ?? packagedPath;
             if (!File.Exists(path))
-                throw new FileNotFoundException("The packaged Workshop dashboard benchmark XAML was not found.", path);
+                throw new FileNotFoundException("The Workshop dashboard benchmark XAML was not found.", path);
 
-            var xaml = File.ReadAllText(path);
-
-            history.Clear();
-            selectedElementIdentity = null;
             visualTreeFilter.Text = string.Empty;
             visualTreeNamedOnly.IsChecked = true;
-            ApplyDocumentText(xaml, null);
+
+            LoadSourceFile(
+                path,
+                readOnly: repositoryPath is null);
 
             SetBenchmarkViewport(1672, 941);
             viewportDisplayMode.SelectedItem = "Fit";
-            UpdateHistoryButtons();
 
             if (referenceOverlay.Source is null)
             {
@@ -560,8 +573,9 @@ public sealed class MainWindow : Window
                     "W2 benchmark loaded · now load W2-01-dashboard.png as the reference overlay";
             }
 
-            status.Text =
-                "Workshop dashboard benchmark loaded · viewport 1672 × 941.";
+            status.Text = repositoryPath is null
+                ? "Workshop dashboard benchmark loaded from packaged copy · viewport 1672 × 941."
+                : "Workshop dashboard benchmark loaded from live repository XAML · edit/save/reload requires no Forge rebuild.";
         }
         catch (Exception ex)
         {
@@ -569,6 +583,120 @@ public sealed class MainWindow : Window
             diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
             status.Text = "Could not load Workshop dashboard benchmark: " + ex.Message;
         }
+    }
+
+    async Task OpenSourceFileAsync()
+    {
+        try
+        {
+            var picker = new FileOpenPicker(AppWindow.Id)
+            {
+                Title = "Open WinUI XAML"
+            };
+            picker.FileTypeFilter.Add(".xaml");
+
+            var result = await picker.PickSingleFileAsync();
+            if (result is null)
+                return;
+
+            LoadSourceFile(result.Path, readOnly: false);
+            status.Text = $"Loaded {Path.GetFileName(result.Path)} directly from disk.";
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Open XAML error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Could not open XAML: " + ex.Message;
+        }
+    }
+
+    void LoadSourceFile(string path, bool readOnly)
+    {
+        var source = File.ReadAllText(path);
+
+        currentSourceFilePath = path;
+        currentSourceFileReadOnly = readOnly;
+        lastSavedSourceText = source;
+
+        history.Clear();
+        selectedElementIdentity = null;
+        ApplyDocumentText(source, null);
+        UpdateHistoryButtons();
+        UpdateSourceFileButtons();
+    }
+
+    void ReloadCurrentSourceFile()
+    {
+        if (string.IsNullOrWhiteSpace(currentSourceFilePath))
+            return;
+
+        try
+        {
+            var source = File.ReadAllText(currentSourceFilePath);
+            lastSavedSourceText = source;
+
+            history.Clear();
+            selectedElementIdentity = null;
+            ApplyDocumentText(source, null);
+            UpdateHistoryButtons();
+            UpdateSourceFileButtons();
+
+            status.Text = $"Reloaded {Path.GetFileName(currentSourceFilePath)} from disk.";
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Reload XAML error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Could not reload XAML: " + ex.Message;
+        }
+    }
+
+    void SaveCurrentSourceFile()
+    {
+        if (string.IsNullOrWhiteSpace(currentSourceFilePath) || currentSourceFileReadOnly)
+            return;
+
+        try
+        {
+            File.WriteAllText(currentSourceFilePath, sourceEditor.Text);
+            lastSavedSourceText = sourceEditor.Text;
+            UpdateSourceFileButtons();
+
+            status.Text = $"Saved {Path.GetFileName(currentSourceFilePath)}.";
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Save XAML error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Could not save XAML: " + ex.Message;
+        }
+    }
+
+    void UpdateSourceFileButtons()
+    {
+        var hasPath = !string.IsNullOrWhiteSpace(currentSourceFilePath);
+        var dirty = hasPath &&
+                    !string.Equals(sourceEditor.Text, lastSavedSourceText, StringComparison.Ordinal);
+
+        reloadSourceFileButton.IsEnabled = hasPath;
+        saveSourceFileButton.IsEnabled = hasPath && !currentSourceFileReadOnly && dirty;
+        saveSourceFileButton.Content = dirty ? "Save XAML *" : "Save XAML";
+    }
+
+    static string? FindRepositoryFile(params string[] relativeSegments)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        for (var depth = 0; directory is not null && depth < 12; depth++, directory = directory.Parent)
+        {
+            var candidate = Path.Combine(
+                new[] { directory.FullName }.Concat(relativeSegments).ToArray());
+
+            if (File.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
     }
 
     async Task LoadReferenceAsync()
@@ -1486,6 +1614,7 @@ public sealed class MainWindow : Window
         selectedElementIdentity = selectionIdentity;
         RenderSource();
         UpdateHistoryButtons();
+        UpdateSourceFileButtons();
     }
 
     void UpdateHistoryButtons()
