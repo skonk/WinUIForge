@@ -261,6 +261,9 @@ public sealed class MainWindow : Window
         sourceEditor.TextChanged += (_, _) =>
         {
             if (suppressSourceTextChanged) return;
+
+            previewMatchesSource = false;
+            status.Text = "Source changed · waiting for a valid preview refresh...";
             renderTimer.Stop();
             renderTimer.Start();
         };
