@@ -229,7 +229,7 @@ See [docs/WINUI_GALLERY_REFERENCE.md](docs/WINUI_GALLERY_REFERENCE.md).
 ## Milestone 3 — visual authoring
 
 **Automated status: PASSED (2026-09-18)**  
-**Hands-on runtime status: pending**
+**Hands-on runtime status: PASSED (2026-09-18)**
 
 Milestone 3 adds the first real visual authoring layer on top of the Milestone 2 coordinator/source foundation.
 
@@ -250,6 +250,10 @@ Implemented:
 - Grid cell movement and within-cell Margin fallback;
 - source-backed resize through Width/Height.
 
-Automated validation: CI **35356977677**, 0 warnings / 0 errors.
+Automated implementation validation: CI **35356977677**, 0 warnings / 0 errors.
+
+The hands-on authoring pass found one integration defect: delayed WinUIEdit `Modified` notifications could clear Forge structural history immediately after a programmatic source synchronization, making Undo/Redo appear non-functional. Commit `09bca57b4d32f2c343421536f54ae4d755d37860` filters those no-op delayed notifications while preserving the intended history reset for genuine manual source edits.
+
+Final Windows CI **35359224233** passed with 14 core authoring tests, 0 warnings and 0 errors. A subsequent hands-on Windows retest confirmed Undo and Redo now work, closing the Milestone 3 runtime gate.
 
 See [docs/MILESTONE3.md](docs/MILESTONE3.md).
