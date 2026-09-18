@@ -572,6 +572,12 @@ public sealed class MainWindow : Window
     {
         if (document is null || previewContent.Content is not UIElement) return;
 
+        // Designer Thumb input bubbles through previewStage. Do not re-run preview
+        // hit-testing for a handle press: SelectAuthoredElement redraws the chrome,
+        // which would remove the active Thumb before its drag can begin.
+        if (IsDesignerHandleSource(e.OriginalSource))
+            return;
+
         var point = e.GetCurrentPoint(previewStage).Position;
         var source = coordinator.FindDeepestAuthoredAtPoint(previewStage, point, out var hitPath);
         if (source is null)
@@ -583,6 +589,20 @@ public sealed class MainWindow : Window
         SelectAuthoredElement(source.Identity, revealSource: true, selectTree: true);
         status.Text =
             $"Selected {source.TypeName} '{source.DisplayName}' · bounds hits: {hitPath}";
+    }
+
+    static bool IsDesignerHandleSource(object? originalSource)
+    {
+        var current = originalSource as DependencyObject;
+        while (current is not null)
+        {
+            if (current is Thumb)
+                return true;
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return false;
     }
 
     void SelectAuthoredElement(string identity, bool revealSource, bool selectTree)
