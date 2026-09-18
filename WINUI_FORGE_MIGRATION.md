@@ -83,3 +83,23 @@ Prototype 1:
 ~~~text
 skonk/JLA3D-Workshop-Suite/WinUIForge
 ~~~
+
+
+## Milestone status — first WinUI 3 vertical slice
+
+**Status: PASSED (2026-09-18)**
+
+The first WinUI 3 proof has now passed both Windows CI and hands-on runtime testing.
+
+Confirmed:
+
+- .NET 10 / Windows App SDK / WinUI 3 application launches;
+- real XAML is dynamically rendered with `Microsoft.UI.Xaml.Markup.XamlReader`;
+- authored named elements are mapped to rendered `FrameworkElement` instances;
+- preview selection is resolved from rendered authored bounds;
+- `ActionButton` can be selected correctly through the live preview;
+- source location and runtime selection remain synchronized;
+- Width can be represented as a source XAML edit in the proof document;
+- build/test CI is green.
+
+The migration may now move beyond proof-of-viability and begin porting/reusing the stronger XAML Studio subsystems.

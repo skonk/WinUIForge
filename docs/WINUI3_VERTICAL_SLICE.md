@@ -77,3 +77,21 @@ Not yet automatically validated:
 - Width edit → source rewrite → re-render UX.
 
 Those items require the first hands-on Windows smoke test (or later UI automation) and must not be described as verified until exercised.
+
+
+## Hands-on runtime validation — 2026-09-18
+
+The first interactive Windows smoke test has now passed.
+
+Validated manually in the running WinUI 3 proof application:
+
+- application launches successfully;
+- dynamically loaded WinUI XAML renders correctly;
+- clicking the authored `ActionButton` selects the actual Button;
+- the inspector reports `Button / ActionButton`;
+- the selection outline follows the Button's rendered bounds;
+- the diagnostic hit path reports `RootGrid > ContentStack > ActionButton`;
+- preview selection no longer falls back to `RootGrid` or `HeadingText` for the Button case;
+- source reveal no longer paints the whole XAML start tag as a large selection.
+
+This closes the core interaction risk for the first vertical-slice proof: real WinUI XAML can be rendered, mapped to runtime elements, selected visually, and tied back to authored source in a usable interaction loop.
