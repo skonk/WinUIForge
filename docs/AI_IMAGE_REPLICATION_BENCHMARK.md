@@ -395,3 +395,23 @@ If the AI repeatedly fails at the same category, the response may be:
 - add a visual correction workflow.
 
 The benchmark therefore becomes a feedback loop for product development.
+
+
+## WinUI Gallery as benchmark guidance
+
+The benchmark may use the Microsoft WinUI Gallery sample catalog as a generic knowledge source for idiomatic WinUI 3 control and layout patterns.
+
+Reference:
+
+~~~text
+microsoft/WinUI-Gallery
+catalog/windows-samples.json
+~~~
+
+This is especially useful when the AI must decide between alternative WinUI structures such as Grid vs StackPanel, fixed vs star sizing, NavigationView/CommandBar patterns, adaptive states, or standard Fluent resource usage.
+
+The Gallery catalog is **guidance, not target leakage**.
+
+If a benchmark reference image comes directly from WinUI Gallery, the corresponding Gallery implementation/sample must be withheld from the AI during the first-pass reconstruction. The point is to measure image → structured WinUI reasoning, not source-code retrieval.
+
+See [WINUI_GALLERY_REFERENCE.md](WINUI_GALLERY_REFERENCE.md).

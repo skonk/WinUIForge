@@ -189,3 +189,38 @@ The benchmark must evaluate both visual similarity and WinUI structural quality.
 Workshop mock-ups should provide the primary real-world benchmark cases.
 
 See [docs/AI_IMAGE_REPLICATION_BENCHMARK.md](docs/AI_IMAGE_REPLICATION_BENCHMARK.md).
+
+
+## Secondary upstream/reference source — Microsoft WinUI Gallery
+
+WinUI Gallery is now an explicit secondary reference source for Forge.
+
+Pinned review:
+
+~~~text
+repository: microsoft/WinUI-Gallery
+revision: abb8cb4cef04a5080f5c0396f67a7ec502b36179
+~~~
+
+Its role differs from XAML Studio:
+
+~~~text
+XAML Studio -> designer/editor architecture
+WinUI Gallery -> canonical WinUI control/design/sample knowledge
+~~~
+
+Particularly valuable is `catalog/windows-samples.json`, a machine-readable sample index containing real WinUI sample XAML/C# and metadata.
+
+Forge should prefer consuming that catalog over scraping sample pages.
+
+Planned uses include:
+
+- Toolbox/control guidance;
+- AI Design XAML examples;
+- property/catalog coverage;
+- Fluent resource/layout references;
+- accessibility guidance;
+- UI automation patterns;
+- image-replication benchmark grounding.
+
+See [docs/WINUI_GALLERY_REFERENCE.md](docs/WINUI_GALLERY_REFERENCE.md).
