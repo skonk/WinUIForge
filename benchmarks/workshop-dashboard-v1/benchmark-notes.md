@@ -186,3 +186,14 @@ Forge now packages the benchmark sidecar with the application so future exports 
 ## Corrections
 
 Second pass has completed its first runtime overlay review. Iterative visual tuning is active.
+
+
+## Dashboard benchmark acceptance
+
+The dashboard case is now accepted as a successful Stage B benchmark.
+
+The final pass deliberately stops short of pixel-identical reproduction. The remaining visible differences are predominantly icon/glyph artwork, minor typography scale and small decorative spacing differences rather than incorrect WinUI structure.
+
+The global top navigation received one final geometry correction: it is centred against the full application window rather than the residual space between the workspace title and the window controls.
+
+Further dashboard work should only resume if a later Forge change causes a regression. The next benchmark should use a materially different and more difficult screen rather than over-fitting this case.
