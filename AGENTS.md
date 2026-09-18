@@ -1,15 +1,15 @@
 # WinUI Forge agent instructions
 
-This repository is a fork of \`dotnet/XAMLStudio\` and is being migrated into **WinUI Forge**.
+This repository is a fork of `dotnet/XAMLStudio` and is being migrated into **WinUI Forge**.
 
 ## Repository relationship
 
-- \`origin\` = the WinUI Forge fork.
-- \`upstream\` = \`https://github.com/dotnet/XAMLStudio.git\`.
-- Upstream baseline for the migration: \`92267797838d8e619dd26a0b3e6af9ba7944e71c\`.
-- Active migration branch: \`winui-forge/winui3-port\`.
+- `origin` = the WinUI Forge fork.
+- `upstream` = `https://github.com/dotnet/XAMLStudio.git`.
+- Upstream baseline for the migration: `92267797838d8e619dd26a0b3e6af9ba7944e71c`.
+- Active migration branch: `winui-forge/winui3-port`.
 
-Do not make WinUI Forge product changes directly on the upstream-tracking \`dev\` branch.
+Do not make WinUI Forge product changes directly on the upstream-tracking `dev` branch.
 
 ## Product mission
 
@@ -17,14 +17,14 @@ WinUI Forge is a visual WinUI 3 design and interchange environment for humans an
 
 The key workflow is:
 
-\`\`\`text
+```text
 AI-generated structured mock-up
     -> human visual review/editing in WinUI Forge
     -> saved real WinUI XAML + Forge metadata
     -> AI consumes exact corrections
     -> implementation in the real application
     -> visual/semantic validation
-\`\`\`
+```
 
 ## Architectural rules
 
@@ -60,10 +60,10 @@ Before replacing or deleting an upstream subsystem, identify what product capabi
 
 High-value upstream areas include:
 
-- \`XamlStudio.Toolkit/Services/XamlRenderService/\`
-- \`XamlStudio.Toolkit/Services/XamlXmlTreeCoordinator.cs\`
-- \`XamlStudio/Views/Properties.*\`
-- \`XamlStudio/Views/Document.Design.xaml.cs\`
+- `XamlStudio.Toolkit/Services/XamlRenderService/`
+- `XamlStudio.Toolkit/Services/XamlXmlTreeCoordinator.cs`
+- `XamlStudio/Views/Properties.*`
+- `XamlStudio/Views/Document.Design.xaml.cs`
 - adorner/highlight infrastructure
 - folder/document persistence
 - source/preview selection coordination
@@ -92,13 +92,13 @@ Do not claim GUI behaviour is verified unless it was actually exercised in a Win
 
 The existing custom Forge implementation remains in:
 
-\`\`\`text
+```text
 skonk/JLA3D-Workshop-Suite/WinUIForge
-\`\`\`
+```
 
 Treat it as Prototype 1 and a source of Forge-specific concepts/code:
 
-- \`.wforge\` project ideas
+- `.wforge` project ideas
 - semantic IDs
 - AI Contract
 - design tokens
@@ -115,13 +115,13 @@ Do not delete Prototype 1 until the XAML Studio-based implementation reaches equ
 
 In this fork:
 
-- \`UPSTREAM.md\`
-- \`WINUI_FORGE_MIGRATION.md\`
-- \`docs/WINUI_FORGE_PORT_MATRIX.md\`
+- `UPSTREAM.md`
+- `WINUI_FORGE_MIGRATION.md`
+- `docs/WINUI_FORGE_PORT_MATRIX.md`
 
 Canonical product plan currently also exists in:
 
-\`\`\`text
+```text
 skonk/JLA3D-Workshop-Suite
 docs/winui-forge/XAMLSTUDIO_PIVOT_PLAN.md
-\`\`\`
+```
