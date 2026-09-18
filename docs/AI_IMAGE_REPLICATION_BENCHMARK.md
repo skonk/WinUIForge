@@ -241,15 +241,23 @@ This should improve:
 
 ## Active case
 
-The first live Stage B case is now:
+The Stage B dashboard case is now accepted, and the first Stage C dense-production case is active:
 
 ~~~text
+Stage B accepted:
 benchmarks/workshop-dashboard-v1/
 reference: W2-01-dashboard.png
 viewport: 1672 x 941
+
+Stage C active:
+benchmarks/workshop-storage-settings-v1/
+reference: W2-14-storage-settings.png
+viewport: 1672 x 941
 ~~~
 
-The first pass rendered successfully and the first overlay review already produced both reconstruction corrections and one Forge editability improvement (dense Visual Tree filtering / Named only mode).
+The dashboard case validated the complete image-reference loop and produced several Forge improvements: reference overlays, fixed logical viewport modes, live designer manipulation, semantic Highlight All, dense Visual Tree filtering, direct XAML open/save/reload, review-package export and collapsible source/tools panes.
+
+The Storage & Settings case deliberately stresses different problems: dense settings controls, mixed Auto/star sizing, scroll behaviour, table density, form alignment, inspector composition and uneven information density.
 
 ## Benchmark stages
 
