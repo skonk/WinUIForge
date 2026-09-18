@@ -12,16 +12,7 @@ namespace WinUIForge.Port.App;
 
 public sealed class MainWindow : Window
 {
-    readonly TextBox sourceEditor = new()
-    {
-        AcceptsReturn = true,
-        TextWrapping = TextWrapping.NoWrap,
-        FontFamily = new FontFamily("Consolas"),
-        FontSize = 13,
-        Padding = new Thickness(12),
-        VerticalAlignment = VerticalAlignment.Stretch,
-        HorizontalAlignment = HorizontalAlignment.Stretch
-    };
+    readonly ForgeSourceEditor sourceEditor = new();
 
     readonly Grid previewStage = new();
     readonly ContentControl previewContent = new()
@@ -336,7 +327,7 @@ public sealed class MainWindow : Window
         sourceEditor.DispatcherQueue.TryEnqueue(() =>
         {
             if (document is null) return;
-            var mapped = document.FindAtSourceIndex(sourceEditor.SelectionStart);
+            var mapped = document.FindAtSourceIndex(sourceEditor.CaretUtf16Index);
             if (!string.IsNullOrWhiteSpace(mapped?.Name))
                 SelectAuthoredElement(mapped.Name!, revealSource: false, selectTree: true);
         });
@@ -372,7 +363,7 @@ public sealed class MainWindow : Window
         selectedFrameworkElement.SizeChanged += SelectedElement_SizeChanged;
 
         if (revealSource)
-            sourceEditor.Select(sourceElement.StartIndex, 0);
+            sourceEditor.GotoUtf16Index(sourceElement.StartIndex);
 
         if (selectTree)
             SelectTreeItem(name);
