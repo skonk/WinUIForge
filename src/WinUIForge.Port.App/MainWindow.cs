@@ -977,7 +977,6 @@ public sealed class MainWindow : Window
                 {
                     operatingSystem = Environment.OSVersion.ToString(),
                     dotnet = Environment.Version.ToString(),
-                    machine = Environment.MachineName,
                     viewport = new
                     {
                         width = previewStage.Width,
@@ -1281,6 +1280,10 @@ public sealed class MainWindow : Window
                 {
                     identity = source.Identity,
                     name = source.Name,
+                    semanticKeys = semanticElements
+                        .Where(x => string.Equals(x.Value, source.Name, StringComparison.Ordinal))
+                        .Select(x => x.Key)
+                        .ToArray(),
                     type = source.TypeName,
                     parent = new
                     {
