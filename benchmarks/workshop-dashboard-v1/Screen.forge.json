@@ -18,7 +18,8 @@
     "dashboard.metrics.activeProjects": "ActiveProjectsMetric",
     "dashboard.metrics.queuedJobs": "QueuedJobsMetric",
     "dashboard.metrics.workers": "WorkersMetric",
-    "dashboard.metrics.storage": "StorageMetric",
+    "dashboard.metrics.assetsProcessed": "AssetsProcessedMetric",
+    "dashboard.metrics.workerHealth": "WorkerHealthMetric",
     "dashboard.recentActivity": "RecentActivityPanel",
     "dashboard.recentProjects": "RecentProjectsPanel",
     "dashboard.quickActions": "QuickActionsPanel",
@@ -30,7 +31,7 @@
   "authoringIntent": {
     "layout": "responsive-grid",
     "fixedRegions": {
-      "localPaneWidth": 205,
+      "localPaneWidth": 224,
       "inspectorWidth": 259
     },
     "notes": [
