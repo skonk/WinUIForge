@@ -4,22 +4,37 @@ on:
   push:
     branches:
       - "winui-forge/**"
+      - "chatgpt/**"
+    paths:
+      - "src/WinUIForge.Port.*/**"
+      - "tests/WinUIForge.Port.*/**"
+      - "samples/VerticalSlice/**"
+      - "WinUIForge.Port.slnx"
+      - "build-port.ps1"
+      - ".github/workflows/winui-forge-port-ci.yml"
   pull_request:
+    paths:
+      - "src/WinUIForge.Port.*/**"
+      - "tests/WinUIForge.Port.*/**"
+      - "samples/VerticalSlice/**"
+      - "WinUIForge.Port.slnx"
+      - "build-port.ps1"
+      - ".github/workflows/winui-forge-port-ci.yml"
   workflow_dispatch:
 
 jobs:
-  upstream-baseline:
+  build-port-proof:
     runs-on: windows-latest
+    timeout-minutes: 30
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify migration bootstrap
-        shell: pwsh
-        run: |
-          Write-Host "WinUI Forge XAML Studio migration"
-          Write-Host "Commit: $env:GITHUB_SHA"
-          if (-not (Test-Path .\UPSTREAM.md)) { throw "UPSTREAM.md is missing." }
-          if (-not (Test-Path .\WINUI_FORGE_MIGRATION.md)) { throw "WINUI_FORGE_MIGRATION.md is missing." }
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
 
-      # The first WinUI 3 port commit should extend this workflow with
-      # restore/build/tests for the new SDK-style solution.
+      - name: Test and build WinUI 3 vertical slice
+        shell: pwsh
+        run: .\build-port.ps1 -Configuration Release
