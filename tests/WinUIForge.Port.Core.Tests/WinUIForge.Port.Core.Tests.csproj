@@ -10,5 +10,8 @@
     <None Include="../../benchmarks/workshop-dashboard-v1/Screen.xaml"
           Link="Benchmark/workshop-dashboard-v1/Screen.xaml"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../benchmarks/workshop-storage-settings-v1/Screen.xaml"
+          Link="Benchmark/workshop-storage-settings-v1/Screen.xaml"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
