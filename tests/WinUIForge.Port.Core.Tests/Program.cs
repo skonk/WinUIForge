@@ -12,6 +12,7 @@ var tests = new List<(string Name, Action Run)>
     ("utf8-utf16-position-roundtrip", Utf8Utf16PositionRoundtrip),
     ("unknown-element", UnknownElement),
     ("unnamed-node-identity", UnnamedNodeIdentity),
+    ("unnamed-property-edit-preserves-identity", UnnamedPropertyEditPreservesIdentity),
     ("insert-delete-structural-edit", InsertDeleteStructuralEdit),
     ("reorder-structural-edit", ReorderStructuralEdit),
     ("reparent-structural-edit", ReparentStructuralEdit),
@@ -188,6 +189,19 @@ static void UnnamedNodeIdentity()
     Check(columns.All(x => !string.IsNullOrWhiteSpace(x.Identity)), "unnamed identities exist");
     Check(columns[0].Identity != columns[1].Identity, "unnamed identities are unique");
     Check(doc.FindByIdentity(columns[1].Identity)?.GetType() == typeof(ForgeXamlElement), "identity lookup");
+}
+
+static void UnnamedPropertyEditPreservesIdentity()
+{
+    var doc = new ForgeXamlDocument(StructuralFixture());
+    var column = doc.Elements.Where(x => x.TypeName == "ColumnDefinition").ElementAt(1);
+    var identity = column.Identity;
+
+    var edit = doc.SetAttributeByIdentity(identity, "Width", "240");
+
+    Check(edit.Changed, "unnamed property edit changed");
+    Check(doc.FindByIdentity(identity) is not null, "unnamed identity survived attribute edit");
+    Check(doc.GetAttributeByIdentity(identity, "Width") == "240", "unnamed attribute updated");
 }
 
 static void InsertDeleteStructuralEdit()
