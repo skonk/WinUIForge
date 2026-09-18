@@ -357,9 +357,10 @@ public sealed class ForgeXamlDocument
         List<ForgeXamlElement> all)
     {
         var lineInfo = (IXmlLineInfo)element;
-        var startIndex = lineInfo.HasLineInfo()
+        var startReported = lineInfo.HasLineInfo()
             ? LineColumnToIndex(lineStarts, lineInfo.LineNumber, lineInfo.LinePosition, Text.Length)
             : 0;
+        var startIndex = FindTagStartAtOrBefore(Text, startReported);
 
         var span = spans.GetValueOrDefault(startIndex)
             ?? throw new InvalidOperationException($"Could not locate source span for {element.Name.LocalName}.");
@@ -517,7 +518,8 @@ public sealed class ForgeXamlDocument
         {
             if (reader.NodeType == XmlNodeType.Element)
             {
-                var start = LineColumnToIndex(lineStarts, lineInfo.LineNumber, lineInfo.LinePosition, text.Length);
+                var startReported = LineColumnToIndex(lineStarts, lineInfo.LineNumber, lineInfo.LinePosition, text.Length);
+                var start = FindTagStartAtOrBefore(text, startReported);
                 var tagEnd = FindStartTagEnd(text, start);
                 var close = FindStartTagCloseIndex(text, start, tagEnd);
                 var span = new ElementSpan(
