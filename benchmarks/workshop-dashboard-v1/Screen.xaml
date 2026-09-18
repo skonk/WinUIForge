@@ -847,6 +847,8 @@
                                 <Button x:Name="QuickActionNewProject"
                                         Grid.Row="0"
                                         Grid.Column="0"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch"
                                         Padding="7"
@@ -858,8 +860,11 @@
                                     </StackPanel>
                                 </Button>
 
-                                <Button Grid.Row="0"
+                                <Button x:Name="QuickActionImportAssets"
+                                        Grid.Row="0"
                                         Grid.Column="1"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch"
                                         Padding="7"
@@ -871,8 +876,11 @@
                                     </StackPanel>
                                 </Button>
 
-                                <Button Grid.Row="1"
+                                <Button x:Name="QuickActionCreateJob"
+                                        Grid.Row="1"
                                         Grid.Column="0"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch"
                                         Padding="7"
@@ -884,8 +892,11 @@
                                     </StackPanel>
                                 </Button>
 
-                                <Button Grid.Row="1"
+                                <Button x:Name="QuickActionOpenConduit"
+                                        Grid.Row="1"
                                         Grid.Column="1"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch"
                                         Padding="7"
@@ -897,8 +908,11 @@
                                     </StackPanel>
                                 </Button>
 
-                                <Button Grid.Row="2"
+                                <Button x:Name="QuickActionBrowseLibrary"
+                                        Grid.Row="2"
                                         Grid.Column="0"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch"
                                         Padding="7"
@@ -910,8 +924,11 @@
                                     </StackPanel>
                                 </Button>
 
-                                <Button Grid.Row="2"
+                                <Button x:Name="QuickActionViewReports"
+                                        Grid.Row="2"
                                         Grid.Column="1"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch"
                                         Padding="7"
