@@ -3,7 +3,9 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System.Globalization;
+using Windows.Storage.Pickers;
 using WinUIForge.Port.Core;
 using Windows.Foundation;
 using Windows.Graphics;
@@ -21,7 +23,33 @@ public sealed class MainWindow : Window
         HorizontalContentAlignment = HorizontalAlignment.Stretch,
         VerticalContentAlignment = VerticalAlignment.Stretch
     };
+    readonly Image referenceOverlay = new()
+    {
+        Stretch = Stretch.Fill,
+        IsHitTestVisible = false,
+        Opacity = 0.5,
+        Visibility = Visibility.Collapsed,
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        VerticalAlignment = VerticalAlignment.Stretch
+    };
     readonly Canvas selectionLayer = new() { IsHitTestVisible = true };
+
+    readonly Button loadReferenceButton = new() { Content = "Load reference…" };
+    readonly CheckBox referenceVisibleCheckBox = new() { Content = "Overlay", IsEnabled = false };
+    readonly Slider referenceOpacitySlider = new()
+    {
+        Minimum = 0.1,
+        Maximum = 0.9,
+        Value = 0.5,
+        StepFrequency = 0.05,
+        Width = 120,
+        IsEnabled = false
+    };
+    readonly TextBlock referenceInfo = new()
+    {
+        Text = "No reference image loaded.",
+        TextWrapping = TextWrapping.Wrap
+    };
 
     readonly ListView visualTree = new()
     {
@@ -69,7 +97,7 @@ public sealed class MainWindow : Window
 
     public MainWindow()
     {
-        Title = "WinUI Forge · Milestone 3";
+        Title = "WinUI Forge · Milestone 4 benchmark";
         AppWindow.Resize(new SizeInt32(1760, 1000));
         AppWindow.TitleBar.BackgroundColor = Color.FromArgb(255, 23, 27, 29);
         AppWindow.TitleBar.ForegroundColor = Color.FromArgb(255, 242, 243, 245);
@@ -107,14 +135,14 @@ public sealed class MainWindow : Window
         var headerText = new StackPanel { Spacing = 2 };
         headerText.Children.Add(new TextBlock
         {
-            Text = "WinUI Forge · visual authoring milestone 3",
+            Text = "WinUI Forge · benchmark comparison milestone 4",
             FontSize = 18,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = TextBrush
         });
         headerText.Children.Add(new TextBlock
         {
-            Text = "Transactions · stable authored identity · layout intelligence · Toolbox · move / resize / reparent",
+            Text = "Milestone 3 authoring baseline · reference-image comparison · image-replication benchmark",
             Foreground = MutedBrush
         });
         header.Children.Add(headerText);
@@ -166,10 +194,44 @@ public sealed class MainWindow : Window
 
         var previewHost = new Grid { Background = WindowBrush };
         previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         previewHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         previewHost.Children.Add(SectionHeader(
             "WinUI 3 designer",
-            "Orange handles edit the real WinUI element using its parent container semantics."));
+            "Orange handles edit the real WinUI element. Load a visual target to compare it over the live render."));
+
+        var referenceTools = new Grid
+        {
+            Background = PanelBrush,
+            Padding = new Thickness(12, 7, 12, 7),
+            ColumnSpacing = 12
+        };
+        referenceTools.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        referenceTools.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        referenceInfo.Foreground = MutedBrush;
+        referenceInfo.VerticalAlignment = VerticalAlignment.Center;
+        referenceTools.Children.Add(referenceInfo);
+
+        var referenceCommands = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        referenceCommands.Children.Add(loadReferenceButton);
+        referenceCommands.Children.Add(referenceVisibleCheckBox);
+        referenceCommands.Children.Add(new TextBlock
+        {
+            Text = "Opacity",
+            Foreground = MutedBrush,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        referenceCommands.Children.Add(referenceOpacitySlider);
+        Grid.SetColumn(referenceCommands, 1);
+        referenceTools.Children.Add(referenceCommands);
+        Grid.SetRow(referenceTools, 1);
+        previewHost.Children.Add(referenceTools);
 
         var previewFrame = new Border
         {
@@ -181,9 +243,10 @@ public sealed class MainWindow : Window
         };
         previewStage.Background = ElevatedBrush;
         previewStage.Children.Add(previewContent);
+        previewStage.Children.Add(referenceOverlay);
         previewStage.Children.Add(selectionLayer);
         previewFrame.Child = previewStage;
-        Grid.SetRow(previewFrame, 1);
+        Grid.SetRow(previewFrame, 2);
         previewHost.Children.Add(previewFrame);
         Grid.SetColumn(previewHost, 1);
         workspace.Children.Add(previewHost);
@@ -276,11 +339,64 @@ public sealed class MainWindow : Window
 
         visualTree.SelectionChanged += OnTreeSelectionChanged;
 
+        loadReferenceButton.Click += async (_, _) => await LoadReferenceAsync();
+        referenceVisibleCheckBox.Checked += (_, _) => UpdateReferenceOverlay();
+        referenceVisibleCheckBox.Unchecked += (_, _) => UpdateReferenceOverlay();
+        referenceOpacitySlider.ValueChanged += (_, _) => UpdateReferenceOverlay();
+
         previewStage.SizeChanged += (_, _) => DrawSelection();
         previewStage.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(OnPreviewPointerPressed),
             true);
+    }
+
+    async Task LoadReferenceAsync()
+    {
+        try
+        {
+            var picker = new FileOpenPicker();
+            picker.FileTypeFilter.Add(".png");
+            picker.FileTypeFilter.Add(".jpg");
+            picker.FileTypeFilter.Add(".jpeg");
+            picker.FileTypeFilter.Add(".bmp");
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+            var file = await picker.PickSingleFileAsync();
+            if (file is null) return;
+
+            var bitmap = new BitmapImage();
+            using (var stream = await file.OpenReadAsync())
+                await bitmap.SetSourceAsync(stream);
+
+            referenceOverlay.Source = bitmap;
+            referenceVisibleCheckBox.IsEnabled = true;
+            referenceOpacitySlider.IsEnabled = true;
+            referenceVisibleCheckBox.IsChecked = true;
+
+            referenceInfo.Text =
+                $"{file.Name} · {bitmap.PixelWidth} × {bitmap.PixelHeight} · normalized to the current designer viewport";
+
+            UpdateReferenceOverlay();
+            status.Text =
+                "Reference image loaded. Overlay is visual-only and does not modify authored XAML.";
+        }
+        catch (Exception ex)
+        {
+            status.Text = "Could not load reference image: " + ex.Message;
+        }
+    }
+
+    void UpdateReferenceOverlay()
+    {
+        referenceOverlay.Opacity = referenceOpacitySlider.Value;
+        referenceOverlay.Visibility =
+            referenceOverlay.Source is not null &&
+            referenceVisibleCheckBox.IsChecked == true
+                ? Visibility.Visible
+                : Visibility.Collapsed;
     }
 
     void BuildToolbox()
