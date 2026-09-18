@@ -2,7 +2,7 @@
 
 > **Date:** 2026-09-18  
 > **Automated status:** PASS  
-> **Runtime smoke test:** pending  
+> **Runtime smoke test:** substantially passed; follow-ups recorded  
 > **CI:** 35351622131
 
 Milestone 2 is the first substantial XAML Studio-derived infrastructure slice after the WinUI 3 feasibility proof.
@@ -119,3 +119,63 @@ Milestone 2 does not add:
 - binding debugger.
 
 Those build on this coordinator/source foundation rather than bypassing it.
+
+
+## Hands-on runtime findings — 2026-09-18
+
+The first Milestone 2 hands-on pass has now exercised the new editor, Visual Tree, preview selection, live inspector, invalid-XAML diagnostics and non-ASCII source handling.
+
+Observed working:
+
+- WinUIEdit loads with XML syntax highlighting;
+- valid source/property edits update the real WinUI preview;
+- preview selection remains reliable;
+- selecting a preview element navigates to/highlights the corresponding source location;
+- named authored items in the Visual Tree select the matching preview element;
+- malformed XAML surfaces a useful parser error with line/position information;
+- non-ASCII content such as `café 😺` renders correctly and does not break source navigation;
+- repeated selection itself does not destabilize the preview.
+
+Observed limitations / follow-ups:
+
+### Unnamed Visual Tree nodes
+
+Nodes such as `Grid.Resources`, `SolidColorBrush`, `Grid.ColumnDefinitions` and individual `ColumnDefinition` entries are currently shown greyed and cannot be selected.
+
+This matches the current coordinator design: runtime mapping is based on authored elements with stable `x:Name` / `Name`.
+
+This is acceptable for Milestone 2, but later Forge authoring should support stable identity for important unnamed authored nodes without requiring developers to litter production XAML with artificial names.
+
+### Width and WinUI layout semantics
+
+Setting an explicit Width on the heading TextBlock changed its layout position rather than simply making the visible text region "wider".
+
+That behaviour is a useful reminder that Forge is editing **real WinUI layout semantics**, not rectangles in a drawing program. Width interacts with parent layout and alignment (for example Stretch/Center behaviour).
+
+Future designer work should therefore make layout context visible and, where useful, explain or co-edit related properties such as:
+
+- HorizontalAlignment;
+- VerticalAlignment;
+- Grid row/column sizing;
+- parent container behaviour;
+- margins;
+- min/max sizing.
+
+This is not something Forge should hide by silently changing unrelated properties.
+
+## Future AI/image benchmark
+
+A later milestone will deliberately ask ChatGPT/Codex to reconstruct a UI from a reference image using real WinUI elements inside Forge.
+
+That benchmark is intended to expose exactly the kinds of layout-semantic issues seen during this smoke test: the AI may visually infer a width or position correctly but choose the wrong WinUI property/container semantics.
+
+The benchmark is specified in:
+
+[AI_IMAGE_REPLICATION_BENCHMARK.md](AI_IMAGE_REPLICATION_BENCHMARK.md)
+
+It will compare both:
+
+- visual fidelity to the reference image; and
+- structural quality/editability of the produced WinUI XAML.
+
+The goal is to improve not only the AI's first-pass visual accuracy, but also Forge's ability to give the AI precise, controllable primitives for reproducing real UI designs.

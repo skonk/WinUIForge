@@ -158,3 +158,34 @@ Hands-on validation must now confirm:
 - live property edits update only the intended XAML attribute and preserve surrounding formatting;
 - blanking a property removes the local XAML value;
 - source navigation remains correct with non-ASCII text.
+
+
+## Planned validation track — AI image-reference replication
+
+A dedicated image-reference reconstruction benchmark is now part of the product plan.
+
+The benchmark should begin after basic visual authoring exists (Toolbox/Add mode, move/resize and container-aware layout editing) and should run before the AI/.wforge round-trip is considered mature.
+
+The test loop is:
+
+~~~text
+reference UI image
+    ->
+ChatGPT/Codex authors real WinUI XAML + Forge metadata
+    ->
+WinUI Forge renders the design
+    ->
+compare reference image, rendered screenshot, semantic bounds and XAML hierarchy
+    ->
+human corrects the design in Forge
+    ->
+return corrected project to the AI
+    ->
+classify failures and improve Forge / schemas / AI guidance
+~~~
+
+The benchmark must evaluate both visual similarity and WinUI structural quality. A visually close result that uses brittle Canvas coordinates or inappropriate fixed sizing is not considered equivalent to a structurally correct Grid/StackPanel design.
+
+Workshop mock-ups should provide the primary real-world benchmark cases.
+
+See [docs/AI_IMAGE_REPLICATION_BENCHMARK.md](docs/AI_IMAGE_REPLICATION_BENCHMARK.md).
