@@ -64,7 +64,8 @@ public sealed class MainWindow : Window
         Visibility = Visibility.Collapsed
     };
 
-    readonly Button loadWorkshopBenchmarkButton = new() { Content = "Load W2 benchmark" };
+    readonly Button loadWorkshopBenchmarkButton = new() { Content = "Load W2 dashboard" };
+    readonly Button loadWorkshopSettingsBenchmarkButton = new() { Content = "Load W2 settings" };
     readonly Button loadReferenceButton = new() { Content = "Load reference…" };
     readonly Button exportReviewPackageButton = new() { Content = "Export review package" };
     readonly CheckBox referenceVisibleCheckBox = new() { Content = "Overlay", IsEnabled = false };
@@ -368,6 +369,7 @@ public sealed class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center
         };
         referenceCommands.Children.Add(loadWorkshopBenchmarkButton);
+        referenceCommands.Children.Add(loadWorkshopSettingsBenchmarkButton);
         referenceCommands.Children.Add(loadReferenceButton);
         referenceCommands.Children.Add(exportReviewPackageButton);
         referenceCommands.Children.Add(referenceVisibleCheckBox);
@@ -576,6 +578,7 @@ public sealed class MainWindow : Window
         saveSourceFileButton.Click += (_, _) => SaveCurrentSourceFile();
 
         loadWorkshopBenchmarkButton.Click += (_, _) => LoadWorkshopBenchmark();
+        loadWorkshopSettingsBenchmarkButton.Click += (_, _) => LoadWorkshopSettingsBenchmark();
         loadReferenceButton.Click += async (_, _) => await LoadReferenceAsync();
         exportReviewPackageButton.Click += async (_, _) => await ExportReviewPackageAsync();
         referenceVisibleCheckBox.Checked += (_, _) => UpdateReferenceOverlay();
@@ -685,6 +688,53 @@ public sealed class MainWindow : Window
             diagnostics.Text = "Benchmark load error: " + ex;
             diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
             status.Text = "Could not load Workshop dashboard benchmark: " + ex.Message;
+        }
+    }
+
+    void LoadWorkshopSettingsBenchmark()
+    {
+        try
+        {
+            var repositoryPath = FindRepositoryFile(
+                "benchmarks",
+                "workshop-storage-settings-v1",
+                "Screen.xaml");
+
+            var packagedPath = Path.Combine(
+                AppContext.BaseDirectory,
+                "Benchmarks",
+                "workshop-storage-settings-v1",
+                "Screen.xaml");
+
+            var path = repositoryPath ?? packagedPath;
+            if (!File.Exists(path))
+                throw new FileNotFoundException("The Workshop Storage & Settings benchmark XAML was not found.", path);
+
+            visualTreeFilter.Text = string.Empty;
+            visualTreeNamedOnly.IsChecked = true;
+
+            LoadSourceFile(
+                path,
+                readOnly: repositoryPath is null);
+
+            SetBenchmarkViewport(1672, 941);
+            viewportDisplayMode.SelectedItem = "Fit";
+
+            if (referenceOverlay.Source is null)
+            {
+                referenceInfo.Text =
+                    "W2 Storage & Settings loaded · now load W2-14-storage-settings.png as the reference overlay";
+            }
+
+            status.Text = repositoryPath is null
+                ? "Workshop Storage & Settings benchmark loaded from packaged copy · viewport 1672 × 941."
+                : "Workshop Storage & Settings benchmark loaded from live repository XAML · edit/save/reload requires no Forge rebuild.";
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Settings benchmark load error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Could not load Workshop Storage & Settings benchmark: " + ex.Message;
         }
     }
 
