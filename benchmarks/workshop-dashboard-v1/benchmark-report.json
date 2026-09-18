@@ -3,12 +3,47 @@
   "viewport": [1672, 941],
   "reference": "W2-01-dashboard.png",
   "firstPass": {
-    "structurallyValid": null,
-    "rendered": null,
-    "runtimeReviewed": false
+    "structurallyValid": true,
+    "rendered": true,
+    "runtimeReviewed": true
   },
-  "corrections": [],
+  "corrections": [
+    {
+      "class": "geometry-interpretation",
+      "finding": "Left navigation rail was too narrow and semantically simplified.",
+      "change": "Use 224 px application/navigation rail."
+    },
+    {
+      "class": "hierarchy-interpretation",
+      "finding": "Top shell was compressed into a single command row.",
+      "change": "Add global nav plus contextual dashboard command hierarchy."
+    },
+    {
+      "class": "content-omission",
+      "finding": "First pass authored four KPI cards instead of five.",
+      "change": "Add Assets Processed and Worker Health; remove Storage from KPI row."
+    },
+    {
+      "class": "layout-interpretation",
+      "finding": "Recent Projects was stacked below Recent Activity.",
+      "change": "Use three parallel lower content columns."
+    },
+    {
+      "class": "hierarchy-interpretation",
+      "finding": "Console and footer branding were collapsed together.",
+      "change": "Split bottom region into console/resource strip plus branded footer."
+    },
+    {
+      "class": "content-detail",
+      "finding": "Inspector lacked preview and detailed project metadata.",
+      "change": "Add semantic preview placeholder and richer metadata."
+    }
+  ],
   "forgeLimitations": [],
-  "guidanceChanges": [],
-  "status": "awaiting-first-runtime-comparison"
+  "guidanceChanges": [
+    "Infer repeated KPI cardinality before authoring.",
+    "Treat major vertical/column boundaries as structural evidence, not cosmetic spacing.",
+    "Preserve separate global navigation and contextual command layers when both are visible."
+  ],
+  "status": "second-pass-ready-for-runtime-comparison"
 }
