@@ -81,7 +81,12 @@ static void AddPropertyPreservesFormatting()
     doc.SetAttribute("ActionButton", "Width", "160");
 
     Check(doc.GetAttribute("ActionButton", "Width") == "160", "width stored");
-    Check(doc.Text.Contains("                    Width=\"160\"", StringComparison.Ordinal), "multiline indentation preserved");
+    var widthLine = doc.Text.Split('\n').Single(x => x.Contains("Width=\"160\"", StringComparison.Ordinal));
+    var alignmentLine = doc.Text.Split('\n').Single(x => x.Contains("HorizontalAlignment=\"Left\"", StringComparison.Ordinal));
+    Check(
+        widthLine[..widthLine.IndexOf("Width=", StringComparison.Ordinal)] ==
+        alignmentLine[..alignmentLine.IndexOf("HorizontalAlignment=", StringComparison.Ordinal)],
+        "multiline indentation preserved");
     Check(doc.Text.Contains("Content=\"Select me\"", StringComparison.Ordinal), "existing content preserved");
     Check(doc.Text.Contains("HorizontalAlignment=\"Left\"", StringComparison.Ordinal), "existing sibling property preserved");
 }
