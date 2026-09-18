@@ -75,6 +75,7 @@ internal sealed class ForgeSourceEditor : Grid
             return;
 
         settingText = true;
+        suppressCaretNotification = true;
         try
         {
             control.Editor.SetText(value);
@@ -84,6 +85,12 @@ internal sealed class ForgeSourceEditor : Grid
         {
             settingText = false;
         }
+
+        // SetText can cause UpdateUI after the native call returns. Keep caret
+        // notifications suppressed through this dispatcher turn so a programmatic
+        // source refresh cannot overwrite the currently selected preview element.
+        if (!DispatcherQueue.TryEnqueue(() => suppressCaretNotification = false))
+            suppressCaretNotification = false;
     }
 
     string ReadText()

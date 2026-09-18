@@ -15,6 +15,11 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     throw ".NET SDK was not found. Install the .NET 10 SDK and rerun."
 }
 
+$running = Get-Process -Name "WinUIForge.Port.App" -ErrorAction SilentlyContinue
+if ($running) {
+    throw "WinUI Forge is currently running. Close WinUIForge.Port.App before rebuilding so Windows does not lock the output files."
+}
+
 $version = (& dotnet --version).Trim()
 Write-Host ".NET SDK: $version"
 if (-not $version.StartsWith("10.")) {
