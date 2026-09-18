@@ -191,7 +191,7 @@ public sealed class MainWindow : Window
         {
             Height = 1,
             Background = BorderBrush,
-            Margin = new Thickness(0, 8)
+            Margin = new Thickness(0, 8, 0, 8)
         });
 
         form.Children.Add(new TextBlock

@@ -9,7 +9,7 @@ internal static class Program
     static void Main(string[] args)
     {
         WinRT.ComWrappersSupport.InitializeComWrappers();
-        Application.Start(_ =>
+        Application.Start(parameters =>
         {
             SynchronizationContext.SetSynchronizationContext(
                 new Microsoft.UI.Dispatching.DispatcherQueueSynchronizationContext(
