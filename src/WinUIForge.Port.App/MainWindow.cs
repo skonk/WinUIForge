@@ -107,6 +107,21 @@ public sealed class MainWindow : Window
         TextWrapping = TextWrapping.Wrap
     };
 
+    readonly TextBox visualTreeFilter = new()
+    {
+        PlaceholderText = "Filter Visual Tree…",
+        MinWidth = 150
+    };
+    readonly CheckBox visualTreeNamedOnly = new()
+    {
+        Content = "Named only",
+        VerticalAlignment = VerticalAlignment.Center
+    };
+    readonly TextBlock visualTreeCount = new()
+    {
+        Foreground = MutedBrush,
+        VerticalAlignment = VerticalAlignment.Center
+    };
     readonly ListView visualTree = new()
     {
         SelectionMode = ListViewSelectionMode.Single,
@@ -394,13 +409,43 @@ public sealed class MainWindow : Window
             }
         };
 
+        var treeHost = new Grid
+        {
+            Background = PanelBrush
+        };
+        treeHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        treeHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        var treeTools = new Grid
+        {
+            Padding = new Thickness(8, 8, 8, 6),
+            ColumnSpacing = 8
+        };
+        treeTools.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        treeTools.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        treeTools.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        visualTreeFilter.HorizontalAlignment = HorizontalAlignment.Stretch;
+        treeTools.Children.Add(visualTreeFilter);
+
+        Grid.SetColumn(visualTreeNamedOnly, 1);
+        treeTools.Children.Add(visualTreeNamedOnly);
+
+        Grid.SetColumn(visualTreeCount, 2);
+        treeTools.Children.Add(visualTreeCount);
+
+        treeHost.Children.Add(treeTools);
+
+        visualTree.Margin = new Thickness(8, 0, 8, 8);
+        Grid.SetRow(visualTree, 1);
+        treeHost.Children.Add(visualTree);
+
         var treeTab = new TabViewItem
         {
             Header = "Visual Tree",
             IsClosable = false,
-            Content = visualTree
+            Content = treeHost
         };
-        visualTree.Margin = new Thickness(8);
 
         var inspectorTab = new TabViewItem
         {
@@ -464,6 +509,9 @@ public sealed class MainWindow : Window
             true);
 
         visualTree.SelectionChanged += OnTreeSelectionChanged;
+        visualTreeFilter.TextChanged += (_, _) => RebuildVisualTree();
+        visualTreeNamedOnly.Checked += (_, _) => RebuildVisualTree();
+        visualTreeNamedOnly.Unchecked += (_, _) => RebuildVisualTree();
 
         loadWorkshopBenchmarkButton.Click += (_, _) => LoadWorkshopBenchmark();
         loadReferenceButton.Click += async (_, _) => await LoadReferenceAsync();
@@ -498,6 +546,8 @@ public sealed class MainWindow : Window
 
             history.Clear();
             selectedElementIdentity = null;
+            visualTreeFilter.Text = string.Empty;
+            visualTreeNamedOnly.IsChecked = true;
             ApplyDocumentText(xaml, null);
 
             SetBenchmarkViewport(1672, 941);
@@ -773,8 +823,23 @@ public sealed class MainWindow : Window
         try
         {
             visualTree.Items.Clear();
-            if (document is null) return;
-            AddTreeRows(document.Root);
+
+            if (document is null)
+            {
+                visualTreeCount.Text = string.Empty;
+                return;
+            }
+
+            var query = visualTreeFilter.Text?.Trim() ?? string.Empty;
+            var namedOnly = visualTreeNamedOnly.IsChecked == true;
+            var shown = 0;
+
+            if (namedOnly)
+                AddNamedTreeRows(document.Root, namedDepth: 0, query, ref shown);
+            else
+                AddTreeRows(document.Root, query, ref shown);
+
+            visualTreeCount.Text = $"{shown}/{document.Elements.Count}";
         }
         finally
         {
@@ -782,7 +847,60 @@ public sealed class MainWindow : Window
         }
     }
 
-    void AddTreeRows(ForgeXamlElement node)
+    void AddTreeRows(
+        ForgeXamlElement node,
+        string query,
+        ref int shown)
+    {
+        if (MatchesTreeFilter(node, query))
+        {
+            AddTreeRow(node, node.Depth);
+            shown++;
+        }
+
+        foreach (var child in node.Children)
+            AddTreeRows(child, query, ref shown);
+    }
+
+    void AddNamedTreeRows(
+        ForgeXamlElement node,
+        int namedDepth,
+        string query,
+        ref int shown)
+    {
+        var isNamed = !string.IsNullOrWhiteSpace(node.Name) ||
+                      !string.IsNullOrWhiteSpace(node.XKey);
+
+        var childNamedDepth = namedDepth;
+        if (isNamed)
+        {
+            if (MatchesTreeFilter(node, query))
+            {
+                AddTreeRow(node, namedDepth);
+                shown++;
+            }
+
+            childNamedDepth++;
+        }
+
+        foreach (var child in node.Children)
+            AddNamedTreeRows(child, childNamedDepth, query, ref shown);
+    }
+
+    bool MatchesTreeFilter(ForgeXamlElement node, string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return true;
+
+        return node.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+               node.TypeName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+               (!string.IsNullOrWhiteSpace(node.Name) &&
+                node.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+               (!string.IsNullOrWhiteSpace(node.XKey) &&
+                node.XKey.Contains(query, StringComparison.OrdinalIgnoreCase));
+    }
+
+    void AddTreeRow(ForgeXamlElement node, int displayDepth)
     {
         var runtimeMapped =
             !string.IsNullOrWhiteSpace(node.Name) &&
@@ -791,7 +909,7 @@ public sealed class MainWindow : Window
         var label = new TextBlock
         {
             Text = node.DisplayName + (runtimeMapped ? string.Empty : "  · source"),
-            Margin = new Thickness(node.Depth * 16, 2, 4, 2),
+            Margin = new Thickness(displayDepth * 16, 2, 4, 2),
             Foreground = runtimeMapped ? TextBrush : MutedBrush
         };
 
@@ -801,9 +919,6 @@ public sealed class MainWindow : Window
             Tag = node.Identity,
             IsEnabled = true
         });
-
-        foreach (var child in node.Children)
-            AddTreeRows(child);
     }
 
     void OnTreeSelectionChanged(object sender, SelectionChangedEventArgs e)
