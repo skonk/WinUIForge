@@ -1,0 +1,25 @@
+{
+  "case": "workshop-storage-settings-v1",
+  "stage": "C",
+  "viewport": [1672, 941],
+  "reference": "W2-14-storage-settings.png",
+  "firstPass": {
+    "structurallyValid": null,
+    "rendered": null,
+    "runtimeReviewed": false
+  },
+  "focusAreas": [
+    "dense settings controls",
+    "Auto versus star row allocation",
+    "scrolling behaviour",
+    "form control alignment",
+    "storage metric cards",
+    "table density",
+    "right inspector composition",
+    "uneven information density"
+  ],
+  "corrections": [],
+  "forgeLimitations": [],
+  "guidanceChanges": [],
+  "status": "awaiting-first-runtime-comparison"
+}
