@@ -42,8 +42,9 @@ static void SourceIndexMapping()
     Check(index >= 0, "fixture button source");
     Check(doc.FindAtSourceIndex(index)?.Name == "ActionButton", "caret maps to button start tag");
 
-    var bodyIndex = source.IndexOf("Select me", StringComparison.Ordinal);
-    Check(doc.FindAtSourceIndex(bodyIndex) is null, "mapping is intentionally start-tag scoped in the first proof");
+    var closingTagIndex = source.IndexOf("</StackPanel>", StringComparison.Ordinal);
+    Check(closingTagIndex >= 0, "fixture closing tag");
+    Check(doc.FindAtSourceIndex(closingTagIndex) is null, "mapping is intentionally start-tag scoped in the first proof");
 }
 
 static void WriteProperty()
