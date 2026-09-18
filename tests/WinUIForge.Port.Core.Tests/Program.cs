@@ -17,7 +17,8 @@ var tests = new List<(string Name, Action Run)>
     ("reorder-structural-edit", ReorderStructuralEdit),
     ("reparent-structural-edit", ReparentStructuralEdit),
     ("history-undo-redo", HistoryUndoRedo),
-    ("workshop-dashboard-benchmark-parses", WorkshopDashboardBenchmarkParses)
+    ("workshop-dashboard-benchmark-parses", WorkshopDashboardBenchmarkParses),
+    ("workshop-storage-settings-benchmark-parses", WorkshopStorageSettingsBenchmarkParses)
 };
 
 var failed = 0;
@@ -309,6 +310,55 @@ static void WorkshopDashboardBenchmarkParses()
     Check(columns![0].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "210", "local pane width");
     Check(columns[1].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "*", "center is flexible");
     Check(columns[2].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "280", "inspector width");
+}
+
+static void WorkshopStorageSettingsBenchmarkParses()
+{
+    var path = Path.Combine(
+        AppContext.BaseDirectory,
+        "Benchmark",
+        "workshop-storage-settings-v1",
+        "Screen.xaml");
+
+    Check(File.Exists(path), "settings benchmark fixture copied to test output");
+
+    var source = File.ReadAllText(path);
+    var doc = new ForgeXamlDocument(source);
+
+    Check(doc.Root.Name == "WorkshopStorageSettingsBenchmark", "settings benchmark root");
+    Check(doc.FindByName("TopCommandBar") is not null, "settings top command bar");
+    Check(doc.FindByName("SettingsNavigation") is not null, "settings navigation");
+    Check(doc.FindByName("SettingsMain") is not null, "settings main");
+    Check(doc.FindByName("StorageOverviewPanel") is not null, "storage overview");
+    Check(doc.FindByName("TotalUsageCard") is not null, "total usage");
+    Check(doc.FindByName("ProjectsStorageCard") is not null, "projects storage");
+    Check(doc.FindByName("AssetsStorageCard") is not null, "assets storage");
+    Check(doc.FindByName("CacheStorageCard") is not null, "cache storage");
+    Check(doc.FindByName("BackupsStorageCard") is not null, "backups storage");
+    Check(doc.FindByName("KeyLocationsPanel") is not null, "key locations");
+    Check(doc.FindByName("ApplicationSettingsPanel") is not null, "application settings");
+    Check(doc.FindByName("GeneralSettingsColumn") is not null, "general settings column");
+    Check(doc.FindByName("BehaviorSettingsColumn") is not null, "behavior settings column");
+    Check(doc.FindByName("SettingsQuickActions") is not null, "settings quick actions");
+    Check(doc.FindByName("StorageManagementPanel") is not null, "storage management");
+    Check(doc.FindByName("StorageDriveTable") is not null, "storage drive table");
+    Check(doc.FindByName("StorageInsightsPanel") is not null, "storage insights");
+    Check(doc.FindByName("StorageLocationInspector") is not null, "storage inspector");
+    Check(doc.FindByName("ActivityConsole") is not null, "settings console");
+    Check(doc.FindByName("ActiveTasksPanel") is not null, "active tasks");
+
+    var workspace = doc.FindByName("SettingsWorkspace");
+    Check(workspace is not null, "settings workspace");
+    var columns = workspace!.Children
+        .FirstOrDefault(x => x.TypeName == "Grid.ColumnDefinitions")
+        ?.Children
+        .Where(x => x.TypeName == "ColumnDefinition")
+        .ToList();
+
+    Check(columns?.Count == 3, "three settings workspace columns");
+    Check(columns![0].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "188", "settings navigation width");
+    Check(columns[1].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "*", "settings center flexible");
+    Check(columns[2].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "300", "settings inspector width");
 }
 
 static string StructuralFixture() =>
