@@ -81,23 +81,23 @@
                         VerticalAlignment="Stretch"
                         Spacing="8">
                 <Grid Width="82">
-                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Dashboard.png" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,4,0,0" Opacity="0.72" Stretch="Uniform"/>
+                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Dashboard.png" Width="21" Height="21" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" Opacity="0.72" Stretch="Uniform"/>
                     <TextBlock Text="Dashboard" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
                 </Grid>
                 <Grid Width="82">
-                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Prepare.png" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,4,0,0" Opacity="0.72" Stretch="Uniform"/>
+                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Prepare.png" Width="21" Height="21" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" Opacity="0.72" Stretch="Uniform"/>
                     <TextBlock Text="Prepare" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
                 </Grid>
                 <Grid Width="82">
-                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Conduit.png" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,4,0,0" Opacity="0.72" Stretch="Uniform"/>
+                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Conduit.png" Width="21" Height="21" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" Opacity="0.72" Stretch="Uniform"/>
                     <TextBlock Text="Conduit" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
                 </Grid>
                 <Grid Width="82">
-                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Beacon.png" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,4,0,0" Opacity="0.72" Stretch="Uniform"/>
+                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Beacon.png" Width="21" Height="21" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" Opacity="0.72" Stretch="Uniform"/>
                     <TextBlock Text="Beacon" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
                 </Grid>
                 <Grid Width="82">
-                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Library.png" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,4,0,0" Opacity="0.72" Stretch="Uniform"/>
+                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Library.png" Width="21" Height="21" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" Opacity="0.72" Stretch="Uniform"/>
                     <TextBlock Text="Library" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
                 </Grid>
                 <Grid Width="88">
@@ -105,7 +105,7 @@
                             BorderBrush="#66371F"
                             BorderThickness="1"
                             CornerRadius="5"/>
-                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Settings.png" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,4,0,0" Stretch="Uniform"/>
+                    <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Settings.png" Width="21" Height="21" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" Stretch="Uniform"/>
                     <TextBlock Text="Settings" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,7" Foreground="{StaticResource AccentBrush}" FontSize="11"/>
                     <Border Height="2" VerticalAlignment="Bottom" Background="{StaticResource AccentBrush}"/>
                 </Grid>
