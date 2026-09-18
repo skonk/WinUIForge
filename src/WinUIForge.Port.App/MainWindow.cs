@@ -1307,12 +1307,12 @@ public sealed class MainWindow : Window
                     },
                     layout = new
                     {
-                        width = double.IsNaN(element.Width) ? null : element.Width,
-                        height = double.IsNaN(element.Height) ? null : element.Height,
+                        width = double.IsNaN(element.Width) ? (double?)null : element.Width,
+                        height = double.IsNaN(element.Height) ? (double?)null : element.Height,
                         minWidth = element.MinWidth,
                         minHeight = element.MinHeight,
-                        maxWidth = double.IsInfinity(element.MaxWidth) ? null : element.MaxWidth,
-                        maxHeight = double.IsInfinity(element.MaxHeight) ? null : element.MaxHeight,
+                        maxWidth = double.IsInfinity(element.MaxWidth) ? (double?)null : element.MaxWidth,
+                        maxHeight = double.IsInfinity(element.MaxHeight) ? (double?)null : element.MaxHeight,
                         margin = ThicknessValue(element.Margin),
                         horizontalAlignment = element.HorizontalAlignment.ToString(),
                         verticalAlignment = element.VerticalAlignment.ToString(),
@@ -1325,8 +1325,8 @@ public sealed class MainWindow : Window
                         },
                         canvas = new
                         {
-                            left = double.IsNaN(Canvas.GetLeft(element)) ? null : Canvas.GetLeft(element),
-                            top = double.IsNaN(Canvas.GetTop(element)) ? null : Canvas.GetTop(element)
+                            left = double.IsNaN(Canvas.GetLeft(element)) ? (double?)null : Canvas.GetLeft(element),
+                            top = double.IsNaN(Canvas.GetTop(element)) ? (double?)null : Canvas.GetTop(element)
                         }
                     },
                     appearance,
