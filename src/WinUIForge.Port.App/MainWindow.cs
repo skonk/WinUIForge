@@ -233,9 +233,8 @@ public sealed class MainWindow : Window
         AppWindow.TitleBar.ButtonBackgroundColor = Color.FromArgb(255, 23, 27, 29);
         AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(255, 242, 243, 245);
 
-        var appIconPath = Path.Combine(AppContext.BaseDirectory, "Workshop.ico");
-        if (File.Exists(appIconPath))
-            AppWindow.SetIcon(appIconPath);
+        ApplyWindowIcons();
+        Activated += (_, _) => ApplyWindowIcons();
 
         viewportDisplayMode.ItemsSource = new[] { "Fit", "Fill", "1:1" };
         viewportDisplayMode.SelectedIndex = 0;
@@ -246,6 +245,17 @@ public sealed class MainWindow : Window
 
         sourceEditor.Text = SampleXaml;
         RenderSource();
+    }
+
+    void ApplyWindowIcons()
+    {
+        var appIconPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Workshop.ico"));
+        if (!File.Exists(appIconPath))
+            return;
+
+        AppWindow.SetIcon(appIconPath);
+        AppWindow.SetTitleBarIcon(appIconPath);
+        AppWindow.SetTaskbarIcon(appIconPath);
     }
 
     UIElement BuildShell()
