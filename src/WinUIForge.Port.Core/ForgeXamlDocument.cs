@@ -535,7 +535,8 @@ public sealed class ForgeXamlDocument
             else if (reader.NodeType == XmlNodeType.EndElement && stack.Count > 0)
             {
                 var index = stack.Pop();
-                var endStart = LineColumnToIndex(lineStarts, lineInfo.LineNumber, lineInfo.LinePosition, text.Length);
+                var endReported = LineColumnToIndex(lineStarts, lineInfo.LineNumber, lineInfo.LinePosition, text.Length);
+                var endStart = FindTagStartAtOrBefore(text, endReported);
                 var endEnd = FindStartTagEnd(text, endStart);
                 spans[index] = spans[index] with
                 {
@@ -629,6 +630,17 @@ public sealed class ForgeXamlDocument
         if (line <= 0 || line > lineStarts.Count) return 0;
         var index = lineStarts[line - 1] + Math.Max(0, column - 1);
         return Math.Clamp(index, 0, textLength);
+    }
+
+    static int FindTagStartAtOrBefore(string text, int reportedIndex)
+    {
+        var i = Math.Clamp(reportedIndex, 0, Math.Max(0, text.Length - 1));
+        for (; i >= 0 && text[i] != '\n'; i--)
+        {
+            if (text[i] == '<') return i;
+        }
+
+        return Math.Clamp(reportedIndex, 0, text.Length);
     }
 
     static int FindStartTagEnd(string text, int startIndex)
