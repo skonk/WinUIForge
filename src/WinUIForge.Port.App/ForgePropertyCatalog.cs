@@ -58,6 +58,9 @@ internal static class ForgePropertyCatalog
         new("HorizontalAlignment", "Layout", typeof(FrameworkElement), typeof(HorizontalAlignment), FrameworkElement.HorizontalAlignmentProperty),
         new("VerticalAlignment", "Layout", typeof(FrameworkElement), typeof(VerticalAlignment), FrameworkElement.VerticalAlignmentProperty),
 
+        new("Canvas.Left", "Canvas", typeof(FrameworkElement), typeof(double), Getter: x => Canvas.GetLeft(x), IsAttached: true),
+        new("Canvas.Top", "Canvas", typeof(FrameworkElement), typeof(double), Getter: x => Canvas.GetTop(x), IsAttached: true),
+
         new("Grid.Row", "Grid", typeof(FrameworkElement), typeof(int), Getter: x => Grid.GetRow(x), IsAttached: true),
         new("Grid.Column", "Grid", typeof(FrameworkElement), typeof(int), Getter: x => Grid.GetColumn(x), IsAttached: true),
         new("Grid.RowSpan", "Grid", typeof(FrameworkElement), typeof(int), Getter: x => Grid.GetRowSpan(x), IsAttached: true),
