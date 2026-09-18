@@ -2,10 +2,12 @@ using WinUIForge.Port.Core;
 
 var tests = new List<(string Name, Action Run)>
 {
-    ("parse-named-elements", ParseNamedElements),
+    ("parse-authored-tree", ParseAuthoredTree),
     ("source-index-mapping", SourceIndexMapping),
-    ("write-property", WriteProperty),
-    ("remove-property", RemoveProperty),
+    ("replace-property-preserves-formatting", ReplacePropertyPreservesFormatting),
+    ("add-property-preserves-formatting", AddPropertyPreservesFormatting),
+    ("remove-property-preserves-document", RemovePropertyPreservesDocument),
+    ("attribute-escaping", AttributeEscaping),
     ("unknown-element", UnknownElement)
 };
 
@@ -26,12 +28,19 @@ foreach (var (name, run) in tests)
 
 return failed == 0 ? 0 : 1;
 
-static void ParseNamedElements()
+static void ParseAuthoredTree()
 {
     var doc = new ForgeXamlDocument(Fixture());
-    Check(doc.Elements.Count == 4, "expected four named authored elements");
+
+    Check(doc.Root.Name == "RootGrid", "root name");
+    Check(doc.Root.TypeName == "Grid", "root type");
+    Check(doc.Root.Children.Count == 1, "root child count");
+    Check(doc.Root.Children[0].Name == "ContentStack", "stack child");
+    Check(doc.Root.Children[0].Children.Count == 2, "stack children");
     Check(doc.FindByName("ActionButton")?.TypeName == "Button", "button mapping");
     Check(doc.FindByName("HeadingText")?.Line > 0, "line info");
+    Check(doc.FindByName("ActionButton")?.Parent?.Name == "ContentStack", "parent mapping");
+    Check(doc.FindByName("ActionButton")?.Depth == 2, "depth");
 }
 
 static void SourceIndexMapping()
@@ -44,27 +53,58 @@ static void SourceIndexMapping()
 
     var closingTagIndex = source.IndexOf("</StackPanel>", StringComparison.Ordinal);
     Check(closingTagIndex >= 0, "fixture closing tag");
-    Check(doc.FindAtSourceIndex(closingTagIndex) is null, "mapping is intentionally start-tag scoped in the first proof");
+    Check(doc.FindAtSourceIndex(closingTagIndex) is null, "mapping remains start-tag scoped");
 }
 
-static void WriteProperty()
+static void ReplacePropertyPreservesFormatting()
 {
-    var doc = new ForgeXamlDocument(Fixture());
+    var source = Fixture();
+    var doc = new ForgeXamlDocument(source);
+    var beforePrefix = source[..source.IndexOf("Content=\"Select me\"", StringComparison.Ordinal)];
+    var beforeSuffix = source[(source.IndexOf("Content=\"Select me\"", StringComparison.Ordinal) + "Content=\"Select me\"".Length)..];
+
+    var edit = doc.SetAttribute("ActionButton", "Content", "Generate");
+
+    Check(edit.Changed, "edit changed");
+    Check(edit.OldValue == "Select me", "old value");
+    Check(edit.NewValue == "Generate", "new value");
+    Check(doc.GetAttribute("ActionButton", "Content") == "Generate", "new value stored");
+    Check(doc.Text.StartsWith(beforePrefix, StringComparison.Ordinal), "prefix preserved");
+    Check(doc.Text.EndsWith(beforeSuffix, StringComparison.Ordinal), "suffix preserved");
+    Check(doc.Text.Contains("Content=\"Generate\"", StringComparison.Ordinal), "only value changed");
+}
+
+static void AddPropertyPreservesFormatting()
+{
+    var source = Fixture();
+    var doc = new ForgeXamlDocument(source);
     doc.SetAttribute("ActionButton", "Width", "160");
 
     Check(doc.GetAttribute("ActionButton", "Width") == "160", "width stored");
-    Check(doc.Text.Contains("Width=\"160\"", StringComparison.Ordinal), "source updated");
-
-    var reparsed = new ForgeXamlDocument(doc.Text);
-    Check(reparsed.FindByName("ActionButton") is not null, "updated source remains parseable");
+    Check(doc.Text.Contains("                    Width=\"160\"", StringComparison.Ordinal), "multiline indentation preserved");
+    Check(doc.Text.Contains("Content=\"Select me\"", StringComparison.Ordinal), "existing content preserved");
+    Check(doc.Text.Contains("HorizontalAlignment=\"Left\"", StringComparison.Ordinal), "existing sibling property preserved");
 }
 
-static void RemoveProperty()
+static void RemovePropertyPreservesDocument()
+{
+    var source = Fixture();
+    var doc = new ForgeXamlDocument(source);
+    doc.SetAttribute("ActionButton", "HorizontalAlignment", null);
+
+    Check(doc.GetAttribute("ActionButton", "HorizontalAlignment") is null, "attribute removed");
+    Check(doc.Text.Contains("Content=\"Select me\"", StringComparison.Ordinal), "neighbor retained");
+    Check(doc.Text.Contains("x:Name=\"ActionButton\"", StringComparison.Ordinal), "identity retained");
+    Check(new ForgeXamlDocument(doc.Text).FindByName("ActionButton") is not null, "still parseable");
+}
+
+static void AttributeEscaping()
 {
     var doc = new ForgeXamlDocument(Fixture());
-    doc.SetAttribute("ActionButton", "Width", "160");
-    doc.SetAttribute("ActionButton", "Width", null);
-    Check(doc.GetAttribute("ActionButton", "Width") is null, "blank value removes property");
+    doc.SetAttribute("ActionButton", "Content", "A & B \"quoted\"");
+
+    Check(doc.Text.Contains("A &amp; B &quot;quoted&quot;", StringComparison.Ordinal), "escaped source");
+    Check(doc.GetAttribute("ActionButton", "Content") == "A & B \"quoted\"", "unescaped model value");
 }
 
 static void UnknownElement()
@@ -89,7 +129,8 @@ static string Fixture() =>
             <TextBlock x:Name="HeadingText"
                        Text="WinUI Forge"/>
             <Button x:Name="ActionButton"
-                    Content="Select me"/>
+                    Content="Select me"
+                    HorizontalAlignment="Left"/>
         </StackPanel>
     </Grid>
     """;
