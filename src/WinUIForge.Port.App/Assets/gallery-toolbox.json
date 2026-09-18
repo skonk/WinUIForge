@@ -1,0 +1,70 @@
+{
+  "sourceRepository": "microsoft/WinUI-Gallery",
+  "sourceRevision": "abb8cb4cef04a5080f5c0396f67a7ec502b36179",
+  "controls": [
+    {
+      "typeName": "Grid",
+      "title": "Grid",
+      "description": "Two-dimensional row/column layout container.",
+      "galleryId": "grid",
+      "relatedControls": ["StackPanel", "Canvas"],
+      "xamlTemplate": "<Grid x:Name=\"{name}\" MinWidth=\"160\" MinHeight=\"100\">\n</Grid>"
+    },
+    {
+      "typeName": "StackPanel",
+      "title": "StackPanel",
+      "description": "Ordered vertical or horizontal layout container.",
+      "galleryId": "stackpanel",
+      "relatedControls": ["Grid"],
+      "xamlTemplate": "<StackPanel x:Name=\"{name}\" Spacing=\"8\">\n</StackPanel>"
+    },
+    {
+      "typeName": "Border",
+      "title": "Border",
+      "description": "Single-child surface with padding, stroke and corner radius.",
+      "galleryId": "border",
+      "relatedControls": ["Grid"],
+      "xamlTemplate": "<Border x:Name=\"{name}\" Padding=\"12\" BorderBrush=\"{ThemeResource CardStrokeColorDefaultBrush}\" BorderThickness=\"1\" CornerRadius=\"8\">\n</Border>"
+    },
+    {
+      "typeName": "TextBlock",
+      "title": "TextBlock",
+      "description": "Read-only text content.",
+      "galleryId": "textblock",
+      "relatedControls": ["RichTextBlock"],
+      "xamlTemplate": "<TextBlock x:Name=\"{name}\" Text=\"Text\" />"
+    },
+    {
+      "typeName": "Button",
+      "title": "Button",
+      "description": "Standard action control.",
+      "galleryId": "button",
+      "relatedControls": ["ToggleButton", "AppBarButton"],
+      "xamlTemplate": "<Button x:Name=\"{name}\" Content=\"Button\" />"
+    },
+    {
+      "typeName": "TextBox",
+      "title": "TextBox",
+      "description": "Editable text input.",
+      "galleryId": "textbox",
+      "relatedControls": ["RichEditBox"],
+      "xamlTemplate": "<TextBox x:Name=\"{name}\" PlaceholderText=\"Text\" />"
+    },
+    {
+      "typeName": "Image",
+      "title": "Image",
+      "description": "Displays bitmap or vector image content.",
+      "galleryId": "image",
+      "relatedControls": [],
+      "xamlTemplate": "<Image x:Name=\"{name}\" Width=\"160\" Height=\"100\" Stretch=\"Uniform\" />"
+    },
+    {
+      "typeName": "Canvas",
+      "title": "Canvas",
+      "description": "Absolute-positioning layout surface.",
+      "galleryId": "canvas",
+      "relatedControls": ["Grid"],
+      "xamlTemplate": "<Canvas x:Name=\"{name}\" Width=\"320\" Height=\"200\">\n</Canvas>"
+    }
+  ]
+}
