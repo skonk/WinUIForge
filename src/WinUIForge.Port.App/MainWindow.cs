@@ -161,8 +161,11 @@ public sealed class MainWindow : Window
     VerticalAlignment resizeOriginalVerticalAlignment;
     bool resizePreviewAnchoredHorizontal;
     bool resizePreviewAnchoredVertical;
+    bool resizeWidthActive;
+    bool resizeHeightActive;
 
-    const double ResizeAxisThreshold = 1.5;
+    const double ResizeAxisThreshold = 8;
+    const double ResizeSecondAxisThreshold = 18;
 
     static readonly SolidColorBrush WindowBrush = Brush(23, 27, 29);
     static readonly SolidColorBrush PanelBrush = Brush(34, 37, 42);
@@ -1403,7 +1406,12 @@ public sealed class MainWindow : Window
         }
     }
 
-    void UpdateSelectionChrome(double x, double y, double width, double height)
+    void UpdateSelectionChrome(
+        double x,
+        double y,
+        double width,
+        double height,
+        bool preserveResizeHandle = false)
     {
         width = Math.Max(1, width);
         height = Math.Max(1, height);
@@ -1422,14 +1430,18 @@ public sealed class MainWindow : Window
             Canvas.SetTop(selectionMoveHandle, y - 6);
         }
 
-        if (selectionResizeHandle is not null)
+        // Do not move the Thumb that currently owns the resize drag. Moving the
+        // active Thumb changes its own coordinate frame under a scaled Viewbox
+        // and can feed false deltas back into DragDelta. The live element and
+        // outline still track continuously.
+        if (!preserveResizeHandle && selectionResizeHandle is not null)
         {
             Canvas.SetLeft(selectionResizeHandle, x + width - 6);
             Canvas.SetTop(selectionResizeHandle, y + height - 6);
         }
     }
 
-    void UpdateSelectionChromeFromRuntime()
+    void UpdateSelectionChromeFromRuntime(bool preserveResizeHandle = false)
     {
         if (selectedFrameworkElement is null) return;
 
@@ -1441,7 +1453,8 @@ public sealed class MainWindow : Window
                 point.X,
                 point.Y,
                 Math.Max(1, selectedFrameworkElement.ActualWidth),
-                Math.Max(1, selectedFrameworkElement.ActualHeight));
+                Math.Max(1, selectedFrameworkElement.ActualHeight),
+                preserveResizeHandle);
         }
         catch
         {
@@ -1534,6 +1547,53 @@ public sealed class MainWindow : Window
         resizeOriginalVerticalAlignment = selectedFrameworkElement.VerticalAlignment;
         resizePreviewAnchoredHorizontal = false;
         resizePreviewAnchoredVertical = false;
+        resizeWidthActive = false;
+        resizeHeightActive = false;
+    }
+
+    void UpdateResizeAxes()
+    {
+        var x = Math.Abs(resizeDeltaX);
+        var y = Math.Abs(resizeDeltaY);
+
+        if (!resizeWidthActive && !resizeHeightActive)
+        {
+            if (x < ResizeAxisThreshold && y < ResizeAxisThreshold)
+                return;
+
+            // Pick a dominant axis when the drag clearly starts horizontally or
+            // vertically. A genuinely diagonal drag activates both axes.
+            if (x >= y * 1.35)
+                resizeWidthActive = true;
+            else if (y >= x * 1.35)
+                resizeHeightActive = true;
+            else
+            {
+                resizeWidthActive = true;
+                resizeHeightActive = true;
+            }
+
+            return;
+        }
+
+        // Once the user has established one axis, require a much larger,
+        // intentional excursion before enabling the second one. This prevents
+        // normal mouse jitter from turning a width resize into a height resize.
+        if (resizeWidthActive &&
+            !resizeHeightActive &&
+            y >= ResizeSecondAxisThreshold &&
+            y >= x * 0.45)
+        {
+            resizeHeightActive = true;
+        }
+
+        if (resizeHeightActive &&
+            !resizeWidthActive &&
+            x >= ResizeSecondAxisThreshold &&
+            x >= y * 0.45)
+        {
+            resizeWidthActive = true;
+        }
     }
 
     void UpdateResizePreview()
@@ -1542,8 +1602,10 @@ public sealed class MainWindow : Window
             document?.FindByIdentity(selectedElementIdentity) is not { } source)
             return;
 
-        var widthChanged = Math.Abs(resizeDeltaX) >= ResizeAxisThreshold;
-        var heightChanged = Math.Abs(resizeDeltaY) >= ResizeAxisThreshold;
+        UpdateResizeAxes();
+
+        var widthChanged = resizeWidthActive;
+        var heightChanged = resizeHeightActive;
 
         // A bottom-right handle anchors the visual top-left. WinUI can reposition
         // an implicitly Stretch-aligned child as soon as Width/Height becomes
@@ -1576,7 +1638,7 @@ public sealed class MainWindow : Window
             selectedFrameworkElement.Height = resizeOriginalHeight;
 
         previewStage.UpdateLayout();
-        UpdateSelectionChromeFromRuntime();
+        UpdateSelectionChromeFromRuntime(preserveResizeHandle: true);
 
         var widthText = widthChanged
             ? Math.Max(8, resizeStartWidth + resizeDeltaX).ToString("0", CultureInfo.InvariantCulture)
@@ -1608,8 +1670,7 @@ public sealed class MainWindow : Window
     }
 
     bool HasResizeAxisChange() =>
-        Math.Abs(resizeDeltaX) >= ResizeAxisThreshold ||
-        Math.Abs(resizeDeltaY) >= ResizeAxisThreshold;
+        resizeWidthActive || resizeHeightActive;
 
     void RestoreResizePreview(FrameworkElement? element)
     {
@@ -1621,6 +1682,8 @@ public sealed class MainWindow : Window
         element.VerticalAlignment = resizeOriginalVerticalAlignment;
         resizePreviewAnchoredHorizontal = false;
         resizePreviewAnchoredVertical = false;
+        resizeWidthActive = false;
+        resizeHeightActive = false;
         previewStage.UpdateLayout();
     }
 
@@ -1700,8 +1763,8 @@ public sealed class MainWindow : Window
             document.FindByIdentity(selectedElementIdentity) is not { } source)
             return false;
 
-        var widthChanged = Math.Abs(resizeDeltaX) >= ResizeAxisThreshold;
-        var heightChanged = Math.Abs(resizeDeltaY) >= ResizeAxisThreshold;
+        var widthChanged = resizeWidthActive;
+        var heightChanged = resizeHeightActive;
         if (!widthChanged && !heightChanged)
             return false;
 
