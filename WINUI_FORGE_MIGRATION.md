@@ -224,3 +224,32 @@ Planned uses include:
 - image-replication benchmark grounding.
 
 See [docs/WINUI_GALLERY_REFERENCE.md](docs/WINUI_GALLERY_REFERENCE.md).
+
+
+## Milestone 3 — visual authoring
+
+**Automated status: PASSED (2026-09-18)**  
+**Hands-on runtime status: pending**
+
+Milestone 3 adds the first real visual authoring layer on top of the Milestone 2 coordinator/source foundation.
+
+Implemented:
+
+- Forge transaction history with undo/redo;
+- authored identity for named, keyed and unnamed XAML nodes;
+- full source spans and structural insert/delete/reorder/reparent operations;
+- selectable source-only Visual Tree nodes;
+- parent-aware layout guidance;
+- Gallery-backed Toolbox knowledge;
+- click-to-add Toolbox authoring;
+- structural Up/Down/Reparent/Delete commands;
+- designer move/reorder handle;
+- designer resize handle;
+- StackPanel-aware reorder semantics;
+- Canvas.Left/Top movement;
+- Grid cell movement and within-cell Margin fallback;
+- source-backed resize through Width/Height.
+
+Automated validation: CI **35356977677**, 0 warnings / 0 errors.
+
+See [docs/MILESTONE3.md](docs/MILESTONE3.md).

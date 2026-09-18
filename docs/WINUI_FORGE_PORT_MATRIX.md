@@ -163,3 +163,31 @@ The first critical fixture should contain a Grid with pixel/star columns, nested
 | Binding debugger | ⏳ later | not part of Milestone 2 |
 | Toolbox / Add mode | ⏳ next designer phase | not started |
 | drag / resize / reparent | ⏳ next designer phase | not started |
+
+
+## Milestone 3 implementation status — 2026-09-18
+
+| Area | Status | Current Forge implementation |
+|---|---|---|
+| Forge transaction history | ✅ implemented | source + selection snapshots, Undo/Redo |
+| Named authored identity | ✅ implemented | `name:<x:Name>` |
+| Keyed authored identity | ✅ implemented | parent + `key:<x:Key>` |
+| Unnamed authored identity | ✅ first slice | deterministic structural path |
+| Full element source spans | ✅ implemented/tested | opening/closing/full spans normalized on Windows |
+| Structural insertion | ✅ implemented/tested | Toolbox fragments into supported containers |
+| Structural deletion | ✅ implemented/tested | full authored element removal |
+| Structural reorder | ✅ implemented/tested | sibling source-order mutation |
+| Structural reparent | ✅ implemented/tested | move element between supported containers |
+| Unnamed Visual Tree selection | ✅ implemented | source-only inspection/navigation |
+| Parent layout intelligence | ✅ implemented | Grid / StackPanel / Canvas / Border / ScrollViewer |
+| Gallery control knowledge | ✅ first curated slice | 8 Toolbox controls, pinned Gallery provenance |
+| Toolbox/Add mode | ✅ first slice | click-to-add with generated x:Name |
+| Designer selection chrome | ✅ implemented | rendered outline + move/resize thumbs |
+| StackPanel move | ✅ first slice | drag → sibling reorder |
+| Canvas move | ✅ first slice | drag → Canvas.Left / Canvas.Top |
+| Grid move | ✅ first slice | cell transition or Margin fallback |
+| Reparent UI | ✅ implemented | target-container ContentDialog |
+| Resize | ✅ first slice | drag → Width / Height |
+| Snapping / guides | ⏳ next | not implemented |
+| Grid definition visual editor | ⏳ next | source-only editing works today |
+| Toolbox drag placement | ⏳ refinement | click-to-add is current authoring path |
