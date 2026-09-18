@@ -255,6 +255,10 @@ public sealed class MainWindow : Window
 
         applyWidth.Click += (_, _) => CommitWidth();
         previewStage.SizeChanged += (_, _) => DrawSelection();
+        previewStage.AddHandler(
+            UIElement.PointerPressedEvent,
+            new PointerEventHandler(OnPreviewPointerPressed),
+            true);
     }
 
     void RenderSource()
@@ -298,10 +302,6 @@ public sealed class MainWindow : Window
             document?.FindByName(element.Name) is not null)
         {
             renderedByName[element.Name] = element;
-            element.AddHandler(
-                UIElement.PointerPressedEvent,
-                new PointerEventHandler(OnAuthoredPointerPressed),
-                true);
         }
 
         var count = VisualTreeHelper.GetChildrenCount(root);
@@ -309,11 +309,38 @@ public sealed class MainWindow : Window
             RegisterAuthoredElements(VisualTreeHelper.GetChild(root, i));
     }
 
-    void OnAuthoredPointerPressed(object sender, PointerRoutedEventArgs e)
+    void OnPreviewPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (sender is not FrameworkElement element || string.IsNullOrWhiteSpace(element.Name)) return;
-        SelectAuthoredElement(element.Name, revealSource: true);
+        if (e.OriginalSource is not DependencyObject original) return;
+
+        var authored = FindNearestAuthoredElement(original);
+        if (authored is null) return;
+
+        SelectAuthoredElement(authored.Name, revealSource: true);
         e.Handled = true;
+    }
+
+    FrameworkElement? FindNearestAuthoredElement(DependencyObject start)
+    {
+        DependencyObject? current = start;
+
+        while (current is not null)
+        {
+            if (current is FrameworkElement element &&
+                !string.IsNullOrWhiteSpace(element.Name) &&
+                renderedByName.TryGetValue(element.Name, out var registered) &&
+                ReferenceEquals(element, registered))
+            {
+                return element;
+            }
+
+            if (ReferenceEquals(current, previewStage))
+                break;
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
     }
 
     void SelectAuthoredElement(string name, bool revealSource)
@@ -335,16 +362,15 @@ public sealed class MainWindow : Window
         if (revealSource)
         {
             suppressSourceSelection = true;
-            try
-            {
-                sourceEditor.Select(
-                    sourceElement.StartIndex,
-                    Math.Max(0, sourceElement.StartTagEndIndex - sourceElement.StartIndex + 1));
-            }
-            finally
-            {
+            sourceEditor.Select(
+                sourceElement.StartIndex,
+                Math.Max(0, sourceElement.StartTagEndIndex - sourceElement.StartIndex + 1));
+
+            // TextBox selection notifications can be delivered after Select() returns.
+            // Keep preview->source reveal suppressed through the current dispatcher turn
+            // so it cannot immediately trigger a second source->preview selection.
+            if (!sourceEditor.DispatcherQueue.TryEnqueue(() => suppressSourceSelection = false))
                 suppressSourceSelection = false;
-            }
         }
 
         DrawSelection();
@@ -407,11 +433,13 @@ public sealed class MainWindow : Window
 
             suppressSourceTextChanged = true;
             suppressSourceSelection = true;
-            try
-            {
-                sourceEditor.Text = document.Text;
-            }
-            finally
+            sourceEditor.Text = document.Text;
+
+            if (!sourceEditor.DispatcherQueue.TryEnqueue(() =>
+                {
+                    suppressSourceSelection = false;
+                    suppressSourceTextChanged = false;
+                }))
             {
                 suppressSourceSelection = false;
                 suppressSourceTextChanged = false;
