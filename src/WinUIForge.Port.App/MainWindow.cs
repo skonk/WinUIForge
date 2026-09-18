@@ -1387,15 +1387,15 @@ public sealed class MainWindow : Window
                 new PointerEventHandler((_, args) => ContinueMovePointerDrag(args)),
                 true);
             selectionMoveHandle.AddHandler(
-                UIElement.PointerReleasedEvent,
-                new PointerEventHandler((_, args) => EndMovePointerDrag(selectionMoveHandle, args)),
-                true);
-            selectionMoveHandle.AddHandler(
                 UIElement.PointerCanceledEvent,
                 new PointerEventHandler((_, args) => CancelMovePointerDrag(selectionMoveHandle, args)),
                 true);
-            selectionMoveHandle.PointerCaptureLost += (_, _) =>
-                CancelMovePointerDrag(null, null);
+            selectionMoveHandle.DragCompleted += (_, _) =>
+            {
+                if (movePointerId is null) return;
+                movePointerId = null;
+                CompleteMovePreview();
+            };
             selectionLayer.Children.Add(selectionMoveHandle);
 
             selectionResizeHandle = CreateHandle("Resize");
@@ -1409,15 +1409,15 @@ public sealed class MainWindow : Window
                 new PointerEventHandler((_, args) => ContinueResizePointerDrag(args)),
                 true);
             selectionResizeHandle.AddHandler(
-                UIElement.PointerReleasedEvent,
-                new PointerEventHandler((_, args) => EndResizePointerDrag(selectionResizeHandle, args)),
-                true);
-            selectionResizeHandle.AddHandler(
                 UIElement.PointerCanceledEvent,
                 new PointerEventHandler((_, args) => CancelResizePointerDrag(selectionResizeHandle, args)),
                 true);
-            selectionResizeHandle.PointerCaptureLost += (_, _) =>
-                CancelResizePointerDrag(null, null);
+            selectionResizeHandle.DragCompleted += (_, _) =>
+            {
+                if (resizePointerId is null) return;
+                resizePointerId = null;
+                CompleteResizePreview();
+            };
             selectionLayer.Children.Add(selectionResizeHandle);
 
             UpdateSelectionChrome(point.X, point.Y, width, height);
