@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
 using System.Globalization;
 using WinUIForge.Port.Core;
@@ -24,6 +23,11 @@ public sealed class MainWindow : Window
         HorizontalAlignment = HorizontalAlignment.Stretch
     };
 
+    readonly TreeView visualTree = new()
+    {
+        SelectionMode = TreeViewSelectionMode.Single
+    };
+
     readonly Grid previewStage = new();
     readonly ContentControl previewContent = new()
     {
@@ -34,18 +38,20 @@ public sealed class MainWindow : Window
 
     readonly TextBlock selectedType = new() { FontSize = 18 };
     readonly TextBlock selectedName = new() { TextWrapping = TextWrapping.Wrap };
-    readonly TextBox widthEditor = new() { Header = "Width (blank = Auto)" };
-    readonly Button applyWidth = new() { Content = "Apply Width", HorizontalAlignment = HorizontalAlignment.Stretch };
+    readonly StackPanel propertyForm = new() { Spacing = 8 };
     readonly TextBlock diagnostics = new() { TextWrapping = TextWrapping.Wrap };
     readonly TextBlock status = new() { TextWrapping = TextWrapping.NoWrap };
 
-    readonly Dictionary<string, FrameworkElement> renderedByName = new(StringComparer.Ordinal);
+    readonly ForgeXamlRenderService renderService = new();
+    readonly ForgeXamlTreeCoordinator coordinator = new();
     readonly DispatcherTimer renderTimer = new() { Interval = TimeSpan.FromMilliseconds(550) };
+    readonly Dictionary<string, TreeViewNode> treeNodesById = new(StringComparer.Ordinal);
 
     ForgeXamlDocument? document;
-    string? selectedElementName;
+    string? selectedSourceId;
     FrameworkElement? selectedFrameworkElement;
     bool suppressSourceTextChanged;
+    bool rebuildingVisualTree;
 
     static readonly SolidColorBrush WindowBrush = Brush(23, 27, 29);
     static readonly SolidColorBrush PanelBrush = Brush(34, 37, 42);
@@ -57,8 +63,8 @@ public sealed class MainWindow : Window
 
     public MainWindow()
     {
-        Title = "WinUI Forge · WinUI 3 Port Proof";
-        AppWindow.Resize(new SizeInt32(1600, 940));
+        Title = "WinUI Forge · XAML Studio migration";
+        AppWindow.Resize(new SizeInt32(1680, 980));
         AppWindow.TitleBar.BackgroundColor = Color.FromArgb(255, 23, 27, 29);
         AppWindow.TitleBar.ForegroundColor = Color.FromArgb(255, 242, 243, 245);
         AppWindow.TitleBar.ButtonBackgroundColor = Color.FromArgb(255, 23, 27, 29);
@@ -97,14 +103,14 @@ public sealed class MainWindow : Window
             {
                 new TextBlock
                 {
-                    Text = "WinUI Forge · WinUI 3 vertical slice",
+                    Text = "WinUI Forge · XAML Studio migration",
                     FontSize = 18,
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                     Foreground = TextBrush
                 },
                 new TextBlock
                 {
-                    Text = "Real WinUI XAML → XamlReader → selectable runtime element → source edit",
+                    Text = "Real XAML · render service · authored/runtime coordinator · Visual Tree · live property source edits",
                     Foreground = MutedBrush
                 }
             }
@@ -123,31 +129,20 @@ public sealed class MainWindow : Window
         root.Children.Add(header);
 
         var workspace = new Grid { ColumnSpacing = 1, Background = BorderBrush };
-        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.92, GridUnitType.Star), MinWidth = 360 });
-        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.15, GridUnitType.Star), MinWidth = 420 });
-        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(320), MinWidth = 280 });
+        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.95, GridUnitType.Star), MinWidth = 380 });
+        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.2, GridUnitType.Star), MinWidth = 460 });
+        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(350), MinWidth = 300 });
         Grid.SetRow(workspace, 1);
         root.Children.Add(workspace);
 
-        var editorHost = new Grid { Background = PanelBrush };
-        editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        editorHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        editorHost.Children.Add(SectionHeader("XAML source", "Edit the real WinUI XAML. Valid changes re-render after a short debounce."));
-        Grid.SetRow(sourceEditor, 1);
-        editorHost.Children.Add(sourceEditor);
-
-        diagnostics.Margin = new Thickness(12, 8, 12, 10);
-        diagnostics.Foreground = MutedBrush;
-        diagnostics.MaxHeight = 72;
-        Grid.SetRow(diagnostics, 2);
-        editorHost.Children.Add(diagnostics);
-        workspace.Children.Add(editorHost);
+        workspace.Children.Add(BuildSourceAndTreePane());
 
         var previewHost = new Grid { Background = WindowBrush };
         previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         previewHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        previewHost.Children.Add(SectionHeader("WinUI 3 preview", "Click a named element to map it back to its source start tag."));
+        previewHost.Children.Add(SectionHeader(
+            "WinUI 3 preview",
+            "Click any mapped authored element. Selection is based on its real rendered bounds."));
 
         var previewFrame = new Border
         {
@@ -166,51 +161,7 @@ public sealed class MainWindow : Window
         Grid.SetColumn(previewHost, 1);
         workspace.Children.Add(previewHost);
 
-        var inspector = new Grid
-        {
-            Background = PanelBrush,
-            Padding = new Thickness(16)
-        };
-        inspector.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        inspector.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-
-        inspector.Children.Add(SectionHeader("Live property proof", "FrameworkElement.Width is committed back into the XAML source."));
-
-        var form = new StackPanel { Spacing = 12, Margin = new Thickness(0, 18, 0, 0) };
-        selectedType.Text = "Nothing selected";
-        selectedType.Foreground = TextBrush;
-        form.Children.Add(selectedType);
-
-        selectedName.Foreground = MutedBrush;
-        form.Children.Add(selectedName);
-        form.Children.Add(widthEditor);
-        form.Children.Add(applyWidth);
-
-        form.Children.Add(new Border
-        {
-            Height = 1,
-            Background = BorderBrush,
-            Margin = new Thickness(0, 8, 0, 8)
-        });
-
-        form.Children.Add(new TextBlock
-        {
-            Text = "Proof behaviour",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = TextBrush
-        });
-        form.Children.Add(new TextBlock
-        {
-            Text = "• Preview selection reveals the exact authored start tag.\n" +
-                   "• Put the source caret inside a named start tag to select its rendered element.\n" +
-                   "• Width edits rewrite XAML and re-render while preserving selection.",
-            TextWrapping = TextWrapping.Wrap,
-            Foreground = MutedBrush
-        });
-
-        var inspectorScroll = new ScrollViewer { Content = form };
-        Grid.SetRow(inspectorScroll, 1);
-        inspector.Children.Add(inspectorScroll);
+        var inspector = BuildInspectorPane();
         Grid.SetColumn(inspector, 2);
         workspace.Children.Add(inspector);
 
@@ -227,6 +178,84 @@ public sealed class MainWindow : Window
         root.Children.Add(statusBorder);
 
         return root;
+    }
+
+    UIElement BuildSourceAndTreePane()
+    {
+        var host = new Grid { Background = PanelBrush };
+        host.RowDefinitions.Add(new RowDefinition { Height = new GridLength(0.72, GridUnitType.Star), MinHeight = 260 });
+        host.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1) });
+        host.RowDefinitions.Add(new RowDefinition { Height = new GridLength(0.28, GridUnitType.Star), MinHeight = 160 });
+
+        var sourceHost = new Grid();
+        sourceHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        sourceHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        sourceHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        sourceHost.Children.Add(SectionHeader(
+            "XAML source",
+            "The text is authoritative. Property edits patch only the relevant attribute."));
+        Grid.SetRow(sourceEditor, 1);
+        sourceHost.Children.Add(sourceEditor);
+
+        diagnostics.Margin = new Thickness(12, 8, 12, 10);
+        diagnostics.Foreground = MutedBrush;
+        diagnostics.MaxHeight = 72;
+        Grid.SetRow(diagnostics, 2);
+        sourceHost.Children.Add(diagnostics);
+        host.Children.Add(sourceHost);
+
+        var divider = new Border { Background = BorderBrush };
+        Grid.SetRow(divider, 1);
+        host.Children.Add(divider);
+
+        var treeHost = new Grid();
+        treeHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        treeHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        treeHost.Children.Add(SectionHeader(
+            "Visual Tree",
+            "Authored XAML elements mapped to their actual WinUI runtime objects."));
+        visualTree.Margin = new Thickness(6);
+        Grid.SetRow(visualTree, 1);
+        treeHost.Children.Add(visualTree);
+        Grid.SetRow(treeHost, 2);
+        host.Children.Add(treeHost);
+
+        return host;
+    }
+
+    UIElement BuildInspectorPane()
+    {
+        var inspector = new Grid
+        {
+            Background = PanelBrush,
+            Padding = new Thickness(16)
+        };
+        inspector.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        inspector.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        inspector.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        inspector.Children.Add(SectionHeader(
+            "Live Properties",
+            "Curated WinUI dependency properties. Apply commits a minimal XAML source edit."));
+
+        var identity = new StackPanel { Spacing = 4, Margin = new Thickness(0, 16, 0, 12) };
+        selectedType.Text = "Nothing selected";
+        selectedType.Foreground = TextBrush;
+        identity.Children.Add(selectedType);
+        selectedName.Foreground = MutedBrush;
+        identity.Children.Add(selectedName);
+        Grid.SetRow(identity, 1);
+        inspector.Children.Add(identity);
+
+        var scroll = new ScrollViewer
+        {
+            Content = propertyForm,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+        };
+        Grid.SetRow(scroll, 2);
+        inspector.Children.Add(scroll);
+
+        return inspector;
     }
 
     void WireEvents()
@@ -249,7 +278,8 @@ public sealed class MainWindow : Window
             new PointerEventHandler(OnSourcePointerReleased),
             true);
 
-        applyWidth.Click += (_, _) => CommitWidth();
+        visualTree.ItemInvoked += OnVisualTreeItemInvoked;
+
         previewStage.SizeChanged += (_, _) => DrawSelection();
         previewStage.AddHandler(
             UIElement.PointerPressedEvent,
@@ -260,82 +290,78 @@ public sealed class MainWindow : Window
     void RenderSource()
     {
         renderTimer.Stop();
-        var previousSelection = selectedElementName;
+        var previousSelection = selectedSourceId;
+        var result = renderService.Render(sourceEditor.Text);
 
-        try
+        if (!result.Succeeded || result.Document is null || result.Element is null)
         {
-            var parsed = new ForgeXamlDocument(sourceEditor.Text);
-            var loaded = XamlReader.Load(sourceEditor.Text);
-            if (loaded is not UIElement root)
-                throw new InvalidOperationException($"XAML root rendered as {loaded?.GetType().FullName ?? "null"}, not UIElement.");
+            diagnostics.Text = string.Join(Environment.NewLine, result.Diagnostics);
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Render failed. The last valid preview remains visible.";
+            return;
+        }
 
-            document = parsed;
-            previewContent.Content = root;
-            renderedByName.Clear();
-            RegisterAuthoredElements(root);
+        ApplyValidRender(result, previousSelection);
+    }
 
-            diagnostics.Text = $"Rendered successfully · {document.Elements.Count} named authored element(s) · {renderedByName.Count} mapped runtime element(s)";
-            diagnostics.Foreground = MutedBrush;
-            status.Text = "Source and preview are synchronized.";
+    void ApplyValidRender(ForgeXamlRenderResult result, string? preferredSelection)
+    {
+        document = result.Document!;
+        previewContent.Content = result.Element;
+        coordinator.Initialize(document, result.Element!);
 
-            if (!string.IsNullOrWhiteSpace(previousSelection) && renderedByName.ContainsKey(previousSelection))
-                SelectAuthoredElement(previousSelection, revealSource: false);
+        RebuildVisualTree();
+
+        diagnostics.Text =
+            $"Rendered successfully · {document.Elements.Count} authored XML element(s) · " +
+            $"{coordinator.Count} mapped runtime element(s)";
+        diagnostics.Foreground = MutedBrush;
+        status.Text = "Source, Visual Tree and preview are synchronized.";
+
+        if (!string.IsNullOrWhiteSpace(preferredSelection) &&
+            coordinator.TryGetRuntimeElement(preferredSelection, out _))
+        {
+            SelectAuthoredElement(preferredSelection, revealSource: false);
+        }
+        else
+        {
+            var root = document.RootElement;
+            if (coordinator.TryGetRuntimeElement(root.Id, out _))
+                SelectAuthoredElement(root.Id, revealSource: false);
             else
                 ClearSelection();
         }
-        catch (Exception e)
-        {
-            diagnostics.Text = "Render error: " + e.Message;
-            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
-            status.Text = "Preview kept at the last valid XAML.";
-        }
-    }
-
-    void RegisterAuthoredElements(DependencyObject root)
-    {
-        if (root is FrameworkElement element &&
-            !string.IsNullOrWhiteSpace(element.Name) &&
-            document?.FindByName(element.Name) is not null)
-        {
-            renderedByName[element.Name] = element;
-        }
-
-        var count = VisualTreeHelper.GetChildrenCount(root);
-        for (var i = 0; i < count; i++)
-            RegisterAuthoredElements(VisualTreeHelper.GetChild(root, i));
     }
 
     void OnSourcePointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        // Run after TextBox has applied the user's pointer/caret update. Programmatic
-        // source reveal never enters this path, so preview -> source cannot feed back.
         sourceEditor.DispatcherQueue.TryEnqueue(() =>
         {
             if (document is null) return;
             var mapped = document.FindAtSourceIndex(sourceEditor.SelectionStart);
-            if (mapped is not null)
-                SelectAuthoredElement(mapped.Name, revealSource: false);
+            if (mapped is not null && coordinator.TryGetRuntimeElement(mapped.Id, out _))
+                SelectAuthoredElement(mapped.Id, revealSource: false);
         });
+    }
+
+    void OnVisualTreeItemInvoked(TreeView sender, TreeViewItemInvokedEventArgs args)
+    {
+        if (rebuildingVisualTree) return;
+
+        if (args.InvokedItem is VisualTreeEntry entry)
+            SelectAuthoredElement(entry.SourceId, revealSource: true);
     }
 
     void OnPreviewPointerPressed(object sender, PointerRoutedEventArgs e)
     {
         if (document is null || previewContent.Content is not UIElement) return;
 
-        // Do not depend on routed-event OriginalSource or WinUI's host-coordinate hit
-        // testing here. Both can be affected by control templates and host transforms.
-        // Instead, measure every authored element in the previewStage coordinate space,
-        // keep the rectangles containing the pointer, and choose the deepest authored
-        // XAML node. This makes Button > StackPanel > Grid deterministic.
         var point = e.GetCurrentPoint(previewStage).Position;
         var candidates = new List<AuthoredHit>();
 
-        foreach (var pair in renderedByName)
+        foreach (var pair in coordinator.GetFrameworkMappings())
         {
-            var sourceElement = document.FindByName(pair.Key);
-            if (sourceElement is null) continue;
-
-            var runtimeElement = pair.Value;
+            var runtimeElement = pair.Runtime;
             if (runtimeElement.ActualWidth <= 0 || runtimeElement.ActualHeight <= 0) continue;
 
             try
@@ -348,13 +374,12 @@ public sealed class MainWindow : Window
 
                 candidates.Add(new AuthoredHit(
                     runtimeElement,
-                    sourceElement,
+                    pair.Source,
                     bounds,
                     Math.Max(1, bounds.Width) * Math.Max(1, bounds.Height)));
             }
             catch
             {
-                // A transiently disconnected visual is simply not a candidate.
             }
         }
 
@@ -365,57 +390,252 @@ public sealed class MainWindow : Window
 
         if (best is null)
         {
-            status.Text = $"Preview hit ({point.X:0},{point.Y:0}) did not intersect an authored element.";
+            status.Text = $"Preview hit ({point.X:0},{point.Y:0}) did not intersect a mapped authored element.";
             return;
         }
 
-        SelectAuthoredElement(best.Source.Name, revealSource: true);
+        SelectAuthoredElement(best.Source.Id, revealSource: true);
 
         var hitPath = string.Join(
             " > ",
             candidates
                 .OrderBy(x => x.Source.Depth)
                 .ThenByDescending(x => x.Area)
-                .Select(x => x.Source.Name));
+                .Select(x => x.Source.DisplayName));
 
         status.Text =
-            $"Selected {best.Source.TypeName} '{best.Source.Name}' · bounds hits: {hitPath}";
-
-        // Leave the routed event unhandled so WinUI can perform its normal focus/input
-        // processing. The designer chrome observes the click; it does not consume it.
+            $"Selected {best.Source.DisplayName} · bounds hits: {hitPath}";
     }
 
-    sealed record AuthoredHit(
-        FrameworkElement Element,
-        ForgeXamlElement Source,
-        Rect Bounds,
-        double Area);
-
-    void SelectAuthoredElement(string name, bool revealSource)
+    void SelectAuthoredElement(string sourceId, bool revealSource)
     {
-        if (document?.FindByName(name) is not { } sourceElement) return;
-        if (!renderedByName.TryGetValue(name, out var runtimeElement)) return;
+        if (document?.FindById(sourceId) is not { } sourceElement) return;
+        if (!coordinator.TryGetRuntimeElement(sourceId, out var runtime)) return;
 
         if (selectedFrameworkElement is not null)
             selectedFrameworkElement.SizeChanged -= SelectedElement_SizeChanged;
 
-        selectedElementName = name;
-        selectedFrameworkElement = runtimeElement;
-        selectedFrameworkElement.SizeChanged += SelectedElement_SizeChanged;
+        selectedSourceId = sourceId;
+        selectedFrameworkElement = runtime as FrameworkElement;
+
+        if (selectedFrameworkElement is not null)
+            selectedFrameworkElement.SizeChanged += SelectedElement_SizeChanged;
 
         selectedType.Text = sourceElement.TypeName;
-        selectedName.Text = $"x:Name = {sourceElement.Name}\nSource: line {sourceElement.Line}, column {sourceElement.Column}";
-        widthEditor.Text = document.GetAttribute(name, "Width") ?? "";
+        selectedName.Text =
+            (sourceElement.Name is null ? $"source id = {sourceElement.Id}" : $"x:Name = {sourceElement.Name}") +
+            $"\nSource: line {sourceElement.Line}, column {sourceElement.Column}";
+
+        RebuildPropertyInspector(sourceElement, runtime);
+        SyncVisualTreeSelection(sourceElement.Id);
 
         if (revealSource)
-        {
-            // A zero-length caret reveals the source location without creating the
-            // large highlighted selection that made preview clicks look like text edits.
             sourceEditor.Select(sourceElement.StartIndex, 0);
-        }
 
         DrawSelection();
-        status.Text = $"Selected {sourceElement.TypeName} '{name}' · source ↔ runtime mapping active.";
+        status.Text = $"Selected {sourceElement.DisplayName} · source ↔ runtime mapping active.";
+    }
+
+    void RebuildPropertyInspector(ForgeXamlElement source, DependencyObject runtime)
+    {
+        propertyForm.Children.Clear();
+
+        var values = ForgeDependencyPropertyCatalog.Inspect(runtime, source);
+        foreach (var group in values.GroupBy(x => x.Definition.Group))
+        {
+            propertyForm.Children.Add(new TextBlock
+            {
+                Text = group.Key,
+                Margin = new Thickness(0, 10, 0, 2),
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = TextBrush
+            });
+
+            foreach (var value in group)
+                propertyForm.Children.Add(BuildPropertyRow(source.Id, value));
+        }
+    }
+
+    UIElement BuildPropertyRow(string sourceId, ForgePropertyValue value)
+    {
+        var host = new Grid
+        {
+            ColumnSpacing = 6,
+            Padding = new Thickness(0, 3, 0, 3)
+        };
+        host.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        host.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var editor = new TextBox
+        {
+            Header = value.SourceValue is null
+                ? value.Definition.AttributeName
+                : $"{value.Definition.AttributeName} · set in XAML",
+            Text = value.EditorValue,
+            IsEnabled = value.IsEditable,
+            MinWidth = 190
+        };
+
+        var apply = new Button
+        {
+            Content = "Apply",
+            Padding = new Thickness(9, 5, 9, 5),
+            VerticalAlignment = VerticalAlignment.Bottom,
+            IsEnabled = value.IsEditable,
+            Tag = new PropertyEditorContext(sourceId, value.Definition, editor)
+        };
+        apply.Click += OnPropertyApply;
+
+        host.Children.Add(editor);
+        Grid.SetColumn(apply, 1);
+        host.Children.Add(apply);
+        return host;
+    }
+
+    void OnPropertyApply(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: PropertyEditorContext context })
+            return;
+
+        CommitProperty(context);
+    }
+
+    void CommitProperty(PropertyEditorContext context)
+    {
+        if (document is null) return;
+
+        var rawValue = context.Editor.Text.Trim();
+        if (!ForgeDependencyPropertyCatalog.TryValidateValue(
+                context.Definition,
+                rawValue,
+                out var validationError))
+        {
+            status.Text =
+                $"{context.Definition.AttributeName} is invalid: {validationError}";
+            return;
+        }
+
+        var preservedSelection = context.SourceId;
+
+        try
+        {
+            var working = new ForgeXamlDocument(sourceEditor.Text);
+            working.SetAttributeById(
+                context.SourceId,
+                context.Definition.AttributeName,
+                string.IsNullOrWhiteSpace(rawValue) ? null : rawValue);
+
+            var result = renderService.Render(working.Text);
+            if (!result.Succeeded || result.Document is null || result.Element is null)
+            {
+                diagnostics.Text = string.Join(Environment.NewLine, result.Diagnostics);
+                diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+                status.Text =
+                    $"Rejected {context.Definition.AttributeName}: the edited XAML did not render.";
+                return;
+            }
+
+            suppressSourceTextChanged = true;
+            sourceEditor.Text = working.Text;
+            suppressSourceTextChanged = false;
+
+            ApplyValidRender(result, preservedSelection);
+            status.Text = string.IsNullOrWhiteSpace(rawValue)
+                ? $"Removed {context.Definition.AttributeName} from XAML."
+                : $"Committed {context.Definition.AttributeName}=\"{rawValue}\" to XAML.";
+        }
+        catch (Exception ex)
+        {
+            status.Text = $"Could not commit {context.Definition.AttributeName}: {ex.Message}";
+        }
+    }
+
+    void RebuildVisualTree()
+    {
+        rebuildingVisualTree = true;
+        try
+        {
+            visualTree.RootNodes.Clear();
+            treeNodesById.Clear();
+
+            if (document is null) return;
+
+            var mappedIds = coordinator.GetMappings()
+                .Select(x => x.Source.Id)
+                .ToHashSet(StringComparer.Ordinal);
+
+            foreach (var source in document.Elements.Where(x =>
+                         mappedIds.Contains(x.Id) &&
+                         NearestMappedParentId(x, mappedIds) is null))
+            {
+                visualTree.RootNodes.Add(BuildTreeNode(source, mappedIds));
+            }
+        }
+        finally
+        {
+            rebuildingVisualTree = false;
+        }
+    }
+
+    TreeViewNode BuildTreeNode(
+        ForgeXamlElement source,
+        IReadOnlySet<string> mappedIds)
+    {
+        var node = new TreeViewNode
+        {
+            Content = new VisualTreeEntry(source.Id, source.DisplayName),
+            IsExpanded = source.Depth < 3
+        };
+        treeNodesById[source.Id] = node;
+
+        if (document is not null)
+        {
+            foreach (var child in document.Elements.Where(x =>
+                         mappedIds.Contains(x.Id) &&
+                         string.Equals(
+                             NearestMappedParentId(x, mappedIds),
+                             source.Id,
+                             StringComparison.Ordinal)))
+            {
+                node.Children.Add(BuildTreeNode(child, mappedIds));
+            }
+        }
+
+        return node;
+    }
+
+    string? NearestMappedParentId(
+        ForgeXamlElement source,
+        IReadOnlySet<string> mappedIds)
+    {
+        if (document is null) return null;
+
+        var parentId = source.ParentId;
+        while (parentId is not null)
+        {
+            if (mappedIds.Contains(parentId))
+                return parentId;
+
+            parentId = document.FindById(parentId)?.ParentId;
+        }
+
+        return null;
+    }
+
+    void SyncVisualTreeSelection(string sourceId)
+    {
+        if (!treeNodesById.TryGetValue(sourceId, out var node))
+            return;
+
+        rebuildingVisualTree = true;
+        try
+        {
+            visualTree.SelectedNode = node;
+        }
+        finally
+        {
+            rebuildingVisualTree = false;
+        }
     }
 
     void SelectedElement_SizeChanged(object sender, SizeChangedEventArgs e) => DrawSelection();
@@ -447,57 +667,16 @@ public sealed class MainWindow : Window
         }
     }
 
-    void CommitWidth()
-    {
-        if (document is null || string.IsNullOrWhiteSpace(selectedElementName)) return;
-
-        var raw = widthEditor.Text.Trim();
-        string? normalized = null;
-
-        if (!string.IsNullOrEmpty(raw))
-        {
-            if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var width) ||
-                double.IsNaN(width) ||
-                double.IsInfinity(width) ||
-                width < 0)
-            {
-                status.Text = "Width must be blank (Auto) or a non-negative number.";
-                return;
-            }
-            normalized = width.ToString("0.###", CultureInfo.InvariantCulture);
-        }
-
-        try
-        {
-            var selected = selectedElementName;
-            document.SetAttribute(selected, "Width", normalized);
-
-            suppressSourceTextChanged = true;
-            sourceEditor.Text = document.Text;
-            suppressSourceTextChanged = false;
-
-            selectedElementName = selected;
-            RenderSource();
-            status.Text = normalized is null
-                ? $"Removed Width from '{selected}' (Auto)."
-                : $"Committed Width=\"{normalized}\" to '{selected}' in XAML.";
-        }
-        catch (Exception e)
-        {
-            status.Text = "Could not commit Width: " + e.Message;
-        }
-    }
-
     void ClearSelection()
     {
         if (selectedFrameworkElement is not null)
             selectedFrameworkElement.SizeChanged -= SelectedElement_SizeChanged;
 
-        selectedElementName = null;
+        selectedSourceId = null;
         selectedFrameworkElement = null;
         selectedType.Text = "Nothing selected";
         selectedName.Text = "";
-        widthEditor.Text = "";
+        propertyForm.Children.Clear();
         selectionLayer.Children.Clear();
     }
 
@@ -530,6 +709,22 @@ public sealed class MainWindow : Window
 
     static SolidColorBrush Brush(byte r, byte g, byte b) =>
         new(Color.FromArgb(255, r, g, b));
+
+    sealed record AuthoredHit(
+        FrameworkElement Element,
+        ForgeXamlElement Source,
+        Rect Bounds,
+        double Area);
+
+    sealed record PropertyEditorContext(
+        string SourceId,
+        ForgePropertyDefinition Definition,
+        TextBox Editor);
+
+    sealed record VisualTreeEntry(string SourceId, string Label)
+    {
+        public override string ToString() => Label;
+    }
 
     const string SampleXaml =
         """
@@ -579,7 +774,7 @@ public sealed class MainWindow : Window
                     <TextBlock Text="Port proof"
                                FontSize="18"
                                FontWeight="SemiBold"/>
-                    <TextBlock Text="Click any named element, then edit Width in the host inspector."
+                    <TextBlock Text="Click any mapped authored element, then edit properties in the inspector."
                                TextWrapping="Wrap"
                                Opacity="0.72"/>
                 </StackPanel>
