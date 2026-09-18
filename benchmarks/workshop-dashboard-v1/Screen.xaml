@@ -86,87 +86,87 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Stretch"
                             Spacing="8">
-                    <Grid Width="92">
+                    <Grid Width="88">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Dashboard.png"
                                Width="22"
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,5,0,0"
+                               Margin="0,9,0,0"
                                Stretch="Uniform"/>
                         <TextBlock Text="Dashboard"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
-                                   Margin="0,0,0,8"
+                                   Margin="0,0,0,7"
                                    Foreground="{StaticResource AccentBrush}"
-                                   FontSize="13"/>
+                                   FontSize="12"/>
                         <Border Height="2"
                                 VerticalAlignment="Bottom"
                                 Background="{StaticResource AccentBrush}"/>
                     </Grid>
-                    <Grid Width="92">
+                    <Grid Width="88">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Prepare.png"
                                Width="22"
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,5,0,0"
+                               Margin="0,9,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Prepare"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
-                                   Margin="0,0,0,8"
+                                   Margin="0,0,0,7"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="13"/>
+                                   FontSize="12"/>
                     </Grid>
-                    <Grid Width="92">
+                    <Grid Width="88">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Conduit.png"
                                Width="22"
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,5,0,0"
+                               Margin="0,9,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Conduit"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
-                                   Margin="0,0,0,8"
+                                   Margin="0,0,0,7"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="13"/>
+                                   FontSize="12"/>
                     </Grid>
-                    <Grid Width="92">
+                    <Grid Width="88">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Library.png"
                                Width="22"
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,5,0,0"
+                               Margin="0,9,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Library"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
-                                   Margin="0,0,0,8"
+                                   Margin="0,0,0,7"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="13"/>
+                                   FontSize="12"/>
                     </Grid>
-                    <Grid Width="92">
+                    <Grid Width="88">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Settings.png"
                                Width="22"
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,5,0,0"
+                               Margin="0,9,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Settings"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
-                                   Margin="0,0,0,8"
+                                   Margin="0,0,0,7"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="13"/>
+                                   FontSize="12"/>
                     </Grid>
                 </StackPanel>
 
@@ -205,11 +205,11 @@
                                 Spacing="26"
                                 Margin="16,0"
                                 VerticalAlignment="Center">
-                        <TextBlock Text="File" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                        <TextBlock Text="Edit" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                        <TextBlock Text="View" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                        <TextBlock Text="Tools" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                        <TextBlock Text="Help" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="File" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                        <TextBlock Text="Edit" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                        <TextBlock Text="View" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                        <TextBlock Text="Tools" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                        <TextBlock Text="Help" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                     </StackPanel>
 
                     <Grid Grid.Row="1"
@@ -304,7 +304,7 @@
                                        FontSize="15"/>
                             <TextBlock Text="Recent Overview"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="13"/>
+                                       FontSize="12"/>
                         </StackPanel>
                     </Border>
 
@@ -313,31 +313,31 @@
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="13"/>
+                            FontSize="12"/>
                     <Button Content="□   Projects"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="13"/>
+                            FontSize="12"/>
                     <Button Content="◇   Assets"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="13"/>
+                            FontSize="12"/>
                     <Button Content="▤   Reports"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="13"/>
+                            FontSize="12"/>
                     <Button Content="⌁   Analytics"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="13"/>
+                            FontSize="12"/>
 
                     <Border Height="1"
                             Margin="0,8"
@@ -348,7 +348,7 @@
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="13"/>
+                            FontSize="12"/>
                 </StackPanel>
 
                 <Border Grid.Row="1"
@@ -366,7 +366,7 @@
                                        FontSize="14"/>
                             <TextBlock Text="Storage"
                                        Foreground="{StaticResource TextBrush}"
-                                       FontSize="13"/>
+                                       FontSize="12"/>
                         </StackPanel>
                         <Grid Height="5"
                               Background="#30363D">
