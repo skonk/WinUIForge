@@ -27,6 +27,9 @@
     <Content Include="..\..\assets\workshop-ui\app-icon\Workshop.ico"
              Link="Assets\Branding\Workshop.ico"
              CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\assets\workshop-ui\runtime\navigation\*.png"
+             Link="Assets\WorkshopUi\Navigation\%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\benchmarks\workshop-dashboard-v1\Screen.xaml"
              Link="Benchmarks\workshop-dashboard-v1\Screen.xaml"
              CopyToOutputDirectory="PreserveNewest" />
