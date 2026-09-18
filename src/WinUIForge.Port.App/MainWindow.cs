@@ -56,6 +56,7 @@ public sealed class MainWindow : Window
         Visibility = Visibility.Collapsed
     };
 
+    readonly Button loadWorkshopBenchmarkButton = new() { Content = "Load W2 first pass" };
     readonly Button loadReferenceButton = new() { Content = "Load reference…" };
     readonly CheckBox referenceVisibleCheckBox = new() { Content = "Overlay", IsEnabled = false };
     readonly Slider referenceOpacitySlider = new()
@@ -308,6 +309,7 @@ public sealed class MainWindow : Window
             Spacing = 8,
             VerticalAlignment = VerticalAlignment.Center
         };
+        referenceCommands.Children.Add(loadWorkshopBenchmarkButton);
         referenceCommands.Children.Add(loadReferenceButton);
         referenceCommands.Children.Add(referenceVisibleCheckBox);
         referenceCommands.Children.Add(new TextBlock
@@ -463,6 +465,7 @@ public sealed class MainWindow : Window
 
         visualTree.SelectionChanged += OnTreeSelectionChanged;
 
+        loadWorkshopBenchmarkButton.Click += (_, _) => LoadWorkshopBenchmark();
         loadReferenceButton.Click += async (_, _) => await LoadReferenceAsync();
         referenceVisibleCheckBox.Checked += (_, _) => UpdateReferenceOverlay();
         referenceVisibleCheckBox.Unchecked += (_, _) => UpdateReferenceOverlay();
@@ -476,6 +479,46 @@ public sealed class MainWindow : Window
             UIElement.PointerPressedEvent,
             new PointerEventHandler(OnPreviewPointerPressed),
             true);
+    }
+
+    void LoadWorkshopBenchmark()
+    {
+        try
+        {
+            var path = Path.Combine(
+                AppContext.BaseDirectory,
+                "Benchmarks",
+                "workshop-dashboard-v1",
+                "Screen.xaml");
+
+            if (!File.Exists(path))
+                throw new FileNotFoundException("The packaged Workshop dashboard benchmark XAML was not found.", path);
+
+            var xaml = File.ReadAllText(path);
+
+            history.Clear();
+            selectedElementIdentity = null;
+            ApplyDocumentText(xaml, null);
+
+            SetBenchmarkViewport(1672, 941);
+            viewportDisplayMode.SelectedItem = "Fit";
+            UpdateHistoryButtons();
+
+            if (referenceOverlay.Source is null)
+            {
+                referenceInfo.Text =
+                    "W2 first pass loaded · now load W2-01-dashboard.png as the reference overlay";
+            }
+
+            status.Text =
+                "Workshop dashboard first pass loaded · benchmark viewport 1672 × 941.";
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Benchmark load error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Could not load Workshop dashboard benchmark: " + ex.Message;
+        }
     }
 
     async Task LoadReferenceAsync()
