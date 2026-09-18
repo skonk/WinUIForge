@@ -287,6 +287,12 @@ static void WorkshopDashboardBenchmarkParses()
     Check(doc.FindByName("RecentActivityPanel") is not null, "recent activity");
     Check(doc.FindByName("RecentProjectsPanel") is not null, "recent projects");
     Check(doc.FindByName("QuickActionsPanel") is not null, "quick actions");
+    Check(doc.FindByName("QuickActionNewProject") is not null, "new project quick action");
+    Check(doc.FindByName("QuickActionImportAssets") is not null, "import assets quick action");
+    Check(doc.FindByName("QuickActionCreateJob") is not null, "create job quick action");
+    Check(doc.FindByName("QuickActionOpenConduit") is not null, "open conduit quick action");
+    Check(doc.FindByName("QuickActionBrowseLibrary") is not null, "browse library quick action");
+    Check(doc.FindByName("QuickActionViewReports") is not null, "view reports quick action");
     Check(doc.FindByName("WorkerStatusPanel") is not null, "worker status");
     Check(doc.FindByName("ProjectInspector") is not null, "project inspector");
     Check(doc.FindByName("ActivityConsole") is not null, "activity console");
