@@ -76,7 +76,7 @@
                                    FontWeight="SemiBold"/>
                         <TextBlock Text="Overview and task control"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="9"/>
+                                   FontSize="12"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -96,7 +96,7 @@
                                    VerticalAlignment="Bottom"
                                    Margin="0,0,0,8"
                                    Foreground="{StaticResource AccentBrush}"
-                                   FontSize="10"/>
+                                   FontSize="13"/>
                         <Border Height="2"
                                 VerticalAlignment="Bottom"
                                 Background="{StaticResource AccentBrush}"/>
@@ -106,52 +106,52 @@
                                    HorizontalAlignment="Center"
                                    Margin="0,8,0,0"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="16"/>
+                                   FontSize="22"/>
                         <TextBlock Text="Prepare"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
                                    Margin="0,0,0,8"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="10"/>
+                                   FontSize="13"/>
                     </Grid>
                     <Grid Width="92">
                         <TextBlock Text="⬡"
                                    HorizontalAlignment="Center"
                                    Margin="0,8,0,0"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="16"/>
+                                   FontSize="22"/>
                         <TextBlock Text="Conduit"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
                                    Margin="0,0,0,8"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="10"/>
+                                   FontSize="13"/>
                     </Grid>
                     <Grid Width="92">
                         <TextBlock Text="▣"
                                    HorizontalAlignment="Center"
                                    Margin="0,8,0,0"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="16"/>
+                                   FontSize="22"/>
                         <TextBlock Text="Library"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
                                    Margin="0,0,0,8"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="10"/>
+                                   FontSize="13"/>
                     </Grid>
                     <Grid Width="92">
                         <TextBlock Text="⚙"
                                    HorizontalAlignment="Center"
                                    Margin="0,8,0,0"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="16"/>
+                                   FontSize="22"/>
                         <TextBlock Text="Settings"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Bottom"
                                    Margin="0,0,0,8"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="10"/>
+                                   FontSize="13"/>
                     </Grid>
                 </StackPanel>
 
@@ -165,7 +165,7 @@
                                FontSize="18"/>
                     <TextBlock Text="▢"
                                Foreground="{StaticResource MutedBrush}"
-                               FontSize="13"/>
+                               FontSize="16"/>
                     <TextBlock Text="×"
                                Foreground="{StaticResource TextBrush}"
                                FontSize="20"/>
@@ -190,11 +190,11 @@
                                 Spacing="26"
                                 Margin="16,0"
                                 VerticalAlignment="Center">
-                        <TextBlock Text="File" Foreground="{StaticResource TextBrush}" FontSize="10"/>
-                        <TextBlock Text="Edit" Foreground="{StaticResource TextBrush}" FontSize="10"/>
-                        <TextBlock Text="View" Foreground="{StaticResource TextBrush}" FontSize="10"/>
-                        <TextBlock Text="Tools" Foreground="{StaticResource TextBrush}" FontSize="10"/>
-                        <TextBlock Text="Help" Foreground="{StaticResource TextBrush}" FontSize="10"/>
+                        <TextBlock Text="File" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="Edit" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="View" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="Tools" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="Help" Foreground="{StaticResource TextBrush}" FontSize="13"/>
                     </StackPanel>
 
                     <Grid Grid.Row="1"
@@ -207,15 +207,15 @@
                         <StackPanel Orientation="Horizontal"
                                     Spacing="8"
                                     VerticalAlignment="Center">
-                            <Button Content="□  New" Padding="11,6" FontSize="9"/>
-                            <Button Content="□  Open" Padding="11,6" FontSize="9"/>
-                            <Button Content="↓  Import" Padding="11,6" FontSize="9"/>
+                            <Button Content="□  New" Padding="11,6" FontSize="12"/>
+                            <Button Content="□  Open" Padding="11,6" FontSize="12"/>
+                            <Button Content="↓  Import" Padding="11,6" FontSize="12"/>
                             <Border Width="1" Height="25" Margin="4,0" Background="{StaticResource BorderBrush}"/>
-                            <Button Content="＋  Add Job" Padding="11,6" FontSize="9"/>
+                            <Button Content="＋  Add Job" Padding="11,6" FontSize="12"/>
                             <Border Width="1" Height="25" Margin="4,0" Background="{StaticResource BorderBrush}"/>
-                            <Button Content="Ⅱ  Pause All" Padding="11,6" FontSize="9"/>
-                            <Button Content="▷  Resume All" Padding="11,6" FontSize="9"/>
-                            <Button Content="×  Cancel" Padding="11,6" FontSize="9"/>
+                            <Button Content="Ⅱ  Pause All" Padding="11,6" FontSize="12"/>
+                            <Button Content="▷  Resume All" Padding="11,6" FontSize="12"/>
+                            <Button Content="×  Cancel" Padding="11,6" FontSize="12"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1"
@@ -229,7 +229,7 @@
                                     CornerRadius="5">
                                 <TextBlock Text="⬡  All Workers   ⌄"
                                            Foreground="{StaticResource TextBrush}"
-                                           FontSize="9"/>
+                                           FontSize="12"/>
                             </Border>
                             <Border Padding="12,7"
                                     Background="{StaticResource CardBrush}"
@@ -238,9 +238,9 @@
                                     CornerRadius="5">
                                 <TextBlock Text="▣  Last 7 Days   ⌄"
                                            Foreground="{StaticResource TextBrush}"
-                                           FontSize="9"/>
+                                           FontSize="12"/>
                             </Border>
-                            <Button Content="↻  Refresh" Padding="12,7" FontSize="9"/>
+                            <Button Content="↻  Refresh" Padding="12,7" FontSize="12"/>
                         </StackPanel>
                     </Grid>
                 </Grid>
@@ -274,7 +274,7 @@
                     <TextBlock Text="OVERVIEW"
                                Margin="4,0,0,3"
                                Foreground="{StaticResource MutedBrush}"
-                               FontSize="8"
+                               FontSize="11"
                                FontWeight="SemiBold"/>
 
                     <Border Padding="9,8"
@@ -286,10 +286,10 @@
                                     Spacing="8">
                             <TextBlock Text="⌂"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="12"/>
+                                       FontSize="15"/>
                             <TextBlock Text="Recent Overview"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="10"/>
+                                       FontSize="13"/>
                         </StackPanel>
                     </Border>
 
@@ -298,31 +298,31 @@
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="10"/>
+                            FontSize="13"/>
                     <Button Content="□   Projects"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="10"/>
+                            FontSize="13"/>
                     <Button Content="◇   Assets"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="10"/>
+                            FontSize="13"/>
                     <Button Content="▤   Reports"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="10"/>
+                            FontSize="13"/>
                     <Button Content="⌁   Analytics"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="10"/>
+                            FontSize="13"/>
 
                     <Border Height="1"
                             Margin="0,8"
@@ -333,7 +333,7 @@
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="10"/>
+                            FontSize="13"/>
                 </StackPanel>
 
                 <Border Grid.Row="1"
@@ -348,10 +348,10 @@
                                     Spacing="7">
                             <TextBlock Text="▱"
                                        Foreground="{StaticResource MutedBrush}"
-                                       FontSize="11"/>
+                                       FontSize="14"/>
                             <TextBlock Text="Storage"
                                        Foreground="{StaticResource TextBrush}"
-                                       FontSize="10"/>
+                                       FontSize="13"/>
                         </StackPanel>
                         <Grid Height="5"
                               Background="#30363D">
@@ -363,15 +363,15 @@
                         <Grid>
                             <TextBlock Text="Groundforge"
                                        Foreground="{StaticResource TextBrush}"
-                                       FontSize="9"/>
+                                       FontSize="12"/>
                             <TextBlock Text="4.0 TB   30%"
                                        HorizontalAlignment="Right"
                                        Foreground="{StaticResource MutedBrush}"
-                                       FontSize="8"/>
+                                       FontSize="11"/>
                         </Grid>
                         <TextBlock Text="Local · Healthy"
                                    Foreground="{StaticResource GoodBrush}"
-                                   FontSize="8"/>
+                                   FontSize="11"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -415,11 +415,11 @@
                         </Grid.RowDefinitions>
                         <TextBlock Text="ACTIVE JOBS"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="7"/>
+                                   FontSize="10"/>
                         <Grid Grid.Row="1">
                             <TextBlock Text="3"
                                        Foreground="{StaticResource TextBrush}"
-                                       FontSize="23"
+                                       FontSize="30"
                                        FontWeight="SemiBold"
                                        VerticalAlignment="Center"/>
                             <TextBlock Text="◈"
@@ -431,7 +431,7 @@
                         <TextBlock Grid.Row="2"
                                    Text="+2 from yesterday"
                                    Foreground="{StaticResource GoodBrush}"
-                                   FontSize="8"/>
+                                   FontSize="11"/>
                     </Grid>
                 </Border>
 
@@ -450,11 +450,11 @@
                         </Grid.RowDefinitions>
                         <TextBlock Text="QUEUED JOBS"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="7"/>
+                                   FontSize="10"/>
                         <Grid Grid.Row="1">
                             <TextBlock Text="12"
                                        Foreground="{StaticResource TextBrush}"
-                                       FontSize="23"
+                                       FontSize="30"
                                        FontWeight="SemiBold"
                                        VerticalAlignment="Center"/>
                             <TextBlock Text="⌛"
@@ -466,7 +466,7 @@
                         <TextBlock Grid.Row="2"
                                    Text="Est. 1h 24m"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="8"/>
+                                   FontSize="11"/>
                     </Grid>
                 </Border>
 
@@ -485,17 +485,17 @@
                         </Grid.RowDefinitions>
                         <TextBlock Text="ASSETS PROCESSED"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="7"/>
+                                   FontSize="10"/>
                         <TextBlock Grid.Row="1"
                                    Text="428"
                                    Foreground="{StaticResource TextBrush}"
-                                   FontSize="23"
+                                   FontSize="30"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center"/>
                         <TextBlock Grid.Row="2"
                                    Text="+18% this week"
                                    Foreground="{StaticResource GoodBrush}"
-                                   FontSize="8"/>
+                                   FontSize="11"/>
                     </Grid>
                 </Border>
 
@@ -514,11 +514,11 @@
                         </Grid.RowDefinitions>
                         <TextBlock Text="WORKER HEALTH"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="7"/>
+                                   FontSize="10"/>
                         <TextBlock Grid.Row="1"
                                    Text="4 / 5"
                                    Foreground="{StaticResource TextBrush}"
-                                   FontSize="23"
+                                   FontSize="30"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center"/>
                         <StackPanel Grid.Row="2"
@@ -531,7 +531,7 @@
                                     VerticalAlignment="Center"/>
                             <TextBlock Text="Healthy"
                                        Foreground="{StaticResource MutedBrush}"
-                                       FontSize="8"/>
+                                       FontSize="11"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -563,17 +563,17 @@
                             <StackPanel Spacing="-1">
                                 <TextBlock Text="Recent Activity"
                                            Foreground="{StaticResource TextBrush}"
-                                           FontSize="12"
+                                           FontSize="15"
                                            FontWeight="SemiBold"/>
                                 <TextBlock Text="Latest changes across this workspace"
                                            Foreground="{StaticResource MutedBrush}"
-                                           FontSize="7"/>
+                                           FontSize="10"/>
                             </StackPanel>
                             <TextBlock Text="View All"
                                        HorizontalAlignment="Right"
                                        VerticalAlignment="Center"
                                        Foreground="{StaticResource MutedBrush}"
-                                       FontSize="7"/>
+                                       FontSize="10"/>
                         </Grid>
 
                         <Grid Grid.Row="1"
@@ -596,17 +596,17 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="◷"
                                            Foreground="{StaticResource TextBrush}"
-                                           FontSize="11"
+                                           FontSize="14"
                                            VerticalAlignment="Center"/>
                                 <StackPanel Grid.Column="1"
                                             VerticalAlignment="Center"
                                             Spacing="-1">
                                     <TextBlock Text="Recent Activity"
                                                Foreground="{StaticResource TextBrush}"
-                                               FontSize="9"/>
+                                               FontSize="12"/>
                                     <TextBlock Text="Groundforge Bases · export completed"
                                                Foreground="{StaticResource MutedBrush}"
-                                               FontSize="7"/>
+                                               FontSize="10"/>
                                 </StackPanel>
                             </Grid>
 
@@ -617,8 +617,8 @@
                                 </Grid.ColumnDefinitions>
                                 <Border Width="7" Height="7" Background="{StaticResource GoodBrush}" CornerRadius="4"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="-1">
-                                    <TextBlock Text="Procedural Ruin Wall completed" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                    <TextBlock Text="Processed 48,221 triangles in 1.8s" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                    <TextBlock Text="Procedural Ruin Wall completed" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    <TextBlock Text="Processed 48,221 triangles in 1.8s" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                 </StackPanel>
                             </Grid>
 
@@ -626,8 +626,8 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Border Width="7" Height="7" Background="{StaticResource WarningBrush}" CornerRadius="4"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="-1">
-                                    <TextBlock Text="Noise Displace job started" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                    <TextBlock Text="Project: Ancient Ruins" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                    <TextBlock Text="Noise Displace job started" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    <TextBlock Text="Project: Ancient Ruins" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                 </StackPanel>
                             </Grid>
 
@@ -635,8 +635,8 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Border Width="7" Height="7" Background="#4297C7" CornerRadius="4"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="-1">
-                                    <TextBlock Text="Asset imported" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                    <TextBlock Text="ruin_wall_01.fbx (12.4 MB)" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                    <TextBlock Text="Asset imported" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    <TextBlock Text="ruin_wall_01.fbx (12.4 MB)" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                 </StackPanel>
                             </Grid>
 
@@ -644,8 +644,8 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Border Width="7" Height="7" Background="{StaticResource GoodBrush}" CornerRadius="4"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="-1">
-                                    <TextBlock Text="Worker W-01 back online" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                    <TextBlock Text="Hardware check complete" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                    <TextBlock Text="Worker W-01 back online" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    <TextBlock Text="Hardware check complete" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                 </StackPanel>
                             </Grid>
 
@@ -653,8 +653,8 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Border Width="7" Height="7" Background="{StaticResource GoodBrush}" CornerRadius="4"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="-1">
-                                    <TextBlock Text="Batch processing completed" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                    <TextBlock Text="12 assets processed in 3m 12s" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                    <TextBlock Text="Batch processing completed" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    <TextBlock Text="12 assets processed in 3m 12s" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                 </StackPanel>
                             </Grid>
 
@@ -662,8 +662,8 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Border Width="7" Height="7" Background="#4297C7" CornerRadius="4"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="-1">
-                                    <TextBlock Text="Project updated" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                    <TextBlock Text="Ruin Environment v2" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                    <TextBlock Text="Project updated" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    <TextBlock Text="Ruin Environment v2" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                 </StackPanel>
                             </Grid>
 
@@ -671,8 +671,8 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Border Width="7" Height="7" Background="{StaticResource DangerBrush}" CornerRadius="4"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="-1">
-                                    <TextBlock Text="Worker W-02 offline" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                    <TextBlock Text="Connection lost" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                    <TextBlock Text="Worker W-02 offline" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                    <TextBlock Text="Connection lost" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
@@ -695,17 +695,17 @@
                             <StackPanel Orientation="Horizontal" Spacing="7">
                                 <TextBlock Text="□"
                                            Foreground="{StaticResource MutedBrush}"
-                                           FontSize="11"/>
+                                           FontSize="14"/>
                                 <TextBlock Text="Recent Projects"
                                            Foreground="{StaticResource TextBrush}"
-                                           FontSize="12"
+                                           FontSize="15"
                                            FontWeight="SemiBold"/>
                             </StackPanel>
                             <TextBlock Text="View All"
                                        HorizontalAlignment="Right"
                                        VerticalAlignment="Center"
                                        Foreground="{StaticResource MutedBrush}"
-                                       FontSize="7"/>
+                                       FontSize="10"/>
                         </Grid>
 
                         <Grid Grid.Row="1"
@@ -720,91 +720,91 @@
 
                             <Border Grid.Row="0" Padding="6" Background="{StaticResource ElevatedBrush}" CornerRadius="5">
                                 <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions>
-                                    <Border Height="47" Background="#5B4936" CornerRadius="3">
-                                        <TextBlock Text="RUIN" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#CDBA9B" FontSize="8"/>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="96"/><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/></Grid.ColumnDefinitions>
+                                    <Border Height="64" Background="#5B4936" CornerRadius="3">
+                                        <TextBlock Text="RUIN" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#CDBA9B" FontSize="11"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Spacing="-1">
                                         <StackPanel Orientation="Horizontal" Spacing="5">
                                             <Border Width="7" Height="7" Background="{StaticResource GoodBrush}" CornerRadius="4"/>
-                                            <TextBlock Text="Procedural Ruin Wall" Foreground="{StaticResource TextBrush}" FontSize="9"/>
+                                            <TextBlock Text="Procedural Ruin Wall" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                                         </StackPanel>
-                                        <TextBlock Text="Modified 2 hours ago" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
-                                        <TextBlock Text="12 assets  ·  48.2K tris" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                        <TextBlock Text="Modified 2 hours ago" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                                        <TextBlock Text="12 assets  ·  48.2K tris" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="15"/>
                                 </Grid>
                             </Border>
 
                             <Border Grid.Row="1" Padding="6" Background="{StaticResource ElevatedBrush}" CornerRadius="5">
                                 <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions>
-                                    <Border Height="47" Background="#725B43" CornerRadius="3">
-                                        <TextBlock Text="DUNE" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#D8C29E" FontSize="8"/>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="96"/><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/></Grid.ColumnDefinitions>
+                                    <Border Height="64" Background="#725B43" CornerRadius="3">
+                                        <TextBlock Text="DUNE" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#D8C29E" FontSize="11"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Spacing="-1">
                                         <StackPanel Orientation="Horizontal" Spacing="5">
                                             <Border Width="7" Height="7" Background="{StaticResource GoodBrush}" CornerRadius="4"/>
-                                            <TextBlock Text="Desert Outpost" Foreground="{StaticResource TextBrush}" FontSize="9"/>
+                                            <TextBlock Text="Desert Outpost" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                                         </StackPanel>
-                                        <TextBlock Text="Modified 1 day ago 34m" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
-                                        <TextBlock Text="28 assets  ·  112K tris" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                        <TextBlock Text="Modified 1 day ago 34m" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                                        <TextBlock Text="28 assets  ·  112K tris" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="15"/>
                                 </Grid>
                             </Border>
 
                             <Border Grid.Row="2" Padding="6" Background="{StaticResource ElevatedBrush}" CornerRadius="5">
                                 <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions>
-                                    <Border Height="47" Background="#384148" CornerRadius="3">
-                                        <TextBlock Text="SCI-FI" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#9FB0BA" FontSize="8"/>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="96"/><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/></Grid.ColumnDefinitions>
+                                    <Border Height="64" Background="#384148" CornerRadius="3">
+                                        <TextBlock Text="SCI-FI" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#9FB0BA" FontSize="11"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Spacing="-1">
                                         <StackPanel Orientation="Horizontal" Spacing="5">
                                             <Border Width="7" Height="7" Background="#727A84" CornerRadius="4"/>
-                                            <TextBlock Text="Sci-Fi Facility" Foreground="{StaticResource TextBrush}" FontSize="9"/>
+                                            <TextBlock Text="Sci-Fi Facility" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                                         </StackPanel>
-                                        <TextBlock Text="Modified 3 days ago" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
-                                        <TextBlock Text="46 assets  ·  248K tris" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                        <TextBlock Text="Modified 3 days ago" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                                        <TextBlock Text="46 assets  ·  248K tris" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="15"/>
                                 </Grid>
                             </Border>
 
                             <Border Grid.Row="3" Padding="6" Background="{StaticResource ElevatedBrush}" CornerRadius="5">
                                 <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions>
-                                    <Border Height="47" Background="#365041" CornerRadius="3">
-                                        <TextBlock Text="FOREST" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#A8C5A7" FontSize="8"/>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="96"/><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/></Grid.ColumnDefinitions>
+                                    <Border Height="64" Background="#365041" CornerRadius="3">
+                                        <TextBlock Text="FOREST" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#A8C5A7" FontSize="11"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Spacing="-1">
                                         <StackPanel Orientation="Horizontal" Spacing="5">
                                             <Border Width="7" Height="7" Background="{StaticResource GoodBrush}" CornerRadius="4"/>
-                                            <TextBlock Text="Forest Temple" Foreground="{StaticResource TextBrush}" FontSize="9"/>
+                                            <TextBlock Text="Forest Temple" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                                         </StackPanel>
-                                        <TextBlock Text="Modified 5 days ago" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
-                                        <TextBlock Text="19 assets  ·  96K tris" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                        <TextBlock Text="Modified 5 days ago" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                                        <TextBlock Text="19 assets  ·  96K tris" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="15"/>
                                 </Grid>
                             </Border>
 
                             <Border Grid.Row="4" Padding="6" Background="{StaticResource ElevatedBrush}" CornerRadius="5">
                                 <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions>
-                                    <Border Height="47" Background="#454C51" CornerRadius="3">
-                                        <TextBlock Text="MODULAR" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#B1B7BA" FontSize="8"/>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="96"/><ColumnDefinition Width="*"/><ColumnDefinition Width="20"/></Grid.ColumnDefinitions>
+                                    <Border Height="64" Background="#454C51" CornerRadius="3">
+                                        <TextBlock Text="MODULAR" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#B1B7BA" FontSize="11"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Spacing="-1">
                                         <StackPanel Orientation="Horizontal" Spacing="5">
                                             <Border Width="7" Height="7" Background="#707981" CornerRadius="4"/>
-                                            <TextBlock Text="Modular Streets" Foreground="{StaticResource TextBrush}" FontSize="9"/>
+                                            <TextBlock Text="Modular Streets" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                                         </StackPanel>
-                                        <TextBlock Text="Modified 1 week ago" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
-                                        <TextBlock Text="34 assets  ·  134K tris" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                        <TextBlock Text="Modified 1 week ago" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                                        <TextBlock Text="34 assets  ·  134K tris" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                                    <TextBlock Grid.Column="2" Text="⋮" Foreground="{StaticResource MutedBrush}" FontSize="15"/>
                                 </Grid>
                             </Border>
                         </Grid>
@@ -828,41 +828,98 @@
                             <Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                             <Grid>
                                 <StackPanel Orientation="Horizontal" Spacing="7">
-                                    <TextBlock Text="ϟ" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
-                                    <TextBlock Text="Quick Actions" Foreground="{StaticResource TextBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="ϟ" Foreground="{StaticResource MutedBrush}" FontSize="15"/>
+                                    <TextBlock Text="Quick Actions" Foreground="{StaticResource TextBrush}" FontSize="15" FontWeight="SemiBold"/>
                                 </StackPanel>
-                                <TextBlock Text="View All" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                <TextBlock Text="View All" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                             </Grid>
-                            <Grid Grid.Row="1" ColumnSpacing="6" RowSpacing="6">
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <Grid Grid.Row="1" ColumnSpacing="7" RowSpacing="7">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                                <Button x:Name="QuickActionNewProject" Grid.Row="0" Grid.Column="0" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Padding="8" Background="{StaticResource ElevatedBrush}">
-                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                                        <TextBlock Text="▣" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="16"/>
-                                        <TextBlock Text="New Project" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                        <TextBlock Text="Create a new project" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                <Button x:Name="QuickActionNewProject"
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch"
+                                        Padding="7"
+                                        Background="{StaticResource ElevatedBrush}">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="▣" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="24"/>
+                                        <TextBlock Text="New Project" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                        <TextBlock Text="Create a new project" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Grid.Row="0" Grid.Column="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Padding="8" Background="{StaticResource ElevatedBrush}">
-                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                                        <TextBlock Text="↥" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="16"/>
-                                        <TextBlock Text="Import Assets" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                        <TextBlock Text="Add 3D files to library" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+
+                                <Button Grid.Row="0"
+                                        Grid.Column="1"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch"
+                                        Padding="7"
+                                        Background="{StaticResource ElevatedBrush}">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="↥" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="25"/>
+                                        <TextBlock Text="Import Assets" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                        <TextBlock Text="Add 3D files to library" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Grid.Row="1" Grid.Column="0" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Padding="8" Background="{StaticResource ElevatedBrush}">
-                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                                        <TextBlock Text="⚙" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="16"/>
-                                        <TextBlock Text="Create Job" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                        <TextBlock Text="Set up a processing job" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+
+                                <Button Grid.Row="1"
+                                        Grid.Column="0"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch"
+                                        Padding="7"
+                                        Background="{StaticResource ElevatedBrush}">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="⚙" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="24"/>
+                                        <TextBlock Text="Create Job" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                        <TextBlock Text="Set up a processing job" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Grid.Row="1" Grid.Column="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Padding="8" Background="{StaticResource ElevatedBrush}">
-                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                                        <TextBlock Text="⌘" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="16"/>
-                                        <TextBlock Text="Open Conduit" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="9"/>
-                                        <TextBlock Text="Build procedural graphs" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+
+                                <Button Grid.Row="1"
+                                        Grid.Column="1"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch"
+                                        Padding="7"
+                                        Background="{StaticResource ElevatedBrush}">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="⌘" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="24"/>
+                                        <TextBlock Text="Open Conduit" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                        <TextBlock Text="Build procedural graphs" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Grid.Row="2"
+                                        Grid.Column="0"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch"
+                                        Padding="7"
+                                        Background="{StaticResource ElevatedBrush}">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="▤" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="24"/>
+                                        <TextBlock Text="Browse Library" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                        <TextBlock Text="View asset library" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Grid.Row="2"
+                                        Grid.Column="1"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch"
+                                        Padding="7"
+                                        Background="{StaticResource ElevatedBrush}">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="▥" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="24"/>
+                                        <TextBlock Text="View Reports" HorizontalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                                        <TextBlock Text="Analytics and stats" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                                     </StackPanel>
                                 </Button>
                             </Grid>
@@ -880,21 +937,21 @@
                             <Grid.RowDefinitions><RowDefinition Height="32"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                             <Grid>
                                 <StackPanel Orientation="Horizontal" Spacing="7">
-                                    <TextBlock Text="▣" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
-                                    <TextBlock Text="Worker Status" Foreground="{StaticResource TextBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                    <TextBlock Text="▣" Foreground="{StaticResource MutedBrush}" FontSize="14"/>
+                                    <TextBlock Text="Worker Status" Foreground="{StaticResource TextBrush}" FontSize="15" FontWeight="SemiBold"/>
                                 </StackPanel>
-                                <TextBlock Text="View All" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                                <TextBlock Text="View All" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                             </Grid>
                             <Grid Grid.Row="1" RowSpacing="4">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*"/><RowDefinition Height="*"/><RowDefinition Height="*"/><RowDefinition Height="*"/><RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <Grid Grid.Row="0"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-01" Foreground="{StaticResource GoodBrush}" FontSize="8"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"><Border Width="82" HorizontalAlignment="Left" Background="{StaticResource AccentBrush}" CornerRadius="3"/></Grid><TextBlock Grid.Column="2" Text="72%" Foreground="{StaticResource MutedBrush}" FontSize="8" HorizontalAlignment="Right"/></Grid>
-                                <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-02" Foreground="{StaticResource DangerBrush}" FontSize="8"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="Offline" Foreground="{StaticResource MutedBrush}" FontSize="8" HorizontalAlignment="Right"/></Grid>
-                                <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-03" Foreground="{StaticResource GoodBrush}" FontSize="8"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"><Border Width="46" HorizontalAlignment="Left" Background="#727B84" CornerRadius="3"/></Grid><TextBlock Grid.Column="2" Text="45%" Foreground="{StaticResource MutedBrush}" FontSize="8" HorizontalAlignment="Right"/></Grid>
-                                <Grid Grid.Row="3"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-04" Foreground="{StaticResource GoodBrush}" FontSize="8"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"><Border Width="22" HorizontalAlignment="Left" Background="#727B84" CornerRadius="3"/></Grid><TextBlock Grid.Column="2" Text="18%" Foreground="{StaticResource MutedBrush}" FontSize="8" HorizontalAlignment="Right"/></Grid>
-                                <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-05" Foreground="{StaticResource GoodBrush}" FontSize="8"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"><Border Width="104" HorizontalAlignment="Left" Background="{StaticResource AccentBrush}" CornerRadius="3"/></Grid><TextBlock Grid.Column="2" Text="91%" Foreground="{StaticResource MutedBrush}" FontSize="8" HorizontalAlignment="Right"/></Grid>
+                                <Grid Grid.Row="0"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-01" Foreground="{StaticResource GoodBrush}" FontSize="11"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"><Border Width="82" HorizontalAlignment="Left" Background="{StaticResource AccentBrush}" CornerRadius="3"/></Grid><TextBlock Grid.Column="2" Text="72%" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Right"/></Grid>
+                                <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-02" Foreground="{StaticResource DangerBrush}" FontSize="11"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="Offline" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Right"/></Grid>
+                                <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-03" Foreground="{StaticResource GoodBrush}" FontSize="11"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"><Border Width="46" HorizontalAlignment="Left" Background="#727B84" CornerRadius="3"/></Grid><TextBlock Grid.Column="2" Text="45%" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Right"/></Grid>
+                                <Grid Grid.Row="3"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-04" Foreground="{StaticResource GoodBrush}" FontSize="11"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"><Border Width="22" HorizontalAlignment="Left" Background="#727B84" CornerRadius="3"/></Grid><TextBlock Grid.Column="2" Text="18%" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Right"/></Grid>
+                                <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="●  W-05" Foreground="{StaticResource GoodBrush}" FontSize="11"/><Grid Grid.Column="1" Height="7" Background="#30363D" VerticalAlignment="Center"><Border Width="104" HorizontalAlignment="Left" Background="{StaticResource AccentBrush}" CornerRadius="3"/></Grid><TextBlock Grid.Column="2" Text="91%" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Right"/></Grid>
                             </Grid>
                         </Grid>
                     </Border>
@@ -921,11 +978,11 @@
                     <StackPanel Spacing="-1">
                         <TextBlock Text="Project Inspector"
                                    Foreground="{StaticResource TextBrush}"
-                                   FontSize="12"
+                                   FontSize="15"
                                    FontWeight="SemiBold"/>
                         <TextBlock Text="Selected project"
                                    Foreground="{StaticResource MutedBrush}"
-                                   FontSize="7"/>
+                                   FontSize="10"/>
                     </StackPanel>
                     <Button Content="⋯"
                             Width="28"
@@ -939,8 +996,8 @@
                     <StackPanel Orientation="Horizontal" Spacing="7">
                         <Border Width="7" Height="7" Background="{StaticResource AccentBrush}" CornerRadius="4" VerticalAlignment="Center"/>
                         <StackPanel Spacing="-1">
-                            <TextBlock Text="Groundforge Bases" Foreground="{StaticResource TextBrush}" FontSize="10" FontWeight="SemiBold"/>
-                            <TextBlock Text="3D asset pipeline" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                            <TextBlock Text="Groundforge Bases" Foreground="{StaticResource TextBrush}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock Text="3D asset pipeline" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -960,52 +1017,52 @@
                                        Text="PREVIEW"
                                        Margin="8,0"
                                        Foreground="{StaticResource MutedBrush}"
-                                       FontSize="7"
+                                       FontSize="10"
                                        VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
 
                     <Grid>
-                        <TextBlock Text="PROGRESS" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
-                        <TextBlock Text="75%" HorizontalAlignment="Right" Foreground="{StaticResource AccentBrush}" FontSize="7"/>
+                        <TextBlock Text="PROGRESS" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                        <TextBlock Text="75%" HorizontalAlignment="Right" Foreground="{StaticResource AccentBrush}" FontSize="10"/>
                     </Grid>
                     <Grid Height="5" Background="#30363D">
                         <Border Width="166" HorizontalAlignment="Left" Background="{StaticResource AccentBrush}" CornerRadius="3"/>
                     </Grid>
-                    <TextBlock Text="18 of 24 tasks" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                    <TextBlock Text="18 of 24 tasks" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2"
                             Margin="0,9,0,0"
                             Spacing="7">
-                    <TextBlock Text="DETAILS" Foreground="{StaticResource MutedBrush}" FontSize="7" FontWeight="SemiBold"/>
-                    <Grid><TextBlock Text="Owner" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="James" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="8"/></Grid>
-                    <Grid><TextBlock Text="Workers" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="3" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="8"/></Grid>
-                    <Grid><TextBlock Text="Queued" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="8 jobs" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="8"/></Grid>
-                    <Grid><TextBlock Text="Updated" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="2 minutes ago" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="8"/></Grid>
+                    <TextBlock Text="DETAILS" Foreground="{StaticResource MutedBrush}" FontSize="10" FontWeight="SemiBold"/>
+                    <Grid><TextBlock Text="Owner" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="James" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="11"/></Grid>
+                    <Grid><TextBlock Text="Workers" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="3" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="11"/></Grid>
+                    <Grid><TextBlock Text="Queued" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="8 jobs" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="11"/></Grid>
+                    <Grid><TextBlock Text="Updated" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="2 minutes ago" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="11"/></Grid>
 
                     <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,3"/>
 
-                    <TextBlock Text="PROJECT" Foreground="{StaticResource MutedBrush}" FontSize="7" FontWeight="SemiBold"/>
-                    <TextBlock Text="Procedural Ruin Wall" Foreground="{StaticResource TextBrush}" FontSize="10" FontWeight="SemiBold"/>
-                    <Grid><TextBlock Text="Status" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="● Active" HorizontalAlignment="Right" Foreground="{StaticResource GoodBrush}" FontSize="8"/></Grid>
-                    <Grid><TextBlock Text="Type" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="Project" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="8"/></Grid>
-                    <Grid><TextBlock Text="Location" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="D:\Projects\RuinWall" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="7"/></Grid>
-                    <Grid><TextBlock Text="Modified" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="Nov 10, 2024 14:32" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="7"/></Grid>
-                    <Grid><TextBlock Text="Assets" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="12" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="8"/></Grid>
-                    <Grid><TextBlock Text="Total Triangles" Foreground="{StaticResource MutedBrush}" FontSize="8"/><TextBlock Text="48,221" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="8"/></Grid>
+                    <TextBlock Text="PROJECT" Foreground="{StaticResource MutedBrush}" FontSize="10" FontWeight="SemiBold"/>
+                    <TextBlock Text="Procedural Ruin Wall" Foreground="{StaticResource TextBrush}" FontSize="13" FontWeight="SemiBold"/>
+                    <Grid><TextBlock Text="Status" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="● Active" HorizontalAlignment="Right" Foreground="{StaticResource GoodBrush}" FontSize="11"/></Grid>
+                    <Grid><TextBlock Text="Type" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="Project" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="11"/></Grid>
+                    <Grid><TextBlock Text="Location" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="D:\Projects\RuinWall" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="10"/></Grid>
+                    <Grid><TextBlock Text="Modified" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="Nov 10, 2024 14:32" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="10"/></Grid>
+                    <Grid><TextBlock Text="Assets" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="12" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="11"/></Grid>
+                    <Grid><TextBlock Text="Total Triangles" Foreground="{StaticResource MutedBrush}" FontSize="11"/><TextBlock Text="48,221" HorizontalAlignment="Right" Foreground="{StaticResource TextBrush}" FontSize="11"/></Grid>
 
                     <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,3"/>
 
-                    <TextBlock Text="Description" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                    <TextBlock Text="Description" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                     <TextBlock Text="Procedural stone wall system with modular pieces, weathering and damage variation."
                                TextWrapping="Wrap"
                                Foreground="{StaticResource TextBrush}"
-                               FontSize="8"/>
+                               FontSize="11"/>
                     <TextBlock Text="Tags    environment   modular   ruins   procedural"
                                TextWrapping="Wrap"
                                Foreground="{StaticResource MutedBrush}"
-                               FontSize="7"/>
+                               FontSize="10"/>
                 </StackPanel>
 
                 <Button Grid.Row="3"
@@ -1037,9 +1094,9 @@
                         Spacing="18"
                         Margin="14,0"
                         VerticalAlignment="Center">
-                <TextBlock Text="Console" Foreground="{StaticResource AccentBrush}" FontSize="9"/>
-                <TextBlock Text="Warnings (2)" Foreground="{StaticResource MutedBrush}" FontSize="8"/>
-                <TextBlock Text="Info (12)" Foreground="{StaticResource MutedBrush}" FontSize="8"/>
+                <TextBlock Text="Console" Foreground="{StaticResource AccentBrush}" FontSize="12"/>
+                <TextBlock Text="Warnings (2)" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                <TextBlock Text="Info (12)" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
             </StackPanel>
 
             <Grid Grid.Row="1"
@@ -1052,16 +1109,16 @@
                 <StackPanel Spacing="2">
                     <TextBlock Text="[14:32:10]   Job completed: Procedural Ruin Wall   (12 nodes, 1.8s)"
                                Foreground="{StaticResource MutedBrush}"
-                               FontSize="7"/>
+                               FontSize="10"/>
                     <TextBlock Text="[14:32:11]   Asset exported: D:\Projects\RuinWall\output\wall_01.fbx"
                                Foreground="{StaticResource MutedBrush}"
-                               FontSize="7"/>
+                               FontSize="10"/>
                     <TextBlock Text="[14:28:03]   Job started: Noise Displace   (8 nodes)"
                                Foreground="{StaticResource MutedBrush}"
-                               FontSize="7"/>
+                               FontSize="10"/>
                     <TextBlock Text="[14:26:17]   Import complete: ruin_wall_01.fbx   (12.4 MB)"
                                Foreground="{StaticResource MutedBrush}"
-                               FontSize="7"/>
+                               FontSize="10"/>
                 </StackPanel>
 
                 <Grid Grid.Column="1"
@@ -1073,30 +1130,30 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="3">
-                        <TextBlock Text="CPU" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                        <TextBlock Text="CPU" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="42%" Foreground="{StaticResource TextBrush}" FontSize="8"/>
+                            <TextBlock Text="42%" Foreground="{StaticResource TextBrush}" FontSize="11"/>
                             <Grid Width="70" Height="6" Background="#2E343B"><Border Width="29" HorizontalAlignment="Left" Background="#6A737D" CornerRadius="3"/></Grid>
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Spacing="3">
-                        <TextBlock Text="GPU" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                        <TextBlock Text="GPU" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="28%" Foreground="{StaticResource TextBrush}" FontSize="8"/>
+                            <TextBlock Text="28%" Foreground="{StaticResource TextBrush}" FontSize="11"/>
                             <Grid Width="70" Height="6" Background="#2E343B"><Border Width="20" HorizontalAlignment="Left" Background="#6A737D" CornerRadius="3"/></Grid>
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Spacing="3">
-                        <TextBlock Text="RAM" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                        <TextBlock Text="RAM" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="6.1 / 16 GB" Foreground="{StaticResource TextBrush}" FontSize="8"/>
+                            <TextBlock Text="6.1 / 16 GB" Foreground="{StaticResource TextBrush}" FontSize="11"/>
                             <Grid Width="70" Height="6" Background="#2E343B"><Border Width="27" HorizontalAlignment="Left" Background="#6A737D" CornerRadius="3"/></Grid>
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="3" Spacing="3">
-                        <TextBlock Text="Disk" Foreground="{StaticResource MutedBrush}" FontSize="7"/>
+                        <TextBlock Text="Disk" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="1.2 / 4.0 TB" Foreground="{StaticResource TextBrush}" FontSize="8"/>
+                            <TextBlock Text="1.2 / 4.0 TB" Foreground="{StaticResource TextBrush}" FontSize="11"/>
                             <Grid Width="70" Height="6" Background="#2E343B"><Border Width="21" HorizontalAlignment="Left" Background="{StaticResource AccentBrush}" CornerRadius="3"/></Grid>
                         </StackPanel>
                     </StackPanel>
@@ -1123,11 +1180,11 @@
                         Spacing="10"
                         VerticalAlignment="Center">
                 <Border Width="28" Height="28" BorderBrush="{StaticResource AccentBrush}" BorderThickness="2" CornerRadius="4">
-                    <TextBlock Text="◇" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontSize="14"/>
+                    <TextBlock Text="◇" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontSize="17"/>
                 </Border>
                 <StackPanel Spacing="-1">
                     <TextBlock Text="JLA3D" Foreground="{StaticResource TextBrush}" FontSize="18" FontWeight="Bold"/>
-                    <TextBlock Text="DESIGN · CREATE · PRINT · PLAY" Foreground="{StaticResource MutedBrush}" FontSize="6"/>
+                    <TextBlock Text="DESIGN · CREATE · PRINT · PLAY" Foreground="{StaticResource MutedBrush}" FontSize="8"/>
                 </StackPanel>
             </StackPanel>
 
@@ -1143,7 +1200,7 @@
                 <TextBlock Text="I D E A S   I N T O   A S S E T S"
                            HorizontalAlignment="Center"
                            Foreground="{StaticResource MutedBrush}"
-                           FontSize="7"
+                           FontSize="10"
                            CharacterSpacing="140"/>
             </StackPanel>
 
@@ -1153,11 +1210,11 @@
                         Spacing="2">
                 <TextBlock Text="A MORE POWERFUL"
                            Foreground="{StaticResource MutedBrush}"
-                           FontSize="7"
+                           FontSize="10"
                            CharacterSpacing="120"/>
                 <TextBlock Text="PROCEDURAL WORKFLOW"
                            Foreground="#6C747D"
-                           FontSize="7"
+                           FontSize="10"
                            CharacterSpacing="100"/>
             </StackPanel>
         </Grid>
