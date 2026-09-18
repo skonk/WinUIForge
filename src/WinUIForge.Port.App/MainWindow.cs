@@ -233,6 +233,14 @@ public sealed class MainWindow : Window
         AppWindow.TitleBar.ButtonBackgroundColor = Color.FromArgb(255, 23, 27, 29);
         AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(255, 242, 243, 245);
 
+        var appIconPath = Path.Combine(
+            AppContext.BaseDirectory,
+            "Assets",
+            "Branding",
+            "Workshop.ico");
+        if (File.Exists(appIconPath))
+            AppWindow.SetIcon(appIconPath);
+
         viewportDisplayMode.ItemsSource = new[] { "Fit", "Fill", "1:1" };
         viewportDisplayMode.SelectedIndex = 0;
 
