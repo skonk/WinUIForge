@@ -67,7 +67,7 @@ internal static class ForgeDependencyPropertyCatalog
         D<ContentControl>(nameof(ContentControl.Content), ContentControl.ContentProperty, typeof(object), "Content"),
         D<TextBlock>(nameof(TextBlock.Text), TextBlock.TextProperty, typeof(string), "Content"),
         D<TextBlock>(nameof(TextBlock.FontSize), TextBlock.FontSizeProperty, typeof(double), "Typography"),
-        D<TextBlock>(nameof(TextBlock.FontWeight), TextBlock.FontWeightProperty, typeof(Microsoft.UI.Text.FontWeight), "Typography"),
+        D<TextBlock>(nameof(TextBlock.FontWeight), TextBlock.FontWeightProperty, typeof(Windows.UI.Text.FontWeight), "Typography"),
         D<TextBlock>(nameof(TextBlock.Foreground), TextBlock.ForegroundProperty, typeof(Brush), "Typography"),
         D<TextBlock>(nameof(TextBlock.Padding), TextBlock.PaddingProperty, typeof(Thickness), "Appearance"),
         D<TextBlock>(nameof(TextBlock.TextWrapping), TextBlock.TextWrappingProperty, typeof(TextWrapping), "Content"),
@@ -158,7 +158,7 @@ internal static class ForgeDependencyPropertyCatalog
                type == typeof(Thickness) ||
                type == typeof(CornerRadius) ||
                type == typeof(Brush) ||
-               type == typeof(Microsoft.UI.Text.FontWeight);
+               type == typeof(Windows.UI.Text.FontWeight);
     }
 
     static string FormatValue(object? value)
@@ -174,7 +174,7 @@ internal static class ForgeDependencyPropertyCatalog
             Thickness t => FormatThickness(t),
             CornerRadius c => $"{N(c.TopLeft)},{N(c.TopRight)},{N(c.BottomRight)},{N(c.BottomLeft)}",
             SolidColorBrush b => FormatColor(b.Color),
-            Microsoft.UI.Text.FontWeight w => w.Weight.ToString(CultureInfo.InvariantCulture),
+            Windows.UI.Text.FontWeight w => w.Weight.ToString(CultureInfo.InvariantCulture),
             _ => value.ToString() ?? ""
         };
     }

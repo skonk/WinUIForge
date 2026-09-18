@@ -223,7 +223,7 @@ public sealed class MainWindow : Window
         return host;
     }
 
-    UIElement BuildInspectorPane()
+    Grid BuildInspectorPane()
     {
         var inspector = new Grid
         {
