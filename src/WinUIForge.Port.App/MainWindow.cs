@@ -143,6 +143,8 @@ public sealed class MainWindow : Window
     readonly TextBlock diagnostics = new() { TextWrapping = TextWrapping.Wrap };
     readonly TextBlock status = new() { TextWrapping = TextWrapping.NoWrap };
 
+    readonly ToggleButton sourcePaneToggle = new() { Content = "Source pane", IsChecked = true };
+    readonly ToggleButton toolsPaneToggle = new() { Content = "Tools pane", IsChecked = true };
     readonly Button openSourceFileButton = new() { Content = "Open XAML…" };
     readonly Button reloadSourceFileButton = new() { Content = "Reload XAML", IsEnabled = false };
     readonly Button saveSourceFileButton = new() { Content = "Save XAML", IsEnabled = false };
@@ -158,6 +160,11 @@ public sealed class MainWindow : Window
     readonly DispatcherTimer renderTimer = new() { Interval = TimeSpan.FromMilliseconds(550) };
 
     Grid shellRoot = null!;
+    ColumnDefinition sourceWorkspaceColumn = null!;
+    ColumnDefinition previewWorkspaceColumn = null!;
+    ColumnDefinition toolsWorkspaceColumn = null!;
+    FrameworkElement sourcePaneHost = null!;
+    FrameworkElement toolsPaneHost = null!;
     ForgeXamlDocument? document;
     string? selectedElementIdentity;
     FrameworkElement? selectedFrameworkElement;
@@ -279,6 +286,8 @@ public sealed class MainWindow : Window
         renderButton.Background = AccentBrush;
         renderButton.Foreground = WindowBrush;
 
+        commands.Children.Add(sourcePaneToggle);
+        commands.Children.Add(toolsPaneToggle);
         commands.Children.Add(openSourceFileButton);
         commands.Children.Add(reloadSourceFileButton);
         commands.Children.Add(saveSourceFileButton);
@@ -291,13 +300,29 @@ public sealed class MainWindow : Window
         shellRoot.Children.Add(header);
 
         var workspace = new Grid { ColumnSpacing = 1, Background = BorderBrush };
-        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.86, GridUnitType.Star), MinWidth = 360 });
-        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.22, GridUnitType.Star), MinWidth = 500 });
-        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(410), MinWidth = 350 });
+        sourceWorkspaceColumn = new ColumnDefinition
+        {
+            Width = new GridLength(0.86, GridUnitType.Star),
+            MinWidth = 360
+        };
+        previewWorkspaceColumn = new ColumnDefinition
+        {
+            Width = new GridLength(1.22, GridUnitType.Star),
+            MinWidth = 500
+        };
+        toolsWorkspaceColumn = new ColumnDefinition
+        {
+            Width = new GridLength(410),
+            MinWidth = 350
+        };
+        workspace.ColumnDefinitions.Add(sourceWorkspaceColumn);
+        workspace.ColumnDefinitions.Add(previewWorkspaceColumn);
+        workspace.ColumnDefinitions.Add(toolsWorkspaceColumn);
         Grid.SetRow(workspace, 1);
         shellRoot.Children.Add(workspace);
 
         var editorHost = new Grid { Background = PanelBrush };
+        sourcePaneHost = editorHost;
         editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         editorHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -418,6 +443,7 @@ public sealed class MainWindow : Window
             IsAddTabButtonVisible = false,
             Background = PanelBrush
         };
+        toolsPaneHost = tabs;
 
         var toolboxTab = new TabViewItem
         {
@@ -504,6 +530,11 @@ public sealed class MainWindow : Window
 
     void WireEvents()
     {
+        sourcePaneToggle.Checked += (_, _) => ApplyWorkspacePanelVisibility();
+        sourcePaneToggle.Unchecked += (_, _) => ApplyWorkspacePanelVisibility();
+        toolsPaneToggle.Checked += (_, _) => ApplyWorkspacePanelVisibility();
+        toolsPaneToggle.Unchecked += (_, _) => ApplyWorkspacePanelVisibility();
+
         undoButton.Click += (_, _) => Undo();
         redoButton.Click += (_, _) => Redo();
         deleteButton.Click += (_, _) => DeleteSelected();
@@ -565,6 +596,49 @@ public sealed class MainWindow : Window
             UIElement.PointerPressedEvent,
             new PointerEventHandler(OnPreviewPointerPressed),
             true);
+    }
+
+    void ApplyWorkspacePanelVisibility()
+    {
+        if (sourcePaneHost is null || toolsPaneHost is null)
+            return;
+
+        var showSource = sourcePaneToggle.IsChecked == true;
+        var showTools = toolsPaneToggle.IsChecked == true;
+
+        sourcePaneHost.Visibility = showSource
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        sourceWorkspaceColumn.MinWidth = showSource ? 360 : 0;
+        sourceWorkspaceColumn.Width = showSource
+            ? new GridLength(0.86, GridUnitType.Star)
+            : new GridLength(0);
+
+        toolsPaneHost.Visibility = showTools
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        toolsWorkspaceColumn.MinWidth = showTools ? 350 : 0;
+        toolsWorkspaceColumn.Width = showTools
+            ? new GridLength(410)
+            : new GridLength(0);
+
+        previewWorkspaceColumn.MinWidth = 500;
+        previewWorkspaceColumn.Width = new GridLength(1.22, GridUnitType.Star);
+
+        previewStage.DispatcherQueue.TryEnqueue(() =>
+        {
+            previewStage.UpdateLayout();
+            DrawAllHighlights();
+            DrawSelection();
+        });
+
+        status.Text = (showSource, showTools) switch
+        {
+            (true, true) => "Source and Tools panes visible.",
+            (false, true) => "Source pane hidden · designer expanded.",
+            (true, false) => "Tools pane hidden · designer expanded.",
+            (false, false) => "Source and Tools panes hidden · designer focus mode."
+        };
     }
 
     void LoadWorkshopBenchmark()
