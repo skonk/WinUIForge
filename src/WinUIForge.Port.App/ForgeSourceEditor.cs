@@ -100,7 +100,18 @@ internal sealed class ForgeSourceEditor : Grid
     void OnModified(Editor sender, ModifiedEventArgs args)
     {
         if (suppressEditorEvents) return;
-        pendingText = Text;
+
+        // WinUIEdit/Scintilla can deliver a Modified notification after SetText has
+        // returned. Forge assigns pendingText before programmatic source updates,
+        // so only surface this as a user edit when the live editor text actually
+        // differs from the last value Forge supplied. Otherwise a delayed
+        // programmatic notification would clear ForgeEditHistory immediately
+        // after every visual authoring transaction.
+        var currentText = Text;
+        if (string.Equals(currentText, pendingText, StringComparison.Ordinal))
+            return;
+
+        pendingText = currentText;
         TextChanged?.Invoke(this, EventArgs.Empty);
     }
 
