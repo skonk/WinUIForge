@@ -28,7 +28,12 @@
     "dashboard.workerStatus": "WorkerStatusPanel",
     "dashboard.inspector": "ProjectInspector",
     "dashboard.console": "ActivityConsole",
-    "dashboard.metrics.activeJobs": "ActiveJobsMetric"
+    "dashboard.metrics.activeJobs": "ActiveJobsMetric",
+    "dashboard.quickActions.importAssets": "QuickActionImportAssets",
+    "dashboard.quickActions.createJob": "QuickActionCreateJob",
+    "dashboard.quickActions.openConduit": "QuickActionOpenConduit",
+    "dashboard.quickActions.browseLibrary": "QuickActionBrowseLibrary",
+    "dashboard.quickActions.viewReports": "QuickActionViewReports"
   },
   "authoringIntent": {
     "layout": "responsive-grid",
