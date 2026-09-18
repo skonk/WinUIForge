@@ -15,7 +15,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>WinUIForge.Port.App</RootNamespace>
     <AssemblyName>WinUIForge.Port.App</AssemblyName>
-    <ApplicationIcon>..\..\assets\workshop-ui\app-icon\Workshop.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
