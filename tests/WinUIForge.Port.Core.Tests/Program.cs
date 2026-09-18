@@ -55,14 +55,15 @@ static void MinimalExistingPropertyWrite()
 {
     var source = Fixture();
     var doc = new ForgeXamlDocument(source);
-    var beforePrefix = source[..source.IndexOf("Text=\"WinUI Forge\"", StringComparison.Ordinal)];
-
     doc.SetAttribute("HeadingText", "Text", "Forge & Friends");
 
+    var expected = source.Replace(
+        "Text=\"WinUI Forge\"",
+        "Text=\"Forge &amp; Friends\"",
+        StringComparison.Ordinal);
+
     Check(doc.GetAttribute("HeadingText", "Text") == "Forge & Friends", "decoded value stored");
-    Check(doc.Text.Contains("Text=\"Forge &amp; Friends\"", StringComparison.Ordinal), "XML escaped source");
-    Check(doc.Text.StartsWith(beforePrefix, StringComparison.Ordinal), "unrelated prefix formatting preserved");
-    Check(doc.Text.Contains("FontSize=\"32\"\n                       FontWeight=\"SemiBold\"", StringComparison.Ordinal), "neighbor formatting preserved");
+    Check(doc.Text == expected, "only the existing attribute value changed");
 }
 
 static void MinimalPropertyAdd()
@@ -95,7 +96,7 @@ static void UnnamedElementsGetStablePaths()
     var unnamedText = doc.Elements.First(x =>
         x.TypeName == "TextBlock" &&
         x.Name is null &&
-        x.ParentId?.Contains("InspectorCard", StringComparison.Ordinal) == true);
+        x.Attributes.Any(a => a.Name == "Text" && a.Value == "Port proof"));
 
     Check(unnamedText.Id.Contains("TextBlock[", StringComparison.Ordinal), "path identity");
     Check(doc.FindById(unnamedText.Id) == unnamedText, "id lookup");
