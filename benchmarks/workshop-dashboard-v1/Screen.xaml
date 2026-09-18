@@ -92,7 +92,7 @@
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,9,0,0"
+                               Margin="0,7,0,0"
                                Stretch="Uniform"/>
                         <TextBlock Text="Dashboard"
                                    HorizontalAlignment="Center"
@@ -110,7 +110,7 @@
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,9,0,0"
+                               Margin="0,7,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Prepare"
@@ -126,7 +126,7 @@
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,9,0,0"
+                               Margin="0,7,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Conduit"
@@ -142,7 +142,7 @@
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,9,0,0"
+                               Margin="0,7,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Library"
@@ -158,7 +158,7 @@
                                Height="22"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
-                               Margin="0,9,0,0"
+                               Margin="0,7,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Settings"
@@ -205,11 +205,11 @@
                                 Spacing="26"
                                 Margin="16,0"
                                 VerticalAlignment="Center">
-                        <TextBlock Text="File" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                        <TextBlock Text="Edit" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                        <TextBlock Text="View" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                        <TextBlock Text="Tools" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                        <TextBlock Text="Help" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                        <TextBlock Text="File" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="Edit" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="View" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="Tools" Foreground="{StaticResource TextBrush}" FontSize="13"/>
+                        <TextBlock Text="Help" Foreground="{StaticResource TextBrush}" FontSize="13"/>
                     </StackPanel>
 
                     <Grid Grid.Row="1"
@@ -304,7 +304,7 @@
                                        FontSize="15"/>
                             <TextBlock Text="Recent Overview"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="12"/>
+                                       FontSize="13"/>
                         </StackPanel>
                     </Border>
 
@@ -313,31 +313,31 @@
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="12"/>
+                            FontSize="13"/>
                     <Button Content="□   Projects"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="12"/>
+                            FontSize="13"/>
                     <Button Content="◇   Assets"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="12"/>
+                            FontSize="13"/>
                     <Button Content="▤   Reports"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="12"/>
+                            FontSize="13"/>
                     <Button Content="⌁   Analytics"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="12"/>
+                            FontSize="13"/>
 
                     <Border Height="1"
                             Margin="0,8"
@@ -348,7 +348,7 @@
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
-                            FontSize="12"/>
+                            FontSize="13"/>
                 </StackPanel>
 
                 <Border Grid.Row="1"
@@ -366,7 +366,7 @@
                                        FontSize="14"/>
                             <TextBlock Text="Storage"
                                        Foreground="{StaticResource TextBrush}"
-                                       FontSize="12"/>
+                                       FontSize="13"/>
                         </StackPanel>
                         <Grid Height="5"
                               Background="#30363D">
