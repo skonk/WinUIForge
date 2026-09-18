@@ -1,0 +1,25 @@
+name: WinUI Forge Port CI
+
+on:
+  push:
+    branches:
+      - "winui-forge/**"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  upstream-baseline:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify migration bootstrap
+        shell: pwsh
+        run: |
+          Write-Host "WinUI Forge XAML Studio migration"
+          Write-Host "Commit: $env:GITHUB_SHA"
+          if (-not (Test-Path .\UPSTREAM.md)) { throw "UPSTREAM.md is missing." }
+          if (-not (Test-Path .\WINUI_FORGE_MIGRATION.md)) { throw "WINUI_FORGE_MIGRATION.md is missing." }
+
+      # The first WinUI 3 port commit should extend this workflow with
+      # restore/build/tests for the new SDK-style solution.
