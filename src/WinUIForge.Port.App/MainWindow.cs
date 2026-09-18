@@ -248,6 +248,11 @@ public sealed class MainWindow : Window
         sourceEditor.SelectionChanged += (_, _) =>
         {
             if (suppressSourceSelection || document is null) return;
+
+            // Only interpret a source selection as navigation while the editor itself
+            // owns focus. Preview-side source reveal must not feed back into selection.
+            if (sourceEditor.FocusState == FocusState.Unfocused) return;
+
             var mapped = document.FindAtSourceIndex(sourceEditor.SelectionStart);
             if (mapped is not null)
                 SelectAuthoredElement(mapped.Name, revealSource: false);
@@ -311,16 +316,50 @@ public sealed class MainWindow : Window
 
     void OnPreviewPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (e.OriginalSource is not DependencyObject original) return;
+        if (previewContent.Content is not UIElement renderedRoot) return;
 
-        var authored = FindNearestAuthoredElement(original);
-        if (authored is null) return;
+        // Match XAML Studio's proven selection strategy: use coordinates within the
+        // rendered XAML subtree, then map the hit visuals back to authored elements.
+        // Relying on routed-event OriginalSource is unreliable for templated controls
+        // such as Button because the original source can be an internal template part.
+        var point = e.GetCurrentPoint(renderedRoot).Position;
+        var hitElements = VisualTreeHelper.FindElementsInHostCoordinates(
+            point,
+            renderedRoot,
+            true);
 
-        SelectAuthoredElement(authored.Name, revealSource: true);
+        FrameworkElement? best = null;
+        var bestDepth = -1;
+        var bestArea = double.PositiveInfinity;
+
+        foreach (var hit in hitElements)
+        {
+            var authored = FindNearestAuthoredElement(hit, renderedRoot);
+            if (authored is null) continue;
+
+            var depth = GetVisualDepth(authored, renderedRoot);
+            var area = Math.Max(1, authored.ActualWidth) * Math.Max(1, authored.ActualHeight);
+
+            // Prefer the deepest authored element. Area is a deterministic tie-breaker
+            // for overlapping authored elements at the same depth.
+            if (depth > bestDepth || (depth == bestDepth && area < bestArea))
+            {
+                best = authored;
+                bestDepth = depth;
+                bestArea = area;
+            }
+        }
+
+        if (best is null)
+            best = FindNearestAuthoredElement(renderedRoot, renderedRoot);
+
+        if (best is null) return;
+
+        SelectAuthoredElement(best.Name, revealSource: true);
         e.Handled = true;
     }
 
-    FrameworkElement? FindNearestAuthoredElement(DependencyObject start)
+    FrameworkElement? FindNearestAuthoredElement(DependencyObject start, UIElement renderedRoot)
     {
         DependencyObject? current = start;
 
@@ -334,13 +373,27 @@ public sealed class MainWindow : Window
                 return element;
             }
 
-            if (ReferenceEquals(current, previewStage))
+            if (ReferenceEquals(current, renderedRoot))
                 break;
 
             current = VisualTreeHelper.GetParent(current);
         }
 
         return null;
+    }
+
+    static int GetVisualDepth(DependencyObject element, UIElement renderedRoot)
+    {
+        var depth = 0;
+        DependencyObject? current = element;
+
+        while (current is not null && !ReferenceEquals(current, renderedRoot))
+        {
+            depth++;
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return current is null ? -1 : depth;
     }
 
     void SelectAuthoredElement(string name, bool revealSource)
@@ -362,9 +415,9 @@ public sealed class MainWindow : Window
         if (revealSource)
         {
             suppressSourceSelection = true;
-            sourceEditor.Select(
-                sourceElement.StartIndex,
-                Math.Max(0, sourceElement.StartTagEndIndex - sourceElement.StartIndex + 1));
+            // A caret is enough to reveal the source location. Selecting the entire
+            // start tag was visually noisy and made preview clicks look like text edits.
+            sourceEditor.Select(sourceElement.StartIndex, 0);
 
             // TextBox selection notifications can be delivered after Select() returns.
             // Keep preview->source reveal suppressed through the current dispatcher turn
