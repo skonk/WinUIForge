@@ -487,6 +487,11 @@ public sealed class MainWindow : Window
 
     void WireEvents()
     {
+        undoButton.Click += (_, _) => Undo();
+        redoButton.Click += (_, _) => Redo();
+        deleteButton.Click += (_, _) => DeleteSelected();
+        renderButton.Click += (_, _) => RenderSource();
+
         renderTimer.Tick += (_, _) =>
         {
             renderTimer.Stop();
