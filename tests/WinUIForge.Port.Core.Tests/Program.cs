@@ -16,7 +16,8 @@ var tests = new List<(string Name, Action Run)>
     ("insert-delete-structural-edit", InsertDeleteStructuralEdit),
     ("reorder-structural-edit", ReorderStructuralEdit),
     ("reparent-structural-edit", ReparentStructuralEdit),
-    ("history-undo-redo", HistoryUndoRedo)
+    ("history-undo-redo", HistoryUndoRedo),
+    ("workshop-dashboard-benchmark-parses", WorkshopDashboardBenchmarkParses)
 };
 
 var failed = 0;
@@ -259,6 +260,45 @@ static void HistoryUndoRedo()
     var after = history.Redo();
     Check(after?.Source == "B", "redo source");
     Check(after?.SelectionIdentity == "name:B", "redo selection");
+}
+
+static void WorkshopDashboardBenchmarkParses()
+{
+    var path = Path.Combine(
+        AppContext.BaseDirectory,
+        "Benchmark",
+        "workshop-dashboard-v1",
+        "Screen.xaml");
+
+    Check(File.Exists(path), "benchmark fixture copied to test output");
+
+    var source = File.ReadAllText(path);
+    var doc = new ForgeXamlDocument(source);
+
+    Check(doc.Root.Name == "WorkshopDashboardBenchmark", "benchmark root");
+    Check(doc.FindByName("TopCommandBar") is not null, "top command bar");
+    Check(doc.FindByName("LocalDashboardPane") is not null, "local dashboard pane");
+    Check(doc.FindByName("DashboardMain") is not null, "main dashboard");
+    Check(doc.FindByName("MetricCards") is not null, "metric cards");
+    Check(doc.FindByName("RecentActivityPanel") is not null, "recent activity");
+    Check(doc.FindByName("RecentProjectsPanel") is not null, "recent projects");
+    Check(doc.FindByName("QuickActionsPanel") is not null, "quick actions");
+    Check(doc.FindByName("WorkerStatusPanel") is not null, "worker status");
+    Check(doc.FindByName("ProjectInspector") is not null, "project inspector");
+    Check(doc.FindByName("ActivityConsole") is not null, "activity console");
+
+    var workspace = doc.FindByName("DashboardWorkspace");
+    Check(workspace is not null, "dashboard workspace");
+    var columns = workspace!.Children
+        .FirstOrDefault(x => x.TypeName == "Grid.ColumnDefinitions")
+        ?.Children
+        .Where(x => x.TypeName == "ColumnDefinition")
+        .ToList();
+
+    Check(columns?.Count == 3, "three workspace columns");
+    Check(columns![0].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "205", "local pane width");
+    Check(columns[1].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "*", "center is flexible");
+    Check(columns[2].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "259", "inspector width");
 }
 
 static string StructuralFixture() =>
