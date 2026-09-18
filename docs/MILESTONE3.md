@@ -2,9 +2,10 @@
 
 > **Date:** 2026-09-18  
 > **Automated status:** PASS  
-> **Runtime smoke test:** pending  
-> **CI:** 35356977677  
-> **Validated commit:** `b6d8babc3f819e524aa0271fb4ea7e0133fdebff`
+> **Runtime smoke test:** PASS  
+> **Implementation CI:** 35356977677  
+> **Final validation CI:** 35359224233  
+> **Runtime-validated commit:** `09bca57b4d32f2c343421536f54ae4d755d37860`
 
 Milestone 3 turns the Milestone 2 XAML editor/inspector into the first real visual-authoring environment.
 
@@ -281,9 +282,37 @@ Core tests passing:
 
 The self-contained x64 WinUI 3 executable was also produced successfully.
 
+## Hands-on runtime validation
+
+**Status: PASSED (2026-09-18)**
+
+The Milestone 3 authoring workflow was exercised in the running Windows application. The authoring features in the acceptance pass behaved correctly except for an initial Undo/Redo integration defect.
+
+The defect was traced to delayed WinUIEdit/Scintilla `Modified` notifications after Forge programmatically synchronized source text. Those delayed notifications were interpreted as free-form user typing and cleared `ForgeEditHistory` immediately after a Forge transaction.
+
+Fix:
+
+~~~text
+09bca57b4d32f2c343421536f54ae4d755d37860
+fix(authoring): preserve Forge undo history across source sync
+~~~
+
+`ForgeSourceEditor` now raises its external `TextChanged` signal only when the live editor text actually differs from the last value assigned by Forge. Real manual source edits still invalidate structural history as intended, while Forge-authored source synchronization no longer destroys Undo/Redo history.
+
+Windows CI run **35359224233** then passed with:
+
+~~~text
+14 core authoring tests passed
+0 warnings
+0 errors
+Release WinUI 3 build succeeded
+~~~
+
+A subsequent hands-on Windows retest confirmed that both **Undo** and **Redo** operate correctly. With the rest of the Milestone 3 smoke pass already behaving as expected, this closes Milestone 3 runtime validation.
+
 ## Hands-on acceptance checklist
 
-Before marking Milestone 3 runtime validated, exercise:
+The following checklist defines the runtime acceptance pass that is now complete:
 
 1. **Existing selection**
    - preview selection remains reliable;
