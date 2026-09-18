@@ -88,10 +88,11 @@
                             Spacing="8">
                     <Grid Width="92">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Dashboard.png"
-                               Width="26"
-                               Height="26"
+                               Width="22"
+                               Height="22"
                                HorizontalAlignment="Center"
-                               Margin="0,4,0,0"
+                               VerticalAlignment="Top"
+                               Margin="0,5,0,0"
                                Stretch="Uniform"/>
                         <TextBlock Text="Dashboard"
                                    HorizontalAlignment="Center"
@@ -105,10 +106,11 @@
                     </Grid>
                     <Grid Width="92">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Prepare.png"
-                               Width="26"
-                               Height="26"
+                               Width="22"
+                               Height="22"
                                HorizontalAlignment="Center"
-                               Margin="0,4,0,0"
+                               VerticalAlignment="Top"
+                               Margin="0,5,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Prepare"
@@ -120,10 +122,11 @@
                     </Grid>
                     <Grid Width="92">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Conduit.png"
-                               Width="26"
-                               Height="26"
+                               Width="22"
+                               Height="22"
                                HorizontalAlignment="Center"
-                               Margin="0,4,0,0"
+                               VerticalAlignment="Top"
+                               Margin="0,5,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Conduit"
@@ -135,10 +138,11 @@
                     </Grid>
                     <Grid Width="92">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Library.png"
-                               Width="26"
-                               Height="26"
+                               Width="22"
+                               Height="22"
                                HorizontalAlignment="Center"
-                               Margin="0,4,0,0"
+                               VerticalAlignment="Top"
+                               Margin="0,5,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Library"
@@ -150,10 +154,11 @@
                     </Grid>
                     <Grid Width="92">
                         <Image Source="ms-appx:///Assets/WorkshopUi/Navigation/Settings.png"
-                               Width="26"
-                               Height="26"
+                               Width="22"
+                               Height="22"
                                HorizontalAlignment="Center"
-                               Margin="0,4,0,0"
+                               VerticalAlignment="Top"
+                               Margin="0,5,0,0"
                                Opacity="0.72"
                                Stretch="Uniform"/>
                         <TextBlock Text="Settings"
