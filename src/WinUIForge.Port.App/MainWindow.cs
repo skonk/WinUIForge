@@ -1462,7 +1462,9 @@ public sealed class MainWindow : Window
         }
     }
 
-    void UpdateSelectionChromeFromRuntime(bool preserveResizeHandle = false)
+    void UpdateSelectionChromeFromRuntime(
+        double? widthOverride = null,
+        double? heightOverride = null)
     {
         if (selectedFrameworkElement is null) return;
 
@@ -1473,9 +1475,8 @@ public sealed class MainWindow : Window
             UpdateSelectionChrome(
                 point.X,
                 point.Y,
-                Math.Max(1, selectedFrameworkElement.ActualWidth),
-                Math.Max(1, selectedFrameworkElement.ActualHeight),
-                preserveResizeHandle);
+                Math.Max(1, widthOverride ?? selectedFrameworkElement.ActualWidth),
+                Math.Max(1, heightOverride ?? selectedFrameworkElement.ActualHeight));
         }
         catch
         {
@@ -1766,24 +1767,42 @@ public sealed class MainWindow : Window
             resizePreviewAnchoredVertical = true;
         }
 
-        if (widthChanged)
-            selectedFrameworkElement.Width = Math.Max(8, resizeStartWidth + resizeDeltaX);
+        var previewWidth = widthChanged
+            ? Math.Max(8, resizeStartWidth + resizeDeltaX)
+            : (double?)null;
+        var previewHeight = heightChanged
+            ? Math.Max(8, resizeStartHeight + resizeDeltaY)
+            : (double?)null;
+
+        if (previewWidth is { } width)
+            selectedFrameworkElement.Width = width;
         else
             selectedFrameworkElement.Width = resizeOriginalWidth;
 
-        if (heightChanged)
-            selectedFrameworkElement.Height = Math.Max(8, resizeStartHeight + resizeDeltaY);
+        if (previewHeight is { } height)
+            selectedFrameworkElement.Height = height;
         else
-            selectedFrameworkElement.Height = resizeOriginalHeight;
+            selectedFrameworkElement.Height = keepAutoHeight
+                ? double.NaN
+                : resizeOriginalHeight;
 
         previewStage.UpdateLayout();
-        UpdateSelectionChromeFromRuntime();
 
-        var widthText = widthChanged
-            ? Math.Max(8, resizeStartWidth + resizeDeltaX).ToString("0", CultureInfo.InvariantCulture)
+        // During an active resize, the target dimension is authoritative for
+        // designer chrome. Some WinUI elements (notably TextBlock in a
+        // StackPanel) can keep reporting the previous arranged ActualWidth for
+        // part of the layout pass even though Width and clipping have already
+        // changed. Using the drag target prevents the orange frame from lagging
+        // behind the content.
+        UpdateSelectionChromeFromRuntime(
+            widthOverride: previewWidth,
+            heightOverride: previewHeight);
+
+        var widthText = previewWidth is { } widthValue
+            ? widthValue.ToString("0", CultureInfo.InvariantCulture)
             : "Auto";
-        var heightText = heightChanged
-            ? Math.Max(8, resizeStartHeight + resizeDeltaY).ToString("0", CultureInfo.InvariantCulture)
+        var heightText = previewHeight is { } heightValue
+            ? heightValue.ToString("0", CultureInfo.InvariantCulture)
             : "Auto";
 
         status.Text = $"Live resize preview {widthText} × {heightText}";
