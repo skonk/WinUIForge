@@ -233,11 +233,7 @@ public sealed class MainWindow : Window
         AppWindow.TitleBar.ButtonBackgroundColor = Color.FromArgb(255, 23, 27, 29);
         AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(255, 242, 243, 245);
 
-        var appIconPath = Path.Combine(
-            AppContext.BaseDirectory,
-            "Assets",
-            "Branding",
-            "Workshop.ico");
+        var appIconPath = Path.Combine(AppContext.BaseDirectory, "Workshop.ico");
         if (File.Exists(appIconPath))
             AppWindow.SetIcon(appIconPath);
 
