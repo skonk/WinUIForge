@@ -87,11 +87,12 @@ Validated manually in the running WinUI 3 proof application:
 
 - application launches successfully;
 - dynamically loaded WinUI XAML renders correctly;
-- clicking the authored `ActionButton` selects the actual Button;
-- the inspector reports `Button / ActionButton`;
-- the selection outline follows the Button's rendered bounds;
-- the diagnostic hit path reports `RootGrid > ContentStack > ActionButton`;
-- preview selection no longer falls back to `RootGrid` or `HeadingText` for the Button case;
+- authored elements in the current proof can be clicked and selected reliably across the preview;
+- the inspector reports the correct authored control type and `x:Name` for the selected element;
+- the selection outline follows the selected element's rendered bounds;
+- nested selection resolves to the deepest authored element under the pointer (for example `RootGrid > ContentStack > ActionButton`);
+- Button, TextBlock, Border/container and root/Grid selection no longer collapse onto an unrelated element;
+- repeated switching between authored elements remains stable;
 - source reveal no longer paints the whole XAML start tag as a large selection.
 
 This closes the core interaction risk for the first vertical-slice proof: real WinUI XAML can be rendered, mapped to runtime elements, selected visually, and tied back to authored source in a usable interaction loop.

@@ -97,7 +97,9 @@ Confirmed:
 - real XAML is dynamically rendered with `Microsoft.UI.Xaml.Markup.XamlReader`;
 - authored named elements are mapped to rendered `FrameworkElement` instances;
 - preview selection is resolved from rendered authored bounds;
-- `ActionButton` can be selected correctly through the live preview;
+- authored elements in the current proof can be selected reliably and repeatedly through the live preview;
+- nested clicks resolve to the correct deepest authored element rather than an unrelated sibling/ancestor;
+- inspector identity tracks the selected authored control correctly;
 - source location and runtime selection remain synchronized;
 - Width can be represented as a source XAML edit in the proof document;
 - build/test CI is green.
