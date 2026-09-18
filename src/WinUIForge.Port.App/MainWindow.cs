@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Globalization;
+using System.Numerics;
 using Microsoft.Windows.Storage.Pickers;
 using WinUIForge.Port.Core;
 using Windows.Foundation;
@@ -133,15 +134,29 @@ public sealed class MainWindow : Window
     FrameworkElement? selectedFrameworkElement;
     bool suppressSourceTextChanged;
     bool suppressTreeSelection;
+    bool designerManipulating;
     int referencePixelWidth;
     int referencePixelHeight;
 
+    Border? selectionOutline;
+    Thumb? selectionMoveHandle;
+    Thumb? selectionResizeHandle;
+
+    double manipulationStartX;
+    double manipulationStartY;
+    double manipulationStartWidth;
+    double manipulationStartHeight;
+
     double moveDeltaX;
     double moveDeltaY;
+    Vector3 moveStartTranslation;
+
     double resizeDeltaX;
     double resizeDeltaY;
     double resizeStartWidth;
     double resizeStartHeight;
+    double resizeOriginalWidth;
+    double resizeOriginalHeight;
 
     static readonly SolidColorBrush WindowBrush = Brush(23, 27, 29);
     static readonly SolidColorBrush PanelBrush = Brush(34, 37, 42);
@@ -1315,11 +1330,19 @@ public sealed class MainWindow : Window
             document?.FindByIdentity(selectedElementIdentity)?.Parent is not null;
     }
 
-    void SelectedElement_SizeChanged(object sender, SizeChangedEventArgs e) => DrawSelection();
+    void SelectedElement_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!designerManipulating)
+            DrawSelection();
+    }
 
     void DrawSelection()
     {
         selectionLayer.Children.Clear();
+        selectionOutline = null;
+        selectionMoveHandle = null;
+        selectionResizeHandle = null;
+
         if (selectedFrameworkElement is null || previewContent.Content is null) return;
 
         try
@@ -1329,7 +1352,7 @@ public sealed class MainWindow : Window
             var width = Math.Max(1, selectedFrameworkElement.ActualWidth);
             var height = Math.Max(1, selectedFrameworkElement.ActualHeight);
 
-            var outline = new Border
+            selectionOutline = new Border
             {
                 Width = width,
                 Height = height,
@@ -1337,51 +1360,216 @@ public sealed class MainWindow : Window
                 BorderThickness = new Thickness(2),
                 IsHitTestVisible = false
             };
-            Canvas.SetLeft(outline, point.X);
-            Canvas.SetTop(outline, point.Y);
-            selectionLayer.Children.Add(outline);
+            selectionLayer.Children.Add(selectionOutline);
 
-            var move = CreateHandle("Move / reorder");
-            Canvas.SetLeft(move, point.X - 6);
-            Canvas.SetTop(move, point.Y - 6);
-            move.DragStarted += (_, _) =>
-            {
-                moveDeltaX = 0;
-                moveDeltaY = 0;
-            };
-            move.DragDelta += (_, args) =>
+            selectionMoveHandle = CreateHandle("Move / reorder");
+            selectionMoveHandle.DragStarted += (_, _) =>
+                BeginMovePreview(point.X, point.Y, width, height);
+            selectionMoveHandle.DragDelta += (_, args) =>
             {
                 moveDeltaX += args.HorizontalChange;
                 moveDeltaY += args.VerticalChange;
-                status.Text = $"Move preview Δ {moveDeltaX:0}, {moveDeltaY:0}";
+                UpdateMovePreview();
             };
-            move.DragCompleted += (_, _) => CommitMove(moveDeltaX, moveDeltaY);
-            selectionLayer.Children.Add(move);
+            selectionMoveHandle.DragCompleted += (_, _) => CompleteMovePreview();
+            selectionLayer.Children.Add(selectionMoveHandle);
 
-            var resize = CreateHandle("Resize");
-            Canvas.SetLeft(resize, point.X + width - 6);
-            Canvas.SetTop(resize, point.Y + height - 6);
-            resize.DragStarted += (_, _) =>
-            {
-                resizeDeltaX = 0;
-                resizeDeltaY = 0;
-                resizeStartWidth = width;
-                resizeStartHeight = height;
-            };
-            resize.DragDelta += (_, args) =>
+            selectionResizeHandle = CreateHandle("Resize");
+            selectionResizeHandle.DragStarted += (_, _) =>
+                BeginResizePreview(width, height);
+            selectionResizeHandle.DragDelta += (_, args) =>
             {
                 resizeDeltaX += args.HorizontalChange;
                 resizeDeltaY += args.VerticalChange;
-                status.Text =
-                    $"Resize preview {Math.Max(8, resizeStartWidth + resizeDeltaX):0} × {Math.Max(8, resizeStartHeight + resizeDeltaY):0}";
+                UpdateResizePreview();
             };
-            resize.DragCompleted += (_, _) => CommitResize();
-            selectionLayer.Children.Add(resize);
+            selectionResizeHandle.DragCompleted += (_, _) => CompleteResizePreview();
+            selectionLayer.Children.Add(selectionResizeHandle);
+
+            UpdateSelectionChrome(point.X, point.Y, width, height);
         }
         catch
         {
             selectionLayer.Children.Clear();
+            selectionOutline = null;
+            selectionMoveHandle = null;
+            selectionResizeHandle = null;
         }
+    }
+
+    void UpdateSelectionChrome(double x, double y, double width, double height)
+    {
+        width = Math.Max(1, width);
+        height = Math.Max(1, height);
+
+        if (selectionOutline is not null)
+        {
+            selectionOutline.Width = width;
+            selectionOutline.Height = height;
+            Canvas.SetLeft(selectionOutline, x);
+            Canvas.SetTop(selectionOutline, y);
+        }
+
+        if (selectionMoveHandle is not null)
+        {
+            Canvas.SetLeft(selectionMoveHandle, x - 6);
+            Canvas.SetTop(selectionMoveHandle, y - 6);
+        }
+
+        if (selectionResizeHandle is not null)
+        {
+            Canvas.SetLeft(selectionResizeHandle, x + width - 6);
+            Canvas.SetTop(selectionResizeHandle, y + height - 6);
+        }
+    }
+
+    void UpdateSelectionChromeFromRuntime()
+    {
+        if (selectedFrameworkElement is null) return;
+
+        try
+        {
+            var transform = selectedFrameworkElement.TransformToVisual(previewStage);
+            var point = transform.TransformPoint(new Point(0, 0));
+            UpdateSelectionChrome(
+                point.X,
+                point.Y,
+                Math.Max(1, selectedFrameworkElement.ActualWidth),
+                Math.Max(1, selectedFrameworkElement.ActualHeight));
+        }
+        catch
+        {
+            // Keep the last valid live-preview chrome if layout is between passes.
+        }
+    }
+
+    void BeginMovePreview(double x, double y, double width, double height)
+    {
+        if (selectedFrameworkElement is null) return;
+
+        designerManipulating = true;
+        moveDeltaX = 0;
+        moveDeltaY = 0;
+        moveStartTranslation = selectedFrameworkElement.Translation;
+
+        manipulationStartX = x;
+        manipulationStartY = y;
+        manipulationStartWidth = width;
+        manipulationStartHeight = height;
+    }
+
+    void UpdateMovePreview()
+    {
+        if (selectedFrameworkElement is null ||
+            document?.FindByIdentity(selectedElementIdentity) is not { } source)
+            return;
+
+        var parentType = source.Parent?.TypeName ?? string.Empty;
+
+        // Translation is a runtime-only rendering offset. It gives immediate
+        // feedback without mutating layout or authoritative XAML mid-drag.
+        // Border is intentionally excluded because its child has no free X/Y
+        // positioning semantics; the moving outline acts as a target ghost.
+        if (parentType != "Border")
+        {
+            selectedFrameworkElement.Translation =
+                moveStartTranslation +
+                new Vector3((float)moveDeltaX, (float)moveDeltaY, 0);
+        }
+
+        UpdateSelectionChrome(
+            manipulationStartX + moveDeltaX,
+            manipulationStartY + moveDeltaY,
+            manipulationStartWidth,
+            manipulationStartHeight);
+
+        status.Text = parentType switch
+        {
+            "StackPanel" =>
+                $"Live reorder preview Δ {moveDeltaX:0}, {moveDeltaY:0} · release to reorder",
+            "Canvas" =>
+                $"Live Canvas preview Δ {moveDeltaX:0}, {moveDeltaY:0}",
+            "Grid" =>
+                $"Live Grid preview Δ {moveDeltaX:0}, {moveDeltaY:0} · release to resolve cell/margin",
+            "Border" =>
+                "Border constrains its child; orange outline shows the attempted position.",
+            _ =>
+                $"Live move preview Δ {moveDeltaX:0}, {moveDeltaY:0}"
+        };
+    }
+
+    void CompleteMovePreview()
+    {
+        var element = selectedFrameworkElement;
+        if (element is not null)
+            element.Translation = moveStartTranslation;
+
+        designerManipulating = false;
+        CommitMove(moveDeltaX, moveDeltaY);
+
+        // CommitMove may intentionally make no source change (small drag,
+        // constrained Border, edge of StackPanel). In those cases restore the
+        // chrome to the actual runtime bounds immediately.
+        DrawSelection();
+    }
+
+    void BeginResizePreview(double width, double height)
+    {
+        if (selectedFrameworkElement is null) return;
+
+        designerManipulating = true;
+        resizeDeltaX = 0;
+        resizeDeltaY = 0;
+        resizeStartWidth = width;
+        resizeStartHeight = height;
+        resizeOriginalWidth = selectedFrameworkElement.Width;
+        resizeOriginalHeight = selectedFrameworkElement.Height;
+    }
+
+    void UpdateResizePreview()
+    {
+        if (selectedFrameworkElement is null) return;
+
+        var width = Math.Max(8, resizeStartWidth + resizeDeltaX);
+        var height = Math.Max(8, resizeStartHeight + resizeDeltaY);
+
+        selectedFrameworkElement.Width = width;
+        selectedFrameworkElement.Height = height;
+
+        // Force the designer subtree through layout so centred/aligned controls
+        // visibly move as their temporary size changes.
+        previewStage.UpdateLayout();
+        UpdateSelectionChromeFromRuntime();
+
+        status.Text = $"Live resize preview {width:0} × {height:0}";
+    }
+
+    void CompleteResizePreview()
+    {
+        var previewElement = selectedFrameworkElement;
+        designerManipulating = false;
+
+        if (Math.Abs(resizeDeltaX) < 0.5 && Math.Abs(resizeDeltaY) < 0.5)
+        {
+            RestoreResizePreview(previewElement);
+            DrawSelection();
+            return;
+        }
+
+        if (!CommitResize())
+        {
+            RestoreResizePreview(previewElement);
+            DrawSelection();
+        }
+    }
+
+    void RestoreResizePreview(FrameworkElement? element)
+    {
+        if (element is null) return;
+
+        element.Width = resizeOriginalWidth;
+        element.Height = resizeOriginalHeight;
+        previewStage.UpdateLayout();
     }
 
     static Thumb CreateHandle(string tooltip)
@@ -1398,15 +1586,15 @@ public sealed class MainWindow : Window
         return thumb;
     }
 
-    void CommitResize()
+    bool CommitResize()
     {
         if (document is null ||
             selectedFrameworkElement is null ||
             string.IsNullOrWhiteSpace(selectedElementIdentity))
-            return;
+            return false;
 
         if (Math.Abs(resizeDeltaX) < 0.5 && Math.Abs(resizeDeltaY) < 0.5)
-            return;
+            return false;
 
         try
         {
@@ -1426,10 +1614,12 @@ public sealed class MainWindow : Window
                 identity);
 
             ApplyDocumentText(document.Text, identity);
+            return true;
         }
         catch (Exception ex)
         {
             status.Text = "Could not resize element: " + ex.Message;
+            return false;
         }
     }
 
@@ -1608,6 +1798,10 @@ public sealed class MainWindow : Window
 
         selectedElementIdentity = null;
         selectedFrameworkElement = null;
+        designerManipulating = false;
+        selectionOutline = null;
+        selectionMoveHandle = null;
+        selectionResizeHandle = null;
         selectionLayer.Children.Clear();
 
         suppressTreeSelection = true;
