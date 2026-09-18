@@ -11,6 +11,11 @@ $solution = Join-Path $root "WinUIForge.Port.slnx"
 Write-Host "== WinUI Forge port build ==" -ForegroundColor Cyan
 Write-Host "Solution: $solution"
 
+$running = Get-Process -Name "WinUIForge.Port.App" -ErrorAction SilentlyContinue
+if ($running) {
+    throw "WinUIForge.Port.App is currently running. Close the app before rebuilding so the output files are not locked."
+}
+
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     throw ".NET SDK was not found. Install the .NET 10 SDK and rerun."
 }

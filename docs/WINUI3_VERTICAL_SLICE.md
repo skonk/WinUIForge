@@ -41,11 +41,11 @@ src\WinUIForge.Port.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\WinUIFor
 
 This is a migration proof, not yet the WinUI Forge product shell.
 
-- The editor is a plain WinUI `TextBox`, not WinUIEdit yet.
-- Mapping is deliberately limited to authored elements with `x:Name` or `Name`.
-- Source → preview selection is scoped to element start tags in this first proof.
-- Only Width is exposed as an editable property.
-- There is no Toolbox, drag/drop, Grid editor, Components, tokens UI or Forge sidecar metadata yet.
+- Milestone 1 used a plain WinUI `TextBox`; Milestone 2 replaces it with WinUIEdit.
+- Runtime mapping is still deliberately limited to authored elements with `x:Name` or `Name`.
+- Source navigation remains scoped to element start tags.
+- Milestone 2 expands the inspector to a curated set of common DependencyProperties.
+- There is still no Toolbox, drag/drop, Grid visual editor, Components, tokens UI or Forge sidecar metadata yet.
 - The existing XAML Studio UWP solution remains untouched.
 
 These limitations are intentional. The next migration slice should strengthen the coordinator/property system rather than broaden the UI prematurely.

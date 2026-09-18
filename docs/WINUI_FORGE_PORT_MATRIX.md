@@ -140,3 +140,26 @@ Success means one XAML document can be edited, rendered, selected and property-i
 Every migration slice should have a build test, behavioural smoke test, fixture XAML document, explicit upstream reference, and no silent fallback to different UI semantics.
 
 The first critical fixture should contain a Grid with pixel/star columns, nested StackPanel, Button, TextBlock, resource reference, and one named element.
+
+
+## Milestone 2 implementation status — 2026-09-18
+
+| Area | Status | Current Forge implementation |
+|---|---|---|
+| WinUI 3 app shell | ✅ implemented | .NET 10 / Windows App SDK side-by-side port |
+| Dynamic XAML rendering | ✅ implemented | `ForgeRenderService` around WinUI 3 `XamlReader` |
+| Last-valid preview | ✅ implemented | failed renders retain previous preview |
+| Authored XAML hierarchy | ✅ implemented | `ForgeXamlDocument` tree with parent/children/source ranges |
+| XML/runtime coordinator | ✅ first Forge slice | `ForgeVisualCoordinator`, named authored element mapping |
+| Preview selection | ✅ runtime validated in Milestone 1 | rendered authored bounds |
+| Visual Tree | ✅ implemented | authored hierarchy with synchronized selection |
+| Live Properties | ✅ first catalog implemented | curated WinUI DependencyProperty metadata |
+| Property → source persistence | ✅ implemented | surgical source attribute edits |
+| Source formatting preservation | ✅ core-tested | replace/add/remove without full reserialization |
+| Monaco UWP replacement | ✅ implemented | WinUIEdit `0.0.5-prerelease` |
+| XML syntax highlighting | ✅ wired | WinUIEdit `HighlightingLanguage = "xml"` |
+| UTF-8 ↔ UTF-16 caret mapping | ✅ implemented/tested | `ForgeTextPosition` |
+| Visual States | ⏳ later | not part of Milestone 2 |
+| Binding debugger | ⏳ later | not part of Milestone 2 |
+| Toolbox / Add mode | ⏳ next designer phase | not started |
+| drag / resize / reparent | ⏳ next designer phase | not started |

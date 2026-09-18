@@ -105,3 +105,56 @@ Confirmed:
 - build/test CI is green.
 
 The migration may now move beyond proof-of-viability and begin porting/reusing the stronger XAML Studio subsystems.
+
+
+## Milestone 2 — coordinator, render service, live properties and source editor
+
+**Automated status: PASSED (2026-09-18)**  
+**Hands-on runtime status: pending**
+
+Milestone 2 replaces the one-off vertical-slice plumbing with reusable infrastructure adapted from the strongest XAML Studio concepts.
+
+Implemented and Windows-CI validated:
+
+- `ForgeRenderService` wraps WinUI 3 `XamlReader` and returns structured render success/failure diagnostics;
+- invalid XAML no longer replaces the last valid preview;
+- `ForgeVisualCoordinator` owns authored-XAML ↔ rendered-`FrameworkElement` mapping;
+- the proven rendered-bounds selection algorithm is preserved in the coordinator;
+- `ForgeXamlDocument` now models the authored hierarchy, source ranges, attributes, parents and children;
+- property edits mutate only the relevant source attribute/value rather than reserializing the document;
+- replacement, insertion, removal and XML escaping are covered by core tests;
+- an authored Visual Tree is synchronized with preview/source/inspector selection;
+- a curated live DependencyProperty inspector exposes common layout, Grid, appearance, typography, control, content, Border and StackPanel properties;
+- Enter commits an inspector edit back into XAML and blank removes the local value;
+- the selected element is preserved across valid re-renders;
+- the temporary WinUI `TextBox` source editor has been replaced with WinUIEdit `0.0.5-prerelease` / `CodeEditorControl` with XML highlighting;
+- Scintilla UTF-8 byte positions are converted to/from .NET UTF-16 source indices so non-ASCII XAML text does not corrupt source navigation;
+- the original XAML Studio UWP solution remains intact for reference and upstream comparison.
+
+Windows CI run **35351622131** passed at commit `660cebd02497c9e164dd0ef2cd911e10574244e3`.
+
+Core tests now cover:
+
+- authored hierarchy parsing;
+- source-index mapping;
+- formatting-preserving property replacement;
+- formatting-preserving property insertion;
+- local-property removal;
+- XML attribute escaping;
+- UTF-8 ↔ UTF-16 caret-position round-tripping with non-ASCII text;
+- unknown-element failure handling.
+
+The Release app build completed successfully with the expected self-contained x64 executable.
+
+### Runtime validation still required
+
+Hands-on validation must now confirm:
+
+- WinUIEdit loads and displays the XAML source correctly;
+- XML syntax highlighting is active;
+- editing valid source triggers the debounced preview render;
+- malformed source leaves the last valid preview visible and surfaces the error;
+- preview, Visual Tree and source selection remain synchronized;
+- live property edits update only the intended XAML attribute and preserve surrounding formatting;
+- blanking a property removes the local XAML value;
+- source navigation remains correct with non-ASCII text.
