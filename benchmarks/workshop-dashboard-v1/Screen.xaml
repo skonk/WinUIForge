@@ -39,9 +39,9 @@
             <Grid Grid.Row="0"
                   Margin="10,0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="470"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="235"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0"
@@ -80,7 +80,8 @@
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1"
+                <StackPanel Grid.Column="0"
+                            Grid.ColumnSpan="3"
                             Orientation="Horizontal"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Stretch"
