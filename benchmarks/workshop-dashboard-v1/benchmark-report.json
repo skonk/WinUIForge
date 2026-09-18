@@ -1,0 +1,14 @@
+{
+  "case": "workshop-dashboard-v1",
+  "viewport": [1672, 941],
+  "reference": "W2-01-dashboard.png",
+  "firstPass": {
+    "structurallyValid": null,
+    "rendered": null,
+    "runtimeReviewed": false
+  },
+  "corrections": [],
+  "forgeLimitations": [],
+  "guidanceChanges": [],
+  "status": "awaiting-first-runtime-comparison"
+}
