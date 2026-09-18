@@ -1,6 +1,9 @@
 {
   "case": "workshop-dashboard-v1",
-  "viewport": [1672, 941],
+  "viewport": [
+    1672,
+    941
+  ],
   "reference": "W2-01-dashboard.png",
   "firstPass": {
     "structurallyValid": true,
@@ -39,11 +42,32 @@
       "change": "Add semantic preview placeholder and richer metadata."
     }
   ],
-  "forgeLimitations": [],
+  "forgeLimitations": [
+    {
+      "class": "editability",
+      "finding": "Production-density XAML made the flat Visual Tree difficult to navigate.",
+      "response": "Added Visual Tree filtering and Named only mode.",
+      "status": "addressed",
+      "commit": "4f03754160569e5ede999b34e67d274f4ac6cd1a"
+    },
+    {
+      "class": "iteration-workflow",
+      "finding": "Benchmark XAML revisions should not require rebuilding Forge or Workshop for every visual iteration.",
+      "response": "Added direct Open/Reload/Save XAML workflow and live repository benchmark loading.",
+      "status": "addressed",
+      "commit": "38758da814c02a9a221f9ee8f9b21c395ae781ed"
+    }
+  ],
   "guidanceChanges": [
     "Infer repeated KPI cardinality before authoring.",
     "Treat major vertical/column boundaries as structural evidence, not cosmetic spacing.",
     "Preserve separate global navigation and contextual command layers when both are visible."
   ],
-  "status": "second-pass-ready-for-runtime-comparison"
+  "status": "second-pass-reviewed-iterative-tuning-active",
+  "secondPass": {
+    "structurallyValid": true,
+    "rendered": true,
+    "runtimeReviewed": true,
+    "summary": "Major screen architecture now aligns substantially better in the 50% overlay; remaining differences are mainly asset/icon fidelity, typography, spacing, and smaller geometry tuning."
+  }
 }
