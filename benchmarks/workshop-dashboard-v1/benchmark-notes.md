@@ -141,6 +141,48 @@ AI edits XAML
 
 without rebuilding the Workshop application and, for normal XAML iterations, without rebuilding Forge.
 
+
+
+## First exported review-package analysis
+
+The first `.forge-review.zip` successfully provided:
+
+- clean WinUI render;
+- normalized 1672 x 941 reference;
+- highlighted render;
+- 50% comparison;
+- exact named runtime bounds;
+- authored hierarchy;
+- environment/render diagnostics.
+
+This immediately corrected one earlier overlay interpretation: the approved reference contains **four KPI cards**, not five. The semi-transparent overlay had made the extra authored Workers Online card appear plausible. The clean normalized reference removed that ambiguity.
+
+### Measured major target geometry
+
+The package allowed the following target structure to be inferred in the shared 1672 x 941 coordinate space:
+
+- global top row: approximately **60 px**;
+- command surface: approximately **84 px**;
+- dashboard workspace begins at approximately **y = 144**;
+- navigation rail: approximately **210 px**;
+- inspector rail: approximately **280 px**;
+- main dashboard content begins at approximately **x = 218 / y = 152** after padding;
+- four-card KPI row: approximately **114 px** high;
+- lower content columns are approximately **408 / 360 / 378 px** before local border variation;
+- Quick Actions is approximately **322 px** high;
+- Worker Status is the shorter remainder beneath it;
+- console begins around **y = 763** and is approximately **110 px** high;
+- branded footer occupies the final approximately **68 px**.
+
+These measurements drove the third structural pass.
+
+### Review-package issue found
+
+The first package reported `case: Screen`, omitted `Screen.forge.json`, and therefore exported `semanticRegionCount: 0`. Highlight All still worked through the named-container fallback, but the semantic sidecar is preferable.
+
+Forge now packages the benchmark sidecar with the application so future exports retain the benchmark case and semantic keys.
+
+
 ## Corrections
 
 Second pass has completed its first runtime overlay review. Iterative visual tuning is active.
