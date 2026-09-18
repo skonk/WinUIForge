@@ -83,7 +83,9 @@ internal static class ForgeDependencyPropertyCatalog
         var runtimeType = element.GetType();
 
         return definitions
-            .Where(x => x.Attached || x.OwnerType.IsAssignableFrom(runtimeType))
+            .Where(x => x.Attached
+                ? element is FrameworkElement
+                : x.OwnerType.IsAssignableFrom(runtimeType))
             .GroupBy(x => x.AttributeName, StringComparer.Ordinal)
             .Select(x => x
                 .OrderByDescending(def => InheritanceDepth(def.OwnerType))
@@ -149,8 +151,10 @@ internal static class ForgeDependencyPropertyCatalog
         if (sourceValue?.StartsWith('{') == true)
             return true;
 
+        if (type == typeof(object))
+            return sourceValue is not null || runtimeValue is null || runtimeValue is string;
+
         return type == typeof(string) ||
-               type == typeof(object) ||
                type == typeof(double) ||
                type == typeof(int) ||
                type == typeof(bool) ||

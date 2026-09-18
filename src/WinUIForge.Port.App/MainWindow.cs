@@ -43,6 +43,7 @@ public sealed class MainWindow : Window
     FrameworkElement? selectedFrameworkElement;
     bool suppressSourceTextChanged;
     bool rebuildingVisualTree;
+    bool previewMatchesSource;
 
     static readonly SolidColorBrush WindowBrush = Brush(23, 27, 29);
     static readonly SolidColorBrush PanelBrush = Brush(34, 37, 42);
@@ -285,7 +286,8 @@ public sealed class MainWindow : Window
         {
             diagnostics.Text = string.Join(Environment.NewLine, result.Diagnostics);
             diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
-            status.Text = "Render failed. The last valid preview remains visible.";
+            previewMatchesSource = false;
+            status.Text = "Render failed. The last valid preview remains visible and source navigation is paused.";
             return;
         }
 
@@ -297,6 +299,7 @@ public sealed class MainWindow : Window
         document = result.Document!;
         previewContent.Content = result.Element;
         coordinator.Initialize(document, result.Element!);
+        previewMatchesSource = true;
 
         RebuildVisualTree();
 
@@ -323,7 +326,7 @@ public sealed class MainWindow : Window
 
     void OnSourceCaretMoved()
     {
-        if (document is null) return;
+        if (document is null || !previewMatchesSource) return;
 
         var mapped = document.FindAtSourceIndex(sourceEditor.CaretIndex);
         if (mapped is not null && coordinator.TryGetRuntimeElement(mapped.Id, out _))
@@ -415,7 +418,7 @@ public sealed class MainWindow : Window
         RebuildPropertyInspector(sourceElement, runtime);
         SyncVisualTreeSelection(sourceElement.Id);
 
-        if (revealSource)
+        if (revealSource && previewMatchesSource)
             sourceEditor.RevealIndex(sourceElement.StartIndex);
 
         DrawSelection();
