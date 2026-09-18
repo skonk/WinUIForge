@@ -56,7 +56,7 @@ public sealed class MainWindow : Window
         Visibility = Visibility.Collapsed
     };
 
-    readonly Button loadWorkshopBenchmarkButton = new() { Content = "Load W2 first pass" };
+    readonly Button loadWorkshopBenchmarkButton = new() { Content = "Load W2 benchmark" };
     readonly Button loadReferenceButton = new() { Content = "Load reference…" };
     readonly CheckBox referenceVisibleCheckBox = new() { Content = "Overlay", IsEnabled = false };
     readonly Slider referenceOpacitySlider = new()
@@ -507,11 +507,11 @@ public sealed class MainWindow : Window
             if (referenceOverlay.Source is null)
             {
                 referenceInfo.Text =
-                    "W2 first pass loaded · now load W2-01-dashboard.png as the reference overlay";
+                    "W2 benchmark loaded · now load W2-01-dashboard.png as the reference overlay";
             }
 
             status.Text =
-                "Workshop dashboard first pass loaded · benchmark viewport 1672 × 941.";
+                "Workshop dashboard benchmark loaded · viewport 1672 × 941.";
         }
         catch (Exception ex)
         {
