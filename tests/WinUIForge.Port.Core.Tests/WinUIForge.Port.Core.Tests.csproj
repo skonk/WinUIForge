@@ -7,5 +7,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/WinUIForge.Port.Core/WinUIForge.Port.Core.csproj" />
+    <None Include="../../benchmarks/workshop-dashboard-v1/Screen.xaml"
+          Link="Benchmark/workshop-dashboard-v1/Screen.xaml"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
