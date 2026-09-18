@@ -219,7 +219,11 @@ public sealed class MainWindow : Window
 
     const uint ImageIcon = 1;
     const uint LoadFromFile = 0x10;
+    const uint WmGetIcon = 0x007F;
     const uint WmSetIcon = 0x0080;
+    const int IconSmall = 0;
+    const int IconBig = 1;
+    const int IconSmall2 = 2;
     const int GclpHIcon = -14;
     const int GclpHIconSm = -34;
 
@@ -231,6 +235,9 @@ public sealed class MainWindow : Window
 
     [DllImport("user32.dll", EntryPoint = "SetClassLongPtrW", SetLastError = true)]
     static extern nint SetClassLongPtrW(nint hwnd, int index, nint value);
+
+    [DllImport("user32.dll", EntryPoint = "GetClassLongPtrW", SetLastError = true)]
+    static extern nint GetClassLongPtrW(nint hwnd, int index);
 
     const double ResizeAxisThreshold = 8;
     const double ResizeSecondAxisThreshold = 18;
@@ -251,6 +258,11 @@ public sealed class MainWindow : Window
         AppWindow.TitleBar.ForegroundColor = Color.FromArgb(255, 242, 243, 245);
         AppWindow.TitleBar.ButtonBackgroundColor = Color.FromArgb(255, 23, 27, 29);
         AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(255, 242, 243, 245);
+
+        // Windows App SDK can retain a hidden system-icon state after title-bar
+        // customization. Explicitly cycle it before applying the Workshop icon.
+        AppWindow.TitleBar.IconShowOptions = Microsoft.UI.Windowing.IconShowOptions.HideIconAndSystemMenu;
+        AppWindow.TitleBar.IconShowOptions = Microsoft.UI.Windowing.IconShowOptions.ShowIconAndSystemMenu;
 
         Activated += (_, _) => ApplyWindowIcons();
 
@@ -276,46 +288,107 @@ public sealed class MainWindow : Window
                 ? linkedIconPath
                 : null;
 
+        var iconLogPath = Path.Combine(Path.GetTempPath(), "WinUIForge-icon-diagnostics.txt");
+        var log = new StringBuilder();
+        log.AppendLine($"Timestamp: {DateTimeOffset.Now:O}");
+        log.AppendLine($"ProcessPath: {Environment.ProcessPath}");
+        log.AppendLine($"BaseDirectory: {AppContext.BaseDirectory}");
+        log.AppendLine($"RootIcon: {rootIconPath} | exists={File.Exists(rootIconPath)}");
+        log.AppendLine($"LinkedIcon: {linkedIconPath} | exists={File.Exists(linkedIconPath)}");
+
         if (appIconPath is null)
         {
+            log.AppendLine("ResolvedIcon: <none>");
+            File.WriteAllText(iconLogPath, log.ToString());
             Debug.WriteLine($"Workshop icon was not found under {AppContext.BaseDirectory}");
+            status.Text = $"Workshop icon missing · probe: {iconLogPath}";
             return;
+        }
+
+        log.AppendLine($"ResolvedIcon: {appIconPath}");
+        try
+        {
+            var info = new FileInfo(appIconPath);
+            log.AppendLine($"IconBytes: {info.Length}");
+        }
+        catch (Exception ex)
+        {
+            log.AppendLine($"IconFileInfoError: {ex}");
         }
 
         try
         {
+            // The title-bar icon can remain hidden after title-bar customization
+            // unless the system icon/menu state is explicitly restored.
+            AppWindow.TitleBar.IconShowOptions = Microsoft.UI.Windowing.IconShowOptions.HideIconAndSystemMenu;
+            AppWindow.TitleBar.IconShowOptions = Microsoft.UI.Windowing.IconShowOptions.ShowIconAndSystemMenu;
+
             AppWindow.SetIcon(appIconPath);
             AppWindow.SetTitleBarIcon(appIconPath);
             AppWindow.SetTaskbarIcon(appIconPath);
+            log.AppendLine("AppWindow APIs: success");
         }
         catch (Exception ex)
         {
+            log.AppendLine($"AppWindow APIs: FAILED: {ex}");
             Debug.WriteLine($"AppWindow icon API failed: {ex}");
         }
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        log.AppendLine($"HWND: 0x{hwnd:X}");
         if (hwnd == 0)
+        {
+            File.WriteAllText(iconLogPath, log.ToString());
+            status.Text = $"Workshop icon probe: no HWND · {iconLogPath}";
             return;
+        }
 
-        nativeBigIcon = nativeBigIcon != 0
-            ? nativeBigIcon
-            : LoadImageW(0, appIconPath, ImageIcon, 32, 32, LoadFromFile);
-        nativeSmallIcon = nativeSmallIcon != 0
-            ? nativeSmallIcon
-            : LoadImageW(0, appIconPath, ImageIcon, 16, 16, LoadFromFile);
+        if (nativeBigIcon == 0)
+        {
+            Marshal.GetLastWin32Error();
+            nativeBigIcon = LoadImageW(0, appIconPath, ImageIcon, 32, 32, LoadFromFile);
+            log.AppendLine($"LoadImage 32: 0x{nativeBigIcon:X} · error={Marshal.GetLastWin32Error()}");
+        }
+
+        if (nativeSmallIcon == 0)
+        {
+            Marshal.GetLastWin32Error();
+            nativeSmallIcon = LoadImageW(0, appIconPath, ImageIcon, 16, 16, LoadFromFile);
+            log.AppendLine($"LoadImage 16: 0x{nativeSmallIcon:X} · error={Marshal.GetLastWin32Error()}");
+        }
 
         if (nativeBigIcon != 0)
         {
-            SendMessageW(hwnd, WmSetIcon, 1, nativeBigIcon);
+            SendMessageW(hwnd, WmSetIcon, IconBig, nativeBigIcon);
             SetClassLongPtrW(hwnd, GclpHIcon, nativeBigIcon);
         }
 
         if (nativeSmallIcon != 0)
         {
-            SendMessageW(hwnd, WmSetIcon, 0, nativeSmallIcon);
-            SendMessageW(hwnd, WmSetIcon, 2, nativeSmallIcon);
+            SendMessageW(hwnd, WmSetIcon, IconSmall, nativeSmallIcon);
+            SendMessageW(hwnd, WmSetIcon, IconSmall2, nativeSmallIcon);
             SetClassLongPtrW(hwnd, GclpHIconSm, nativeSmallIcon);
         }
+
+        var windowBig = SendMessageW(hwnd, WmGetIcon, IconBig, 0);
+        var windowSmall = SendMessageW(hwnd, WmGetIcon, IconSmall, 0);
+        var windowSmall2 = SendMessageW(hwnd, WmGetIcon, IconSmall2, 0);
+        var classBig = GetClassLongPtrW(hwnd, GclpHIcon);
+        var classSmall = GetClassLongPtrW(hwnd, GclpHIconSm);
+
+        log.AppendLine($"WM_GETICON BIG: 0x{windowBig:X}");
+        log.AppendLine($"WM_GETICON SMALL: 0x{windowSmall:X}");
+        log.AppendLine($"WM_GETICON SMALL2: 0x{windowSmall2:X}");
+        log.AppendLine($"CLASS BIG: 0x{classBig:X}");
+        log.AppendLine($"CLASS SMALL: 0x{classSmall:X}");
+        log.AppendLine($"TitleBar IconShowOptions: {AppWindow.TitleBar.IconShowOptions}");
+
+        File.WriteAllText(iconLogPath, log.ToString());
+
+        var applied = windowBig != 0 || windowSmall != 0 || classBig != 0 || classSmall != 0;
+        status.Text = applied
+            ? $"Workshop icon applied · diagnostic log: {iconLogPath}"
+            : $"Workshop icon APIs returned no native icon · diagnostic log: {iconLogPath}";
     }
 
     UIElement BuildShell()
