@@ -1,3 +1,4 @@
+using System.Text;
 using WinUIForge.Port.Core;
 
 var tests = new List<(string Name, Action Run)>
@@ -8,6 +9,7 @@ var tests = new List<(string Name, Action Run)>
     ("add-property-preserves-formatting", AddPropertyPreservesFormatting),
     ("remove-property-preserves-document", RemovePropertyPreservesDocument),
     ("attribute-escaping", AttributeEscaping),
+    ("utf8-utf16-position-roundtrip", Utf8Utf16PositionRoundtrip),
     ("unknown-element", UnknownElement)
 };
 
@@ -110,6 +112,33 @@ static void AttributeEscaping()
 
     Check(doc.Text.Contains("A &amp; B &quot;quoted&quot;", StringComparison.Ordinal), "escaped source");
     Check(doc.GetAttribute("ActionButton", "Content") == "A & B \"quoted\"", "unescaped model value");
+}
+
+
+static void Utf8Utf16PositionRoundtrip()
+{
+    const string text = "Grid Δ café 😺 Button";
+
+    for (var utf16 = 0; utf16 <= text.Length; utf16++)
+    {
+        if (utf16 > 0 &&
+            utf16 < text.Length &&
+            char.IsLowSurrogate(text[utf16]) &&
+            char.IsHighSurrogate(text[utf16 - 1]))
+        {
+            continue;
+        }
+
+        var bytes = ForgeTextPosition.Utf16IndexToUtf8ByteOffset(text, utf16);
+        var roundtrip = ForgeTextPosition.Utf8ByteOffsetToUtf16Index(text, bytes);
+        Check(roundtrip == utf16, $"UTF roundtrip at {utf16}");
+    }
+
+    var emojiIndex = text.IndexOf("😺", StringComparison.Ordinal);
+    var emojiByte = Encoding.UTF8.GetByteCount(text.AsSpan(0, emojiIndex));
+    Check(
+        ForgeTextPosition.Utf8ByteOffsetToUtf16Index(text, emojiByte) == emojiIndex,
+        "emoji boundary maps to UTF-16 source index");
 }
 
 static void UnknownElement()

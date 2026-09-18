@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Text;
+using WinUIForge.Port.Core;
 using WinUIEditor;
 
 namespace WinUIForge.Port.App;
@@ -69,7 +69,7 @@ internal sealed class ForgeSourceEditor : Grid
             {
                 var oldCaret = CaretUtf16Index;
                 editorControl.Editor.SetText(pendingText);
-                editorControl.Editor.GotoPos(Utf16IndexToUtf8ByteOffset(pendingText, Math.Min(oldCaret, pendingText.Length)));
+                editorControl.Editor.GotoPos(ForgeTextPosition.Utf16IndexToUtf8ByteOffset(pendingText, Math.Min(oldCaret, pendingText.Length)));
             }
             finally
             {
@@ -83,7 +83,7 @@ internal sealed class ForgeSourceEditor : Grid
         get
         {
             if (!ready) return 0;
-            return Utf8ByteOffsetToUtf16Index(Text, editorControl.Editor.CurrentPos);
+            return ForgeTextPosition.Utf8ByteOffsetToUtf16Index(Text, editorControl.Editor.CurrentPos);
         }
     }
 
@@ -93,7 +93,7 @@ internal sealed class ForgeSourceEditor : Grid
 
         var text = Text;
         var clamped = Math.Clamp(index, 0, text.Length);
-        editorControl.Editor.GotoPos(Utf16IndexToUtf8ByteOffset(text, clamped));
+        editorControl.Editor.GotoPos(ForgeTextPosition.Utf16IndexToUtf8ByteOffset(text, clamped));
         editorControl.Focus(FocusState.Programmatic);
     }
 
@@ -110,33 +110,4 @@ internal sealed class ForgeSourceEditor : Grid
         CaretChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    internal static int Utf8ByteOffsetToUtf16Index(string text, long byteOffset)
-    {
-        if (string.IsNullOrEmpty(text) || byteOffset <= 0) return 0;
-
-        var bytes = Encoding.UTF8.GetBytes(text);
-        var clamped = (int)Math.Clamp(byteOffset, 0, bytes.Length);
-
-        // Scintilla positions are UTF-8 byte offsets. Decode the prefix to recover
-        // the .NET UTF-16 index used by our XAML source spans.
-        return Encoding.UTF8.GetString(bytes, 0, clamped).Length;
-    }
-
-    internal static long Utf16IndexToUtf8ByteOffset(string text, int utf16Index)
-    {
-        if (string.IsNullOrEmpty(text) || utf16Index <= 0) return 0;
-
-        var clamped = Math.Clamp(utf16Index, 0, text.Length);
-
-        // Avoid splitting a surrogate pair if a caller supplied an arbitrary index.
-        if (clamped < text.Length &&
-            clamped > 0 &&
-            char.IsLowSurrogate(text[clamped]) &&
-            char.IsHighSurrogate(text[clamped - 1]))
-        {
-            clamped--;
-        }
-
-        return Encoding.UTF8.GetByteCount(text.AsSpan(0, clamped));
-    }
 }
