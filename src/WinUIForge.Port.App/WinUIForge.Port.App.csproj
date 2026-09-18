@@ -24,11 +24,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\gallery-toolbox.json" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="..\..\assets\workshop-ui\app-icon\Workshop.ico"
-             Link="Assets\Branding\Workshop.ico"
-             TargetPath="Workshop.ico"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\assets\workshop-ui\app-icon\Workshop.ico"
+          Link="Workshop.ico"
+          TargetPath="Workshop.ico"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always" />
     <Content Include="..\..\assets\workshop-ui\runtime\navigation\*.png"
              Link="Assets\WorkshopUi\Navigation\%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest" />
