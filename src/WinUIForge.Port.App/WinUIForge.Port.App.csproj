@@ -15,6 +15,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>WinUIForge.Port.App</RootNamespace>
     <AssemblyName>WinUIForge.Port.App</AssemblyName>
+    <ApplicationIcon>..\..\assets\workshop-ui\app-icon\Workshop.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
@@ -25,7 +26,9 @@
     <Content Include="Assets\gallery-toolbox.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\assets\workshop-ui\app-icon\Workshop.ico"
              Link="Assets\Branding\Workshop.ico"
-             CopyToOutputDirectory="PreserveNewest" />
+             TargetPath="Workshop.ico"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\assets\workshop-ui\runtime\navigation\*.png"
              Link="Assets\WorkshopUi\Navigation\%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest" />
