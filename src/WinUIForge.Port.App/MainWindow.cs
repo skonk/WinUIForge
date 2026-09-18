@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Windows.Storage.Pickers;
@@ -213,6 +214,24 @@ public sealed class MainWindow : Window
     bool resizeWidthActive;
     bool resizeHeightActive;
 
+    nint nativeBigIcon;
+    nint nativeSmallIcon;
+
+    const uint ImageIcon = 1;
+    const uint LoadFromFile = 0x10;
+    const uint WmSetIcon = 0x0080;
+    const int GclpHIcon = -14;
+    const int GclpHIconSm = -34;
+
+    [DllImport("user32.dll", EntryPoint = "LoadImageW", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern nint LoadImageW(nint hInstance, string name, uint type, int width, int height, uint loadFlags);
+
+    [DllImport("user32.dll", EntryPoint = "SendMessageW")]
+    static extern nint SendMessageW(nint hwnd, uint message, nuint wParam, nint lParam);
+
+    [DllImport("user32.dll", EntryPoint = "SetClassLongPtrW", SetLastError = true)]
+    static extern nint SetClassLongPtrW(nint hwnd, int index, nint value);
+
     const double ResizeAxisThreshold = 8;
     const double ResizeSecondAxisThreshold = 18;
 
@@ -233,7 +252,6 @@ public sealed class MainWindow : Window
         AppWindow.TitleBar.ButtonBackgroundColor = Color.FromArgb(255, 23, 27, 29);
         AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(255, 242, 243, 245);
 
-        ApplyWindowIcons();
         Activated += (_, _) => ApplyWindowIcons();
 
         viewportDisplayMode.ItemsSource = new[] { "Fit", "Fill", "1:1" };
@@ -245,17 +263,59 @@ public sealed class MainWindow : Window
 
         sourceEditor.Text = SampleXaml;
         RenderSource();
+        ApplyWindowIcons();
     }
 
     void ApplyWindowIcons()
     {
-        var appIconPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Workshop.ico"));
-        if (!File.Exists(appIconPath))
+        var rootIconPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Workshop.ico"));
+        var linkedIconPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Assets", "Branding", "Workshop.ico"));
+        var appIconPath = File.Exists(rootIconPath)
+            ? rootIconPath
+            : File.Exists(linkedIconPath)
+                ? linkedIconPath
+                : null;
+
+        if (appIconPath is null)
+        {
+            Debug.WriteLine($"Workshop icon was not found under {AppContext.BaseDirectory}");
+            return;
+        }
+
+        try
+        {
+            AppWindow.SetIcon(appIconPath);
+            AppWindow.SetTitleBarIcon(appIconPath);
+            AppWindow.SetTaskbarIcon(appIconPath);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"AppWindow icon API failed: {ex}");
+        }
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        if (hwnd == 0)
             return;
 
-        AppWindow.SetIcon(appIconPath);
-        AppWindow.SetTitleBarIcon(appIconPath);
-        AppWindow.SetTaskbarIcon(appIconPath);
+        nativeBigIcon = nativeBigIcon != 0
+            ? nativeBigIcon
+            : LoadImageW(0, appIconPath, ImageIcon, 32, 32, LoadFromFile);
+        nativeSmallIcon = nativeSmallIcon != 0
+            ? nativeSmallIcon
+            : LoadImageW(0, appIconPath, ImageIcon, 16, 16, LoadFromFile);
+
+        if (nativeBigIcon != 0)
+        {
+            SendMessageW(hwnd, WmSetIcon, 1, nativeBigIcon);
+            SetClassLongPtrW(hwnd, GclpHIcon, nativeBigIcon);
+        }
+
+        if (nativeSmallIcon != 0)
+        {
+            SendMessageW(hwnd, WmSetIcon, 0, nativeSmallIcon);
+            SendMessageW(hwnd, WmSetIcon, 2, nativeSmallIcon);
+            SetClassLongPtrW(hwnd, GclpHIconSm, nativeSmallIcon);
+        }
     }
 
     UIElement BuildShell()
