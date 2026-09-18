@@ -56,7 +56,7 @@ internal sealed class ForgeSourceEditor : Grid
         get
         {
             if (!ready) return pendingText;
-            var length = editorControl.Editor.Length();
+            var length = editorControl.Editor.Length;
             return editorControl.Editor.GetText(length + 1);
         }
         set
@@ -83,7 +83,7 @@ internal sealed class ForgeSourceEditor : Grid
         get
         {
             if (!ready) return 0;
-            return Utf8ByteOffsetToUtf16Index(Text, editorControl.Editor.CurrentPos());
+            return Utf8ByteOffsetToUtf16Index(Text, editorControl.Editor.CurrentPos);
         }
     }
 
