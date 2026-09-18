@@ -280,8 +280,10 @@ static void WorkshopDashboardBenchmarkParses()
     Check(doc.FindByName("LocalDashboardPane") is not null, "local dashboard pane");
     Check(doc.FindByName("DashboardMain") is not null, "main dashboard");
     Check(doc.FindByName("MetricCards") is not null, "metric cards");
+    Check(doc.FindByName("ActiveJobsMetric") is not null, "active jobs metric");
     Check(doc.FindByName("AssetsProcessedMetric") is not null, "assets processed metric");
     Check(doc.FindByName("WorkerHealthMetric") is not null, "worker health metric");
+    Check(doc.FindByName("MetricCards")!.ContentChildren.Count == 4, "four metric cards");
     Check(doc.FindByName("RecentActivityPanel") is not null, "recent activity");
     Check(doc.FindByName("RecentProjectsPanel") is not null, "recent projects");
     Check(doc.FindByName("QuickActionsPanel") is not null, "quick actions");
@@ -298,9 +300,9 @@ static void WorkshopDashboardBenchmarkParses()
         .ToList();
 
     Check(columns?.Count == 3, "three workspace columns");
-    Check(columns![0].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "224", "local pane width");
+    Check(columns![0].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "210", "local pane width");
     Check(columns[1].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "*", "center is flexible");
-    Check(columns[2].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "259", "inspector width");
+    Check(columns[2].Attributes.FirstOrDefault(x => x.Name == "Width")?.Value == "280", "inspector width");
 }
 
 static string StructuralFixture() =>
