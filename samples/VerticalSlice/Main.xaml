@@ -1,0 +1,28 @@
+<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      x:Name="RootGrid"
+      Background="#202327"
+      Padding="32">
+    <Grid.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="#F97419"/>
+    </Grid.Resources>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="260"/>
+    </Grid.ColumnDefinitions>
+    <StackPanel x:Name="ContentStack" Spacing="16" VerticalAlignment="Center">
+        <TextBlock x:Name="HeadingText" Text="WinUI Forge" FontSize="32"/>
+        <Button x:Name="ActionButton"
+                Content="Select me"
+                HorizontalAlignment="Left"
+                Background="{StaticResource AccentBrush}"/>
+    </StackPanel>
+    <Border x:Name="InspectorCard"
+            Grid.Column="1"
+            Margin="20,0,0,0"
+            Padding="18"
+            BorderBrush="{StaticResource AccentBrush}"
+            BorderThickness="1">
+        <TextBlock Text="Real WinUI 3 XAML"/>
+    </Border>
+</Grid>

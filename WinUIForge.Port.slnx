@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/WinUIForge.Port.Core/WinUIForge.Port.Core.csproj" />
+  <Project Path="src/WinUIForge.Port.App/WinUIForge.Port.App.csproj" />
+  <Project Path="tests/WinUIForge.Port.Core.Tests/WinUIForge.Port.Core.Tests.csproj" />
+</Solution>
