@@ -21,4 +21,7 @@
     <PackageReference Include="WinUIEdit" Version="0.0.5-prerelease" />
     <ProjectReference Include="../WinUIForge.Port.Core/WinUIForge.Port.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\gallery-toolbox.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
