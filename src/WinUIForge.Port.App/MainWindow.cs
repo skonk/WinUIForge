@@ -1377,27 +1377,45 @@ public sealed class MainWindow : Window
             selectionLayer.Children.Add(selectionOutline);
 
             selectionMoveHandle = CreateHandle("Move / reorder");
-            selectionMoveHandle.PointerPressed += (_, args) =>
-                BeginMovePointerDrag(selectionMoveHandle, args, point.X, point.Y, width, height);
-            selectionMoveHandle.PointerMoved += (_, args) =>
-                ContinueMovePointerDrag(args);
-            selectionMoveHandle.PointerReleased += (_, args) =>
-                EndMovePointerDrag(selectionMoveHandle, args);
-            selectionMoveHandle.PointerCanceled += (_, args) =>
-                CancelMovePointerDrag(selectionMoveHandle, args);
+            selectionMoveHandle.AddHandler(
+                UIElement.PointerPressedEvent,
+                new PointerEventHandler((_, args) =>
+                    BeginMovePointerDrag(selectionMoveHandle, args, point.X, point.Y, width, height)),
+                true);
+            selectionMoveHandle.AddHandler(
+                UIElement.PointerMovedEvent,
+                new PointerEventHandler((_, args) => ContinueMovePointerDrag(args)),
+                true);
+            selectionMoveHandle.AddHandler(
+                UIElement.PointerReleasedEvent,
+                new PointerEventHandler((_, args) => EndMovePointerDrag(selectionMoveHandle, args)),
+                true);
+            selectionMoveHandle.AddHandler(
+                UIElement.PointerCanceledEvent,
+                new PointerEventHandler((_, args) => CancelMovePointerDrag(selectionMoveHandle, args)),
+                true);
             selectionMoveHandle.PointerCaptureLost += (_, _) =>
                 CancelMovePointerDrag(null, null);
             selectionLayer.Children.Add(selectionMoveHandle);
 
             selectionResizeHandle = CreateHandle("Resize");
-            selectionResizeHandle.PointerPressed += (_, args) =>
-                BeginResizePointerDrag(selectionResizeHandle, args, width, height);
-            selectionResizeHandle.PointerMoved += (_, args) =>
-                ContinueResizePointerDrag(args);
-            selectionResizeHandle.PointerReleased += (_, args) =>
-                EndResizePointerDrag(selectionResizeHandle, args);
-            selectionResizeHandle.PointerCanceled += (_, args) =>
-                CancelResizePointerDrag(selectionResizeHandle, args);
+            selectionResizeHandle.AddHandler(
+                UIElement.PointerPressedEvent,
+                new PointerEventHandler((_, args) =>
+                    BeginResizePointerDrag(selectionResizeHandle, args, width, height)),
+                true);
+            selectionResizeHandle.AddHandler(
+                UIElement.PointerMovedEvent,
+                new PointerEventHandler((_, args) => ContinueResizePointerDrag(args)),
+                true);
+            selectionResizeHandle.AddHandler(
+                UIElement.PointerReleasedEvent,
+                new PointerEventHandler((_, args) => EndResizePointerDrag(selectionResizeHandle, args)),
+                true);
+            selectionResizeHandle.AddHandler(
+                UIElement.PointerCanceledEvent,
+                new PointerEventHandler((_, args) => CancelResizePointerDrag(selectionResizeHandle, args)),
+                true);
             selectionResizeHandle.PointerCaptureLost += (_, _) =>
                 CancelResizePointerDrag(null, null);
             selectionLayer.Children.Add(selectionResizeHandle);
@@ -1477,7 +1495,8 @@ public sealed class MainWindow : Window
 
         movePointerId = args.Pointer.PointerId;
         movePointerStart = args.GetCurrentPoint(previewStage).Position;
-        handle.CapturePointer(args.Pointer);
+        // Thumb already captures the pointer for its built-in drag behavior.
+        // We only observe the routed pointer stream here.
         args.Handled = true;
 
         BeginMovePreview(x, y, width, height);
@@ -1503,7 +1522,6 @@ public sealed class MainWindow : Window
         moveDeltaY = current.Y - movePointerStart.Y;
 
         movePointerId = null;
-        handle.ReleasePointerCapture(args.Pointer);
         args.Handled = true;
         CompleteMovePreview();
     }
@@ -1513,8 +1531,6 @@ public sealed class MainWindow : Window
         if (movePointerId is null) return;
 
         movePointerId = null;
-        if (handle is not null && args is not null)
-            handle.ReleasePointerCapture(args.Pointer);
 
         if (selectedFrameworkElement is not null)
             selectedFrameworkElement.Translation = moveStartTranslation;
@@ -1603,7 +1619,7 @@ public sealed class MainWindow : Window
 
         resizePointerId = args.Pointer.PointerId;
         resizePointerStart = args.GetCurrentPoint(previewStage).Position;
-        handle.CapturePointer(args.Pointer);
+        // Thumb owns pointer capture; Forge observes the handled routed events.
         args.Handled = true;
 
         BeginResizePreview(width, height);
@@ -1630,7 +1646,6 @@ public sealed class MainWindow : Window
         UpdateResizePreview();
 
         resizePointerId = null;
-        handle.ReleasePointerCapture(args.Pointer);
         args.Handled = true;
         CompleteResizePreview();
     }
@@ -1640,8 +1655,6 @@ public sealed class MainWindow : Window
         if (resizePointerId is null) return;
 
         resizePointerId = null;
-        if (handle is not null && args is not null)
-            handle.ReleasePointerCapture(args.Pointer);
 
         designerManipulating = false;
         RestoreResizePreview(selectedFrameworkElement);
