@@ -23,5 +23,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\gallery-toolbox.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\benchmarks\workshop-dashboard-v1\Screen.xaml"
+             Link="Benchmarks\workshop-dashboard-v1\Screen.xaml"
+             CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
