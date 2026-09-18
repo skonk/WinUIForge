@@ -45,7 +45,6 @@ public sealed class MainWindow : Window
     ForgeXamlDocument? document;
     string? selectedElementName;
     FrameworkElement? selectedFrameworkElement;
-    bool suppressSourceSelection;
     bool suppressSourceTextChanged;
 
     static readonly SolidColorBrush WindowBrush = Brush(23, 27, 29);
@@ -245,18 +244,10 @@ public sealed class MainWindow : Window
             renderTimer.Start();
         };
 
-        sourceEditor.SelectionChanged += (_, _) =>
-        {
-            if (suppressSourceSelection || document is null) return;
-
-            // Only interpret a source selection as navigation while the editor itself
-            // owns focus. Preview-side source reveal must not feed back into selection.
-            if (sourceEditor.FocusState == FocusState.Unfocused) return;
-
-            var mapped = document.FindAtSourceIndex(sourceEditor.SelectionStart);
-            if (mapped is not null)
-                SelectAuthoredElement(mapped.Name, revealSource: false);
-        };
+        sourceEditor.AddHandler(
+            UIElement.PointerReleasedEvent,
+            new PointerEventHandler(OnSourcePointerReleased),
+            true);
 
         applyWidth.Click += (_, _) => CommitWidth();
         previewStage.SizeChanged += (_, _) => DrawSelection();
@@ -314,87 +305,91 @@ public sealed class MainWindow : Window
             RegisterAuthoredElements(VisualTreeHelper.GetChild(root, i));
     }
 
+    void OnSourcePointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        // Run after TextBox has applied the user's pointer/caret update. Programmatic
+        // source reveal never enters this path, so preview -> source cannot feed back.
+        sourceEditor.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (document is null) return;
+            var mapped = document.FindAtSourceIndex(sourceEditor.SelectionStart);
+            if (mapped is not null)
+                SelectAuthoredElement(mapped.Name, revealSource: false);
+        });
+    }
+
     void OnPreviewPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (previewContent.Content is not UIElement renderedRoot) return;
+        if (document is null || previewContent.Content is not UIElement) return;
 
-        // Match XAML Studio's proven selection strategy: use coordinates within the
-        // rendered XAML subtree, then map the hit visuals back to authored elements.
-        // Relying on routed-event OriginalSource is unreliable for templated controls
-        // such as Button because the original source can be an internal template part.
-        var point = e.GetCurrentPoint(renderedRoot).Position;
-        var hitElements = VisualTreeHelper.FindElementsInHostCoordinates(
-            point,
-            renderedRoot,
-            true);
+        // Do not depend on routed-event OriginalSource or WinUI's host-coordinate hit
+        // testing here. Both can be affected by control templates and host transforms.
+        // Instead, measure every authored element in the previewStage coordinate space,
+        // keep the rectangles containing the pointer, and choose the deepest authored
+        // XAML node. This makes Button > StackPanel > Grid deterministic.
+        var point = e.GetCurrentPoint(previewStage).Position;
+        var candidates = new List<AuthoredHit>();
 
-        FrameworkElement? best = null;
-        var bestDepth = -1;
-        var bestArea = double.PositiveInfinity;
-
-        foreach (var hit in hitElements)
+        foreach (var pair in renderedByName)
         {
-            var authored = FindNearestAuthoredElement(hit, renderedRoot);
-            if (authored is null) continue;
+            var sourceElement = document.FindByName(pair.Key);
+            if (sourceElement is null) continue;
 
-            var depth = GetVisualDepth(authored, renderedRoot);
-            var area = Math.Max(1, authored.ActualWidth) * Math.Max(1, authored.ActualHeight);
+            var runtimeElement = pair.Value;
+            if (runtimeElement.ActualWidth <= 0 || runtimeElement.ActualHeight <= 0) continue;
 
-            // Prefer the deepest authored element. Area is a deterministic tie-breaker
-            // for overlapping authored elements at the same depth.
-            if (depth > bestDepth || (depth == bestDepth && area < bestArea))
+            try
             {
-                best = authored;
-                bestDepth = depth;
-                bestArea = area;
+                var transform = runtimeElement.TransformToVisual(previewStage);
+                var bounds = transform.TransformBounds(
+                    new Rect(0, 0, runtimeElement.ActualWidth, runtimeElement.ActualHeight));
+
+                if (!bounds.Contains(point)) continue;
+
+                candidates.Add(new AuthoredHit(
+                    runtimeElement,
+                    sourceElement,
+                    bounds,
+                    Math.Max(1, bounds.Width) * Math.Max(1, bounds.Height)));
+            }
+            catch
+            {
+                // A transiently disconnected visual is simply not a candidate.
             }
         }
+
+        var best = candidates
+            .OrderByDescending(x => x.Source.Depth)
+            .ThenBy(x => x.Area)
+            .FirstOrDefault();
 
         if (best is null)
-            best = FindNearestAuthoredElement(renderedRoot, renderedRoot);
-
-        if (best is null) return;
-
-        SelectAuthoredElement(best.Name, revealSource: true);
-        e.Handled = true;
-    }
-
-    FrameworkElement? FindNearestAuthoredElement(DependencyObject start, UIElement renderedRoot)
-    {
-        DependencyObject? current = start;
-
-        while (current is not null)
         {
-            if (current is FrameworkElement element &&
-                !string.IsNullOrWhiteSpace(element.Name) &&
-                renderedByName.TryGetValue(element.Name, out var registered) &&
-                ReferenceEquals(element, registered))
-            {
-                return element;
-            }
-
-            if (ReferenceEquals(current, renderedRoot))
-                break;
-
-            current = VisualTreeHelper.GetParent(current);
+            status.Text = $"Preview hit ({point.X:0},{point.Y:0}) did not intersect an authored element.";
+            return;
         }
 
-        return null;
+        SelectAuthoredElement(best.Source.Name, revealSource: true);
+
+        var hitPath = string.Join(
+            " > ",
+            candidates
+                .OrderBy(x => x.Source.Depth)
+                .ThenByDescending(x => x.Area)
+                .Select(x => x.Source.Name));
+
+        status.Text =
+            $"Selected {best.Source.TypeName} '{best.Source.Name}' · bounds hits: {hitPath}";
+
+        // Leave the routed event unhandled so WinUI can perform its normal focus/input
+        // processing. The designer chrome observes the click; it does not consume it.
     }
 
-    static int GetVisualDepth(DependencyObject element, UIElement renderedRoot)
-    {
-        var depth = 0;
-        DependencyObject? current = element;
-
-        while (current is not null && !ReferenceEquals(current, renderedRoot))
-        {
-            depth++;
-            current = VisualTreeHelper.GetParent(current);
-        }
-
-        return current is null ? -1 : depth;
-    }
+    sealed record AuthoredHit(
+        FrameworkElement Element,
+        ForgeXamlElement Source,
+        Rect Bounds,
+        double Area);
 
     void SelectAuthoredElement(string name, bool revealSource)
     {
@@ -414,16 +409,9 @@ public sealed class MainWindow : Window
 
         if (revealSource)
         {
-            suppressSourceSelection = true;
-            // A caret is enough to reveal the source location. Selecting the entire
-            // start tag was visually noisy and made preview clicks look like text edits.
+            // A zero-length caret reveals the source location without creating the
+            // large highlighted selection that made preview clicks look like text edits.
             sourceEditor.Select(sourceElement.StartIndex, 0);
-
-            // TextBox selection notifications can be delivered after Select() returns.
-            // Keep preview->source reveal suppressed through the current dispatcher turn
-            // so it cannot immediately trigger a second source->preview selection.
-            if (!sourceEditor.DispatcherQueue.TryEnqueue(() => suppressSourceSelection = false))
-                suppressSourceSelection = false;
         }
 
         DrawSelection();
@@ -485,18 +473,8 @@ public sealed class MainWindow : Window
             document.SetAttribute(selected, "Width", normalized);
 
             suppressSourceTextChanged = true;
-            suppressSourceSelection = true;
             sourceEditor.Text = document.Text;
-
-            if (!sourceEditor.DispatcherQueue.TryEnqueue(() =>
-                {
-                    suppressSourceSelection = false;
-                    suppressSourceTextChanged = false;
-                }))
-            {
-                suppressSourceSelection = false;
-                suppressSourceTextChanged = false;
-            }
+            suppressSourceTextChanged = false;
 
             selectedElementName = selected;
             RenderSource();
