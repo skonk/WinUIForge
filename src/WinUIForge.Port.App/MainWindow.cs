@@ -2291,17 +2291,15 @@ public sealed class MainWindow : Window
         {
             status.Text = "Opening reference image picker…";
 
-            // Windows App SDK 1.8+ provides a desktop-native picker that is
-            // parented directly with AppWindow.Id. This is the preferred WinUI 3
-            // path and avoids the legacy IInitializeWithWindow interop route.
             var picker = new FileOpenPicker(AppWindow.Id)
             {
-                Title = "Choose a benchmark reference image"
+                Title = "Choose a visual reference image"
             };
             picker.FileTypeFilter.Add(".png");
             picker.FileTypeFilter.Add(".jpg");
             picker.FileTypeFilter.Add(".jpeg");
             picker.FileTypeFilter.Add(".bmp");
+            picker.FileTypeFilter.Add(".webp");
 
             var result = await picker.PickSingleFileAsync();
             if (result is null)
@@ -2310,27 +2308,7 @@ public sealed class MainWindow : Window
                 return;
             }
 
-            referenceSourceFilePath = result.Path;
-            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(result.Path);
-            var bitmap = new BitmapImage();
-            using (var stream = await file.OpenReadAsync())
-                await bitmap.SetSourceAsync(stream);
-
-            referenceOverlay.Source = bitmap;
-            referencePixelWidth = bitmap.PixelWidth;
-            referencePixelHeight = bitmap.PixelHeight;
-            referenceVisibleCheckBox.IsEnabled = true;
-            referenceOpacitySlider.IsEnabled = true;
-            useReferenceSizeButton.IsEnabled = referencePixelWidth > 0 && referencePixelHeight > 0;
-            referenceVisibleCheckBox.IsChecked = true;
-
-            referenceInfo.Text =
-                $"{file.Name} · {referencePixelWidth} × {referencePixelHeight} · aspect ratio preserved";
-
-            if (referencePixelWidth > 0 && referencePixelHeight > 0)
-                SetBenchmarkViewport(referencePixelWidth, referencePixelHeight);
-
-            UpdateReferenceOverlay();
+            await LoadReferenceFromPathAsync(result.Path);
             status.Text =
                 "Reference image loaded. Overlay is visual-only and does not modify authored XAML.";
         }
@@ -2340,6 +2318,45 @@ public sealed class MainWindow : Window
             diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
             status.Text = "Could not load reference image: " + ex.Message;
         }
+    }
+
+    async Task LoadReferenceFromPathAsync(string path, bool adoptViewport = true)
+    {
+        referenceSourceFilePath = Path.GetFullPath(path);
+        var file = await StorageFile.GetFileFromPathAsync(referenceSourceFilePath);
+        var bitmap = new BitmapImage();
+        using (var stream = await file.OpenReadAsync())
+            await bitmap.SetSourceAsync(stream);
+
+        referenceOverlay.Source = bitmap;
+        referencePixelWidth = bitmap.PixelWidth;
+        referencePixelHeight = bitmap.PixelHeight;
+        referenceVisibleCheckBox.IsEnabled = true;
+        referenceOpacitySlider.IsEnabled = true;
+        useReferenceSizeButton.IsEnabled = referencePixelWidth > 0 && referencePixelHeight > 0;
+        referenceVisibleCheckBox.IsChecked = true;
+
+        referenceInfo.Text =
+            $"{file.Name} · {referencePixelWidth} × {referencePixelHeight} · project reference";
+
+        if (adoptViewport && referencePixelWidth > 0 && referencePixelHeight > 0)
+            SetBenchmarkViewport(referencePixelWidth, referencePixelHeight);
+
+        UpdateReferenceOverlay();
+    }
+
+    void ClearReference()
+    {
+        referenceSourceFilePath = null;
+        referenceOverlay.Source = null;
+        referencePixelWidth = 0;
+        referencePixelHeight = 0;
+        referenceVisibleCheckBox.IsChecked = false;
+        referenceVisibleCheckBox.IsEnabled = false;
+        referenceOpacitySlider.IsEnabled = false;
+        useReferenceSizeButton.IsEnabled = false;
+        referenceInfo.Text = "No reference image loaded.";
+        UpdateReferenceOverlay();
     }
 
     void UpdateReferenceOverlay()
