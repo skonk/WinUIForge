@@ -240,25 +240,73 @@ Add-Type -TypeDefinition $source -Language CSharp
 $resolvedExe = (Resolve-Path -LiteralPath $ExePath).Path
 $resolvedIcon = (Resolve-Path -LiteralPath $IconPath).Path
 
-# The Workshop runtime ICO is intentionally accepted by Windows but some icon
-# writers leave non-canonical directory offsets. Normalize it through
-# System.Drawing before parsing/stamping so the PE resource writer gets a
-# conventional ICO directory every time.
+# The runtime ICO is accepted by Win32 LoadImage even though System.Drawing
+# rejects its original directory metadata. Ask Win32 to decode the icon first,
+# then serialize that native HICON back into a conventional single-image ICO.
 Add-Type -AssemblyName System.Drawing
 
+$nativeLoaderSource = @'
+using System;
+using System.Runtime.InteropServices;
+
+public static class WorkshopNativeIconLoader
+{
+    const uint IMAGE_ICON = 1;
+    const uint LR_LOADFROMFILE = 0x10;
+
+    [DllImport("user32.dll", EntryPoint = "LoadImageW", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern IntPtr LoadImageW(
+        IntPtr hInstance,
+        string name,
+        uint type,
+        int width,
+        int height,
+        uint loadFlags);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern bool DestroyIcon(IntPtr hIcon);
+
+    public static IntPtr LoadIcon(string path, int size)
+    {
+        return LoadImageW(IntPtr.Zero, path, IMAGE_ICON, size, size, LR_LOADFROMFILE);
+    }
+
+    public static void ReleaseIcon(IntPtr icon)
+    {
+        if (icon != IntPtr.Zero)
+            DestroyIcon(icon);
+    }
+}
+'@
+
+if (-not ("WorkshopNativeIconLoader" -as [type])) {
+    Add-Type -TypeDefinition $nativeLoaderSource -Language CSharp
+}
+
 $normalizedIconPath = Join-Path ([System.IO.Path]::GetTempPath()) "WinUIForge-Workshop-normalized.ico"
-$iconObject = New-Object System.Drawing.Icon -ArgumentList $resolvedIcon
+$nativeIcon = [WorkshopNativeIconLoader]::LoadIcon($resolvedIcon, 256)
+if ($nativeIcon -eq [IntPtr]::Zero) {
+    throw "Win32 could not decode Workshop.ico. Error: $([Runtime.InteropServices.Marshal]::GetLastWin32Error())"
+}
+
 try {
-    $stream = [System.IO.File]::Create($normalizedIconPath)
+    $borrowedIcon = [System.Drawing.Icon]::FromHandle($nativeIcon)
+    $iconObject = $borrowedIcon.Clone()
     try {
-        $iconObject.Save($stream)
+        $stream = [System.IO.File]::Create($normalizedIconPath)
+        try {
+            $iconObject.Save($stream)
+        }
+        finally {
+            $stream.Dispose()
+        }
     }
     finally {
-        $stream.Dispose()
+        $iconObject.Dispose()
     }
 }
 finally {
-    $iconObject.Dispose()
+    [WorkshopNativeIconLoader]::ReleaseIcon($nativeIcon)
 }
 
 try {
