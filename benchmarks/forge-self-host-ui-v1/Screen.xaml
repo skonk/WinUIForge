@@ -160,7 +160,7 @@
                         Height="38"
                         Background="#2D3034">
                     <FontIcon Glyph="&#xE8B7;"
-                              FontSize="16"
+                              FontSize="14"
                               Foreground="{StaticResource AccentBrush}"/>
                 </Button>
                 <Button ToolTipService.ToolTip="Source"
@@ -168,7 +168,7 @@
                         Height="38"
                         Background="Transparent">
                     <FontIcon Glyph="&#xE943;"
-                              FontSize="16"
+                              FontSize="14"
                               Foreground="{StaticResource TextBrush}"/>
                 </Button>
                 <Button ToolTipService.ToolTip="Search"
@@ -176,7 +176,7 @@
                         Height="38"
                         Background="Transparent">
                     <FontIcon Glyph="&#xE721;"
-                              FontSize="16"
+                              FontSize="14"
                               Foreground="{StaticResource TextBrush}"/>
                 </Button>
                 <Button ToolTipService.ToolTip="Designer"
@@ -184,7 +184,7 @@
                         Height="38"
                         Background="Transparent">
                     <FontIcon Glyph="&#xE790;"
-                              FontSize="16"
+                              FontSize="14"
                               Foreground="{StaticResource TextBrush}"/>
                 </Button>
             </StackPanel>
