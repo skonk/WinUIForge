@@ -94,6 +94,7 @@
         <CommandBar x:Name="MainCommandBar"
                     Background="Transparent"
                     DefaultLabelPosition="Right"
+                    HorizontalAlignment="Left"
                     IsOpen="False">
             <AppBarButton Label="New">
                 <AppBarButton.Icon><FontIcon Glyph="&#xE710;"/></AppBarButton.Icon>
@@ -137,13 +138,13 @@
           Background="{StaticResource BorderBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="48"/>
-            <ColumnDefinition Width="270"/>
+            <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="1"/>
-            <ColumnDefinition Width="410"/>
+            <ColumnDefinition Width="380"/>
             <ColumnDefinition Width="1"/>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="1"/>
-            <ColumnDefinition Width="330"/>
+            <ColumnDefinition Width="320"/>
         </Grid.ColumnDefinitions>
 
         <!-- Activity rail -->
@@ -159,6 +160,7 @@
                         Height="38"
                         Background="#2D3034">
                     <FontIcon Glyph="&#xE8B7;"
+                              FontSize="16"
                               Foreground="{StaticResource AccentBrush}"/>
                 </Button>
                 <Button ToolTipService.ToolTip="Source"
@@ -166,6 +168,7 @@
                         Height="38"
                         Background="Transparent">
                     <FontIcon Glyph="&#xE943;"
+                              FontSize="16"
                               Foreground="{StaticResource TextBrush}"/>
                 </Button>
                 <Button ToolTipService.ToolTip="Search"
@@ -173,6 +176,7 @@
                         Height="38"
                         Background="Transparent">
                     <FontIcon Glyph="&#xE721;"
+                              FontSize="16"
                               Foreground="{StaticResource TextBrush}"/>
                 </Button>
                 <Button ToolTipService.ToolTip="Designer"
@@ -180,6 +184,7 @@
                         Height="38"
                         Background="Transparent">
                     <FontIcon Glyph="&#xE790;"
+                              FontSize="16"
                               Foreground="{StaticResource TextBrush}"/>
                 </Button>
             </StackPanel>
@@ -207,14 +212,26 @@
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 Spacing="2">
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Add folder">
-                            <FontIcon Glyph="&#xE8F4;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Add folder">
+                            <FontIcon Glyph="&#xE8F4;"
+                                      FontSize="13"/>
                         </Button>
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Refresh">
-                            <FontIcon Glyph="&#xE72C;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Refresh">
+                            <FontIcon Glyph="&#xE72C;"
+                                      FontSize="13"/>
                         </Button>
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="More">
-                            <FontIcon Glyph="&#xE712;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="More">
+                            <FontIcon Glyph="&#xE712;"
+                                      FontSize="13"/>
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -280,14 +297,26 @@
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 Spacing="2">
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Reload">
-                            <FontIcon Glyph="&#xE72C;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Reload">
+                            <FontIcon Glyph="&#xE72C;"
+                                      FontSize="13"/>
                         </Button>
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Save">
-                            <FontIcon Glyph="&#xE74E;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Save">
+                            <FontIcon Glyph="&#xE74E;"
+                                      FontSize="13"/>
                         </Button>
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Source options">
-                            <FontIcon Glyph="&#xE712;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Source options">
+                            <FontIcon Glyph="&#xE712;"
+                                      FontSize="13"/>
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -339,17 +368,33 @@
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 Spacing="2">
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Fit">
-                            <FontIcon Glyph="&#xE9A6;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Fit">
+                            <FontIcon Glyph="&#xE9A6;"
+                                      FontSize="13"/>
                         </Button>
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Actual size">
-                            <FontIcon Glyph="&#xE8A3;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Actual size">
+                            <FontIcon Glyph="&#xE8A3;"
+                                      FontSize="13"/>
                         </Button>
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Toggle reference">
-                            <FontIcon Glyph="&#xE7B3;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Toggle reference">
+                            <FontIcon Glyph="&#xE7B3;"
+                                      FontSize="13"/>
                         </Button>
-                        <Button Width="28" Height="28" ToolTipService.ToolTip="Designer options">
-                            <FontIcon Glyph="&#xE712;"/>
+                        <Button Width="26"
+                                Height="26"
+                                Padding="0"
+                                ToolTipService.ToolTip="Designer options">
+                            <FontIcon Glyph="&#xE712;"
+                                      FontSize="13"/>
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -462,12 +507,14 @@
                         <TextBlock Text="INSPECTOR"
                                    Foreground="{StaticResource MutedBrush}"/>
                     </StackPanel>
-                    <Button Width="28"
-                            Height="28"
+                    <Button Width="26"
+                            Height="26"
+                            Padding="0"
                             HorizontalAlignment="Right"
                             Margin="0,0,4,0"
                             ToolTipService.ToolTip="Panel options">
-                        <FontIcon Glyph="&#xE712;"/>
+                        <FontIcon Glyph="&#xE712;"
+                                  FontSize="13"/>
                     </Button>
                 </Grid>
             </Border>
