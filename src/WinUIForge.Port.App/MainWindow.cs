@@ -378,57 +378,199 @@ public sealed class MainWindow : Window
             Background = WindowBrush,
             RequestedTheme = ElementTheme.Dark
         };
-        shellRoot.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        shellRoot.RowDefinitions.Add(new RowDefinition { Height = new GridLength(30) });
+        shellRoot.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         shellRoot.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        shellRoot.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        shellRoot.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
 
-        var header = new Grid
+        // Native Windows-style menu surface.
+        var menuHost = new Border
+        {
+            Background = Brush(20, 23, 25),
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 0, 0, 1)
+        };
+        var menuGrid = new Grid();
+        menuGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        menuGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var menuBar = new MenuBar
+        {
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var fileMenu = new MenuBarItem { Title = "File" };
+        var newMenuItem = new MenuFlyoutItem { Text = "New UI" };
+        newMenuItem.Click += (_, _) => LoadNewDocument();
+        var openMenuItem = new MenuFlyoutItem { Text = "Open XAML…" };
+        openMenuItem.Click += async (_, _) => await OpenSourceFileAsync();
+        var addFolderMenuItem = new MenuFlyoutItem { Text = "Add Project Folder…" };
+        addFolderMenuItem.Click += async (_, _) => await AddProjectFolderAsync();
+        var saveMenuItem = new MenuFlyoutItem { Text = "Save" };
+        saveMenuItem.Click += (_, _) => SaveCurrentSourceFile();
+        var exitMenuItem = new MenuFlyoutItem { Text = "Exit" };
+        exitMenuItem.Click += (_, _) => Close();
+        fileMenu.Items.Add(newMenuItem);
+        fileMenu.Items.Add(openMenuItem);
+        fileMenu.Items.Add(addFolderMenuItem);
+        fileMenu.Items.Add(new MenuFlyoutSeparator());
+        fileMenu.Items.Add(saveMenuItem);
+        fileMenu.Items.Add(new MenuFlyoutSeparator());
+        fileMenu.Items.Add(exitMenuItem);
+
+        var editMenu = new MenuBarItem { Title = "Edit" };
+        var undoMenuItem = new MenuFlyoutItem { Text = "Undo" };
+        undoMenuItem.Click += (_, _) => Undo();
+        var redoMenuItem = new MenuFlyoutItem { Text = "Redo" };
+        redoMenuItem.Click += (_, _) => Redo();
+        var deleteMenuItem = new MenuFlyoutItem { Text = "Delete" };
+        deleteMenuItem.Click += (_, _) => DeleteSelected();
+        editMenu.Items.Add(undoMenuItem);
+        editMenu.Items.Add(redoMenuItem);
+        editMenu.Items.Add(new MenuFlyoutSeparator());
+        editMenu.Items.Add(deleteMenuItem);
+
+        var viewMenu = new MenuBarItem { Title = "View" };
+        var projectsMenuItem = new ToggleMenuFlyoutItem
+        {
+            Text = "Projects",
+            IsChecked = projectsPaneToggle.IsChecked == true
+        };
+        var sourceMenuItem = new ToggleMenuFlyoutItem
+        {
+            Text = "Source",
+            IsChecked = sourcePaneToggle.IsChecked == true
+        };
+        var toolsMenuItem = new ToggleMenuFlyoutItem
+        {
+            Text = "Inspector / Tools",
+            IsChecked = toolsPaneToggle.IsChecked == true
+        };
+        projectsMenuItem.Click += (_, _) => projectsPaneToggle.IsChecked = projectsMenuItem.IsChecked;
+        sourceMenuItem.Click += (_, _) => sourcePaneToggle.IsChecked = sourceMenuItem.IsChecked;
+        toolsMenuItem.Click += (_, _) => toolsPaneToggle.IsChecked = toolsMenuItem.IsChecked;
+        viewMenu.Items.Add(projectsMenuItem);
+        viewMenu.Items.Add(sourceMenuItem);
+        viewMenu.Items.Add(toolsMenuItem);
+        viewMenu.Items.Add(new MenuFlyoutSeparator());
+        var fitMenuItem = new MenuFlyoutItem { Text = "Fit Designer" };
+        fitMenuItem.Click += (_, _) => viewportDisplayMode.SelectedItem = "Fit";
+        var actualMenuItem = new MenuFlyoutItem { Text = "Actual Size" };
+        actualMenuItem.Click += (_, _) => viewportDisplayMode.SelectedItem = "1:1";
+        viewMenu.Items.Add(fitMenuItem);
+        viewMenu.Items.Add(actualMenuItem);
+
+        var projectMenu = new MenuBarItem { Title = "Project" };
+        var projectAddMenuItem = new MenuFlyoutItem { Text = "Add Folder…" };
+        projectAddMenuItem.Click += async (_, _) => await AddProjectFolderAsync();
+        var projectRefreshMenuItem = new MenuFlyoutItem { Text = "Refresh" };
+        projectRefreshMenuItem.Click += (_, _) => RebuildProjectExplorer();
+        var projectExplorerMenuItem = new MenuFlyoutItem { Text = "Open Selected Root in Explorer" };
+        projectExplorerMenuItem.Click += (_, _) =>
+        {
+            if (!string.IsNullOrWhiteSpace(selectedProjectRoot) && Directory.Exists(selectedProjectRoot))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{selectedProjectRoot}\"",
+                    UseShellExecute = true
+                });
+            }
+        };
+        projectMenu.Items.Add(projectAddMenuItem);
+        projectMenu.Items.Add(projectRefreshMenuItem);
+        projectMenu.Items.Add(projectExplorerMenuItem);
+
+        var designerMenu = new MenuBarItem { Title = "Designer" };
+        var renderMenuItem = new MenuFlyoutItem { Text = "Render Now" };
+        renderMenuItem.Click += (_, _) => RenderSource();
+        var referenceMenuItem = new MenuFlyoutItem { Text = "Load Reference…" };
+        referenceMenuItem.Click += async (_, _) => await LoadReferenceAsync();
+        var reviewMenuItem = new MenuFlyoutItem { Text = "Export Review Package…" };
+        reviewMenuItem.Click += async (_, _) => await ExportReviewPackageAsync();
+        designerMenu.Items.Add(renderMenuItem);
+        designerMenu.Items.Add(referenceMenuItem);
+        designerMenu.Items.Add(reviewMenuItem);
+
+        var helpMenu = new MenuBarItem { Title = "Help" };
+        var aboutMenuItem = new MenuFlyoutItem { Text = "About WinUI Forge" };
+        aboutMenuItem.Click += (_, _) => status.Text = "WinUI Forge · visual XAML authoring and review.";
+        helpMenu.Items.Add(aboutMenuItem);
+
+        menuBar.Items.Add(fileMenu);
+        menuBar.Items.Add(editMenu);
+        menuBar.Items.Add(viewMenu);
+        menuBar.Items.Add(projectMenu);
+        menuBar.Items.Add(designerMenu);
+        menuBar.Items.Add(helpMenu);
+        menuGrid.Children.Add(menuBar);
+
+        var productName = new TextBlock
+        {
+            Text = "WinUI Forge",
+            Foreground = MutedBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0)
+        };
+        Grid.SetColumn(productName, 1);
+        menuGrid.Children.Add(productName);
+        menuHost.Child = menuGrid;
+        shellRoot.Children.Add(menuHost);
+
+        // Primary toolbar: left aligned, icon + text, native CommandBar behavior.
+        var toolbarHost = new Border
         {
             Background = PanelBrush,
-            Padding = new Thickness(14, 10, 14, 10),
-            ColumnSpacing = 12
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 0, 0, 1)
         };
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var headerText = new StackPanel { Spacing = 2 };
-        headerText.Children.Add(new TextBlock
+        var commandBar = new CommandBar
         {
-            Text = "WinUI Forge · benchmark comparison milestone 4",
-            FontSize = 18,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = TextBrush
-        });
-        headerText.Children.Add(new TextBlock
-        {
-            Text = "Milestone 3 authoring baseline · reference-image comparison · image-replication benchmark",
-            Foreground = MutedBrush
-        });
-        header.Children.Add(headerText);
-
-        var commands = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            DefaultLabelPosition = CommandBarDefaultLabelPosition.Right,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            IsOpen = false
         };
-        renderButton.Background = AccentBrush;
-        renderButton.Foreground = WindowBrush;
 
-        commands.Children.Add(projectsPaneToggle);
-        commands.Children.Add(sourcePaneToggle);
-        commands.Children.Add(toolsPaneToggle);
-        commands.Children.Add(openSourceFileButton);
-        commands.Children.Add(reloadSourceFileButton);
-        commands.Children.Add(saveSourceFileButton);
-        commands.Children.Add(undoButton);
-        commands.Children.Add(redoButton);
-        commands.Children.Add(deleteButton);
-        commands.Children.Add(renderButton);
-        Grid.SetColumn(commands, 1);
-        header.Children.Add(commands);
-        shellRoot.Children.Add(header);
+        var newButton = ToolbarButton("New", "\uE710");
+        newButton.Click += (_, _) => LoadNewDocument();
+        var referenceButton = ToolbarButton("Reference", "\uEB9F");
+        referenceButton.Click += async (_, _) => await LoadReferenceAsync();
+        var reviewButton = ToolbarButton("Review", "\uE8A5");
+        reviewButton.Click += async (_, _) => await ExportReviewPackageAsync();
 
+        commandBar.PrimaryCommands.Add(newButton);
+        commandBar.PrimaryCommands.Add(openSourceFileButton);
+        commandBar.PrimaryCommands.Add(saveSourceFileButton);
+        commandBar.PrimaryCommands.Add(new AppBarSeparator());
+        commandBar.PrimaryCommands.Add(undoButton);
+        commandBar.PrimaryCommands.Add(redoButton);
+        commandBar.PrimaryCommands.Add(deleteButton);
+        commandBar.PrimaryCommands.Add(new AppBarSeparator());
+        commandBar.PrimaryCommands.Add(referenceButton);
+        commandBar.PrimaryCommands.Add(reviewButton);
+        commandBar.PrimaryCommands.Add(renderButton);
+
+        var resetWorkspace = new AppBarButton { Label = "Reset Workspace" };
+        resetWorkspace.Click += (_, _) =>
+        {
+            projectsPaneToggle.IsChecked = true;
+            sourcePaneToggle.IsChecked = true;
+            toolsPaneToggle.IsChecked = true;
+            userSettings.ProjectsPaneWidth = 300;
+            userSettings.SourcePaneWidth = 430;
+            userSettings.ToolsPaneWidth = 410;
+            ApplyWorkspacePanelVisibility();
+        };
+        commandBar.SecondaryCommands.Add(resetWorkspace);
+        toolbarHost.Child = commandBar;
+        Grid.SetRow(toolbarHost, 1);
+        shellRoot.Children.Add(toolbarHost);
+
+        // Main development workspace: activity rail | projects | source | designer | tools.
         workspaceGrid = new Grid { Background = BorderBrush };
+        workspaceGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
 
         projectsWorkspaceColumn = new ColumnDefinition
         {
@@ -461,54 +603,130 @@ public sealed class MainWindow : Window
         workspaceGrid.ColumnDefinitions.Add(previewWorkspaceColumn);
         workspaceGrid.ColumnDefinitions.Add(toolsSplitterColumn);
         workspaceGrid.ColumnDefinitions.Add(toolsWorkspaceColumn);
-        Grid.SetRow(workspaceGrid, 1);
+        Grid.SetRow(workspaceGrid, 2);
         shellRoot.Children.Add(workspaceGrid);
 
-        var projectHost = new Grid { Background = PanelBrush };
+        // Activity rail.
+        var activityRail = new Border
+        {
+            Background = Brush(23, 26, 29),
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 0, 1, 0)
+        };
+        var railStack = new StackPanel
+        {
+            Spacing = 4,
+            Margin = new Thickness(5, 8, 5, 8)
+        };
+
+        Button RailButton(string glyph, string tooltip, bool active = false)
+        {
+            var button = new Button
+            {
+                Width = 38,
+                Height = 38,
+                Padding = new Thickness(0),
+                Background = active ? ElevatedBrush : new SolidColorBrush(Microsoft.UI.Colors.Transparent)
+            };
+            button.Content = new FontIcon
+            {
+                Glyph = glyph,
+                FontSize = 14,
+                Foreground = active ? AccentBrush : TextBrush
+            };
+            ToolTipService.SetToolTip(button, tooltip);
+            return button;
+        }
+
+        var projectsRailButton = RailButton("\uE8B7", "Projects", projectsPaneToggle.IsChecked == true);
+        projectsRailButton.Click += (_, _) => projectsPaneToggle.IsChecked = !(projectsPaneToggle.IsChecked == true);
+        var sourceRailButton = RailButton("\uE943", "Source", sourcePaneToggle.IsChecked == true);
+        sourceRailButton.Click += (_, _) => sourcePaneToggle.IsChecked = !(sourcePaneToggle.IsChecked == true);
+        var searchRailButton = RailButton("\uE721", "Search");
+        searchRailButton.Click += (_, _) => status.Text = "Workspace search is planned for a later Forge milestone.";
+        var focusRailButton = RailButton("\uE790", "Designer focus");
+        focusRailButton.Click += (_, _) =>
+        {
+            projectsPaneToggle.IsChecked = false;
+            sourcePaneToggle.IsChecked = false;
+            toolsPaneToggle.IsChecked = false;
+        };
+
+        railStack.Children.Add(projectsRailButton);
+        railStack.Children.Add(sourceRailButton);
+        railStack.Children.Add(searchRailButton);
+        railStack.Children.Add(focusRailButton);
+        activityRail.Child = railStack;
+        workspaceGrid.Children.Add(activityRail);
+
+        // Projects panel.
+        var projectHost = new Grid { Background = Brush(29, 32, 36) };
+        projectHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         projectHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         projectHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         projectHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        projectHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(32) });
 
-        var projectHeader = new Grid
+        var projectTitleBorder = new Border
         {
-            Padding = new Thickness(8, 8, 8, 6),
-            ColumnSpacing = 6
+            Background = PanelBrush,
+            Padding = new Thickness(10, 8, 10, 3)
         };
-        projectHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        projectHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var projectTitle = new StackPanel { Spacing = 2 };
-        projectTitle.Children.Add(new TextBlock
+        projectTitleBorder.Child = new TextBlock
         {
-            Text = "Projects",
-            FontSize = 16,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = TextBrush
-        });
-        projectTitle.Children.Add(new TextBlock
+            Text = "PROJECTS",
+            Foreground = TextBrush,
+            FontSize = 14,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+        };
+        projectHost.Children.Add(projectTitleBorder);
+
+        var projectDescriptionBorder = new Border
+        {
+            Background = PanelBrush,
+            Padding = new Thickness(10, 0, 10, 7)
+        };
+        var projectDescription = new StackPanel { Spacing = 2 };
+        projectDescription.Children.Add(new TextBlock
         {
             Text = "Open UI files and paired references from project folders.",
             Foreground = MutedBrush,
+            FontSize = 11,
             TextWrapping = TextWrapping.Wrap
         });
-        projectHeader.Children.Add(projectTitle);
+        projectExplorerInfo.FontSize = 10;
+        projectExplorerInfo.Opacity = 0.78;
+        projectDescription.Children.Add(projectExplorerInfo);
+        projectDescriptionBorder.Child = projectDescription;
+        Grid.SetRow(projectDescriptionBorder, 1);
+        projectHost.Children.Add(projectDescriptionBorder);
 
-        var projectButtons = new StackPanel
+        var projectToolbar = new Border
+        {
+            Background = PanelBrush,
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(8, 5, 8, 5)
+        };
+        var projectToolbarStack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 4,
-            VerticalAlignment = VerticalAlignment.Top
+            HorizontalAlignment = HorizontalAlignment.Left
         };
-        projectButtons.Children.Add(addProjectFolderButton);
-        projectButtons.Children.Add(removeProjectFolderButton);
-        projectButtons.Children.Add(refreshProjectsButton);
-        Grid.SetColumn(projectButtons, 1);
-        projectHeader.Children.Add(projectButtons);
-        projectHost.Children.Add(projectHeader);
-
-        projectExplorerInfo.Margin = new Thickness(8, 0, 8, 6);
-        Grid.SetRow(projectExplorerInfo, 1);
-        projectHost.Children.Add(projectExplorerInfo);
+        addProjectFolderButton.Content = "＋  Add folder";
+        removeProjectFolderButton.Content = "⌫  Remove";
+        refreshProjectsButton.Content = "↻";
+        addProjectFolderButton.Height = 28;
+        removeProjectFolderButton.Height = 28;
+        refreshProjectsButton.Width = 34;
+        refreshProjectsButton.Height = 28;
+        projectToolbarStack.Children.Add(addProjectFolderButton);
+        projectToolbarStack.Children.Add(removeProjectFolderButton);
+        projectToolbarStack.Children.Add(refreshProjectsButton);
+        projectToolbar.Child = projectToolbarStack;
+        Grid.SetRow(projectToolbar, 2);
+        projectHost.Children.Add(projectToolbar);
 
         var projectScroll = new ScrollViewer
         {
@@ -516,146 +734,188 @@ public sealed class MainWindow : Window
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
-        Grid.SetRow(projectScroll, 2);
+        Grid.SetRow(projectScroll, 3);
         projectHost.Children.Add(projectScroll);
 
+        var projectFooter = new Border
+        {
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(8, 0)
+        };
+        projectFooter.Child = new TextBlock
+        {
+            Text = "Project files remain normal files on disk",
+            Foreground = MutedBrush,
+            FontSize = 10,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetRow(projectFooter, 4);
+        projectHost.Children.Add(projectFooter);
+
         projectsPaneHost = projectHost;
+        Grid.SetColumn(projectHost, 1);
         workspaceGrid.Children.Add(projectHost);
 
-        projectsSourceSplitter = new Thumb
-        {
-            Background = BorderBrush,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
-        };
-        Grid.SetColumn(projectsSourceSplitter, 1);
+        projectsSourceSplitter = Splitter();
+        Grid.SetColumn(projectsSourceSplitter, 2);
         workspaceGrid.Children.Add(projectsSourceSplitter);
 
-        var editorHost = new Grid { Background = PanelBrush };
-        editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        // Source editor.
+        var editorHost = new Grid { Background = Brush(27, 30, 33) };
+        editorHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(36) });
         editorHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        editorHost.Children.Add(SectionHeader(
-            "XAML source",
-            "Authoritative source. Designer edits update this document."));
-        Grid.SetRow(sourceEditor, 1);
-        editorHost.Children.Add(sourceEditor);
+        editorHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(32) });
 
-        diagnostics.Margin = new Thickness(12, 8, 12, 10);
-        diagnostics.Foreground = MutedBrush;
-        diagnostics.MaxHeight = 86;
-        Grid.SetRow(diagnostics, 2);
-        editorHost.Children.Add(diagnostics);
-
-        sourcePaneHost = editorHost;
-        Grid.SetColumn(editorHost, 2);
-        workspaceGrid.Children.Add(editorHost);
-
-        sourcePreviewSplitter = new Thumb
-        {
-            Background = BorderBrush,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
-        };
-        Grid.SetColumn(sourcePreviewSplitter, 3);
-        workspaceGrid.Children.Add(sourcePreviewSplitter);
-
-        var previewHost = new Grid { Background = WindowBrush };
-        previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        previewHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        previewHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        previewHost.Children.Add(SectionHeader(
-            "WinUI 3 designer",
-            "Orange handles edit the real WinUI element. Load a visual target to compare it over the live render."));
-
-        var referenceTools = new Grid
-        {
-            Background = PanelBrush,
-            Padding = new Thickness(12, 7, 12, 7),
-            ColumnSpacing = 12
-        };
-        referenceTools.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        referenceTools.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        referenceInfo.Foreground = MutedBrush;
-        referenceInfo.VerticalAlignment = VerticalAlignment.Center;
-        referenceTools.Children.Add(referenceInfo);
-
-        var referenceCommands = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        referenceCommands.Children.Add(loadReferenceButton);
-        referenceCommands.Children.Add(exportReviewPackageButton);
-        referenceCommands.Children.Add(referenceVisibleCheckBox);
-        referenceCommands.Children.Add(highlightAllCheckBox);
-        referenceCommands.Children.Add(new TextBlock
-        {
-            Text = "Opacity",
-            Foreground = MutedBrush,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-        referenceCommands.Children.Add(referenceOpacitySlider);
-        var referenceCommandScroller = new ScrollViewer
-        {
-            Content = referenceCommands,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollMode = ScrollMode.Auto,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            VerticalScrollMode = ScrollMode.Disabled,
-            MaxHeight = 58
-        };
-        Grid.SetColumn(referenceCommandScroller, 1);
-        referenceTools.Children.Add(referenceCommandScroller);
-        Grid.SetRow(referenceTools, 1);
-        previewHost.Children.Add(referenceTools);
-
-        var viewportTools = new Grid
+        var sourceHeader = new Border
         {
             Background = PanelBrush,
             BorderBrush = BorderBrush,
-            BorderThickness = new Thickness(0, 1, 0, 0),
-            Padding = new Thickness(12, 6, 12, 8),
-            ColumnSpacing = 12
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(8, 0)
         };
-        viewportTools.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        viewportTools.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        viewportInfo.Foreground = MutedBrush;
-        viewportInfo.VerticalAlignment = VerticalAlignment.Center;
-        viewportTools.Children.Add(viewportInfo);
-
-        var viewportCommands = new StackPanel
+        var sourceHeaderGrid = new Grid();
+        sourceHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        sourceHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var sourceTitle = new TextBlock
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8,
+            Text = "SOURCE",
+            Foreground = MutedBrush,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center
         };
-        viewportCommands.Children.Add(viewportWidthBox);
-        viewportCommands.Children.Add(viewportHeightBox);
-        viewportCommands.Children.Add(viewportDisplayMode);
-        viewportCommands.Children.Add(applyViewportButton);
-        viewportCommands.Children.Add(useReferenceSizeButton);
-        var viewportCommandScroller = new ScrollViewer
+        sourceHeaderGrid.Children.Add(sourceTitle);
+
+        var sourceActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+        var sourceReload = IconButton("\uE72C", "Reload XAML");
+        sourceReload.Click += (_, _) => ReloadCurrentSourceFile();
+        var sourceSave = IconButton("\uE74E", "Save XAML");
+        sourceSave.Click += (_, _) => SaveCurrentSourceFile();
+        sourceActions.Children.Add(sourceReload);
+        sourceActions.Children.Add(sourceSave);
+        Grid.SetColumn(sourceActions, 1);
+        sourceHeaderGrid.Children.Add(sourceActions);
+        sourceHeader.Child = sourceHeaderGrid;
+        editorHost.Children.Add(sourceHeader);
+
+        Grid.SetRow(sourceEditor, 1);
+        editorHost.Children.Add(sourceEditor);
+
+        var sourceFooter = new Border
         {
-            Content = viewportCommands,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollMode = ScrollMode.Auto,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            VerticalScrollMode = ScrollMode.Disabled,
-            MaxHeight = 76
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(8, 0)
         };
-        Grid.SetColumn(viewportCommandScroller, 1);
-        viewportTools.Children.Add(viewportCommandScroller);
-        Grid.SetRow(viewportTools, 2);
-        previewHost.Children.Add(viewportTools);
+        diagnostics.Margin = new Thickness(0);
+        diagnostics.Foreground = MutedBrush;
+        diagnostics.FontSize = 10;
+        diagnostics.MaxHeight = 30;
+        sourceFooter.Child = diagnostics;
+        Grid.SetRow(sourceFooter, 2);
+        editorHost.Children.Add(sourceFooter);
+
+        sourcePaneHost = editorHost;
+        Grid.SetColumn(editorHost, 3);
+        workspaceGrid.Children.Add(editorHost);
+
+        sourcePreviewSplitter = Splitter();
+        Grid.SetColumn(sourcePreviewSplitter, 4);
+        workspaceGrid.Children.Add(sourcePreviewSplitter);
+
+        // Designer.
+        var previewHost = new Grid { Background = WindowBrush };
+        previewHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(36) });
+        previewHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40) });
+        previewHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        previewHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(34) });
+
+        var designerHeader = new Border
+        {
+            Background = PanelBrush,
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(8, 0)
+        };
+        var designerHeaderGrid = new Grid();
+        designerHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        designerHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        designerHeaderGrid.Children.Add(new TextBlock
+        {
+            Text = "DESIGNER",
+            Foreground = MutedBrush,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        var designerActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+        var fitButton = IconButton("\uE9A6", "Fit");
+        fitButton.Click += (_, _) => viewportDisplayMode.SelectedItem = "Fit";
+        var actualButton = IconButton("\uE8A3", "Actual size");
+        actualButton.Click += (_, _) => viewportDisplayMode.SelectedItem = "1:1";
+        var overlayButton = IconButton("\uE7B3", "Toggle reference");
+        overlayButton.Click += (_, _) =>
+        {
+            if (referenceVisibleCheckBox.IsEnabled)
+                referenceVisibleCheckBox.IsChecked = !(referenceVisibleCheckBox.IsChecked == true);
+        };
+        designerActions.Children.Add(fitButton);
+        designerActions.Children.Add(actualButton);
+        designerActions.Children.Add(overlayButton);
+        Grid.SetColumn(designerActions, 1);
+        designerHeaderGrid.Children.Add(designerActions);
+        designerHeader.Child = designerHeaderGrid;
+        previewHost.Children.Add(designerHeader);
+
+        var designerToolbar = new Grid
+        {
+            Background = Brush(29, 32, 36),
+            Padding = new Thickness(8, 4, 8, 4),
+            ColumnSpacing = 8
+        };
+        designerToolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        designerToolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        designerToolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        designerToolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        viewportInfo.FontSize = 10;
+        viewportInfo.VerticalAlignment = VerticalAlignment.Center;
+        designerToolbar.Children.Add(viewportInfo);
+
+        viewportDisplayMode.Header = null;
+        viewportDisplayMode.Width = 84;
+        Grid.SetColumn(viewportDisplayMode, 1);
+        designerToolbar.Children.Add(viewportDisplayMode);
+
+        referenceVisibleCheckBox.Content = "Overlay";
+        Grid.SetColumn(referenceVisibleCheckBox, 2);
+        designerToolbar.Children.Add(referenceVisibleCheckBox);
+
+        var opacityRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        opacityRow.Children.Add(new TextBlock
+        {
+            Text = "Opacity",
+            Foreground = MutedBrush,
+            FontSize = 10,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        referenceOpacitySlider.Width = 96;
+        opacityRow.Children.Add(referenceOpacitySlider);
+        Grid.SetColumn(opacityRow, 3);
+        designerToolbar.Children.Add(opacityRow);
+
+        Grid.SetRow(designerToolbar, 1);
+        previewHost.Children.Add(designerToolbar);
 
         var previewFrame = new Border
         {
-            Margin = new Thickness(18),
+            Margin = new Thickness(16),
             Background = ElevatedBrush,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(1),
@@ -671,20 +931,30 @@ public sealed class MainWindow : Window
         previewViewportShell.Children.Add(previewViewbox);
         previewViewportShell.Children.Add(previewScrollViewer);
         previewFrame.Child = previewViewportShell;
-        Grid.SetRow(previewFrame, 3);
+        Grid.SetRow(previewFrame, 2);
         previewHost.Children.Add(previewFrame);
-        Grid.SetColumn(previewHost, 4);
+
+        var designerFooter = new Border
+        {
+            Background = PanelBrush,
+            BorderBrush = BorderBrush,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(8, 0)
+        };
+        referenceInfo.FontSize = 10;
+        referenceInfo.VerticalAlignment = VerticalAlignment.Center;
+        designerFooter.Child = referenceInfo;
+        Grid.SetRow(designerFooter, 3);
+        previewHost.Children.Add(designerFooter);
+
+        Grid.SetColumn(previewHost, 5);
         workspaceGrid.Children.Add(previewHost);
 
-        previewToolsSplitter = new Thumb
-        {
-            Background = BorderBrush,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
-        };
-        Grid.SetColumn(previewToolsSplitter, 5);
+        previewToolsSplitter = Splitter();
+        Grid.SetColumn(previewToolsSplitter, 6);
         workspaceGrid.Children.Add(previewToolsSplitter);
 
+        // Toolbox / Visual Tree / Inspector.
         toolsTabs = new TabView
         {
             IsAddTabButtonVisible = false,
@@ -703,16 +973,13 @@ public sealed class MainWindow : Window
             }
         };
 
-        var treeHost = new Grid
-        {
-            Background = PanelBrush
-        };
-        treeHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var treeHost = new Grid { Background = PanelBrush };
+        treeHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40) });
         treeHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
         var treeTools = new Grid
         {
-            Padding = new Thickness(8, 8, 8, 6),
+            Padding = new Thickness(8, 6, 8, 6),
             ColumnSpacing = 8
         };
         treeTools.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -721,13 +988,10 @@ public sealed class MainWindow : Window
 
         visualTreeFilter.HorizontalAlignment = HorizontalAlignment.Stretch;
         treeTools.Children.Add(visualTreeFilter);
-
         Grid.SetColumn(visualTreeNamedOnly, 1);
         treeTools.Children.Add(visualTreeNamedOnly);
-
         Grid.SetColumn(visualTreeCount, 2);
         treeTools.Children.Add(visualTreeCount);
-
         treeHost.Children.Add(treeTools);
 
         visualTree.Margin = new Thickness(8, 0, 8, 8);
@@ -757,20 +1021,44 @@ public sealed class MainWindow : Window
         toolsTabs.TabItems.Add(treeTab);
         toolsTabs.TabItems.Add(inspectorTab);
         toolsTabs.SelectedIndex = Math.Clamp(userSettings.ToolsTabIndex, 0, 2);
-        Grid.SetColumn(toolsTabs, 6);
+        Grid.SetColumn(toolsTabs, 7);
         workspaceGrid.Children.Add(toolsTabs);
 
+        // Global status bar.
         var statusBorder = new Border
         {
-            Background = PanelBrush,
+            Background = Brush(20, 23, 25),
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 1, 0, 0),
-            Padding = new Thickness(12, 6, 12, 6)
+            Padding = new Thickness(8, 0)
         };
+        var statusGrid = new Grid();
+        statusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        statusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         status.Foreground = MutedBrush;
-        statusBorder.Child = status;
-        Grid.SetRow(statusBorder, 2);
+        status.FontSize = 10;
+        status.VerticalAlignment = VerticalAlignment.Center;
+        statusGrid.Children.Add(status);
+        var statusRight = new TextBlock
+        {
+            Text = "WinUI 3 · Forge",
+            Foreground = MutedBrush,
+            FontSize = 10,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(statusRight, 1);
+        statusGrid.Children.Add(statusRight);
+        statusBorder.Child = statusGrid;
+        Grid.SetRow(statusBorder, 3);
         shellRoot.Children.Add(statusBorder);
+
+        // Keep View menu checkmarks synchronized with rail/menu toggles.
+        projectsPaneToggle.Checked += (_, _) => projectsMenuItem.IsChecked = true;
+        projectsPaneToggle.Unchecked += (_, _) => projectsMenuItem.IsChecked = false;
+        sourcePaneToggle.Checked += (_, _) => sourceMenuItem.IsChecked = true;
+        sourcePaneToggle.Unchecked += (_, _) => sourceMenuItem.IsChecked = false;
+        toolsPaneToggle.Checked += (_, _) => toolsMenuItem.IsChecked = true;
+        toolsPaneToggle.Unchecked += (_, _) => toolsMenuItem.IsChecked = false;
 
         return shellRoot;
     }
