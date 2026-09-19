@@ -150,6 +150,12 @@ public sealed class MainWindow : Window
         Foreground = MutedBrush,
         TextWrapping = TextWrapping.Wrap
     };
+    readonly TextBox projectSearchBox = new()
+    {
+        PlaceholderText = "Search project files…",
+        Visibility = Visibility.Collapsed,
+        Margin = new Thickness(8, 5, 8, 5)
+    };
     readonly TextBlock diagnostics = new() { TextWrapping = TextWrapping.Wrap };
     readonly TextBlock status = new() { TextWrapping = TextWrapping.NoWrap };
 
@@ -705,8 +711,26 @@ public sealed class MainWindow : Window
         projectsRailButton.Click += (_, _) => projectsPaneToggle.IsChecked = !(projectsPaneToggle.IsChecked == true);
         var sourceRailButton = RailButton("\uE943", "Source", sourcePaneToggle.IsChecked == true);
         sourceRailButton.Click += (_, _) => sourcePaneToggle.IsChecked = !(sourcePaneToggle.IsChecked == true);
-        var searchRailButton = RailButton("\uE721", "Search");
-        searchRailButton.Click += (_, _) => status.Text = "Workspace search is planned for a later Forge milestone.";
+        var searchRailButton = RailButton("\uE721", "Search project files");
+        searchRailButton.Click += (_, _) =>
+        {
+            projectsPaneToggle.IsChecked = true;
+            projectSearchBox.Visibility = projectSearchBox.Visibility == Visibility.Visible
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
+            if (projectSearchBox.Visibility == Visibility.Visible)
+            {
+                projectSearchBox.Focus(FocusState.Programmatic);
+                projectSearchBox.SelectAll();
+                status.Text = "Project search active.";
+            }
+            else
+            {
+                projectSearchBox.Text = string.Empty;
+                status.Text = "Project search closed.";
+            }
+        };
         var focusRailButton = RailButton("\uE790", "Designer focus");
         focusRailButton.Click += (_, _) =>
         {
@@ -724,6 +748,7 @@ public sealed class MainWindow : Window
 
         // Projects panel.
         var projectHost = new Grid { Background = Brush(29, 32, 36) };
+        projectHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         projectHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         projectHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         projectHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -791,13 +816,17 @@ public sealed class MainWindow : Window
         Grid.SetRow(projectToolbar, 2);
         projectHost.Children.Add(projectToolbar);
 
+        projectSearchBox.TextChanged += (_, _) => RebuildProjectExplorer();
+        Grid.SetRow(projectSearchBox, 3);
+        projectHost.Children.Add(projectSearchBox);
+
         var projectScroll = new ScrollViewer
         {
             Content = projectExplorerPanel,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
-        Grid.SetRow(projectScroll, 3);
+        Grid.SetRow(projectScroll, 4);
         projectHost.Children.Add(projectScroll);
 
         var projectFooter = new Border
@@ -813,7 +842,7 @@ public sealed class MainWindow : Window
             FontSize = 10,
             VerticalAlignment = VerticalAlignment.Center
         };
-        Grid.SetRow(projectFooter, 4);
+        Grid.SetRow(projectFooter, 5);
         projectHost.Children.Add(projectFooter);
 
         projectsPaneHost = projectHost;
@@ -1463,10 +1492,16 @@ public sealed class MainWindow : Window
             $"{roots.Count} project folder{(roots.Count == 1 ? string.Empty : "s")} · " +
             "UI files and references are paired by .forgeproject metadata when available.";
 
+        var query = projectSearchBox.Text?.Trim() ?? string.Empty;
+
         foreach (var root in roots)
         {
             LoadProjectDescriptors(root);
-            AddProjectDirectoryRows(root, root, depth: 0);
+
+            if (string.IsNullOrWhiteSpace(query))
+                AddProjectDirectoryRows(root, root, depth: 0);
+            else
+                AddProjectSearchResults(root, query);
         }
 
         removeProjectFolderButton.IsEnabled = !string.IsNullOrWhiteSpace(selectedProjectRoot);
@@ -1548,6 +1583,74 @@ public sealed class MainWindow : Window
                 diagnostics.Text = $"Forge project warning ({Path.GetFileName(descriptorPath)}): {ex.Message}";
                 diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.Orange);
             }
+        }
+    }
+
+    void AddProjectSearchResults(string root, string query)
+    {
+        string[] files;
+        try
+        {
+            files = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+                .Where(path =>
+                {
+                    var directory = Path.GetDirectoryName(path);
+                    if (directory is null)
+                        return false;
+
+                    var current = directory;
+                    while (!string.IsNullOrWhiteSpace(current) &&
+                           current.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (IsIgnoredProjectDirectory(current))
+                            return false;
+
+                        var parent = Path.GetDirectoryName(current);
+                        if (string.Equals(parent, current, StringComparison.OrdinalIgnoreCase))
+                            break;
+                        current = parent;
+                    }
+
+                    return IsVisibleProjectFile(path);
+                })
+                .Where(path =>
+                    Path.GetFileName(path).Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    Path.GetRelativePath(root, path).Contains(query, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(ProjectFileSortOrder)
+                .ThenBy(path => Path.GetRelativePath(root, path), StringComparer.OrdinalIgnoreCase)
+                .Take(100)
+                .ToArray();
+        }
+        catch (Exception ex)
+        {
+            projectExplorerPanel.Children.Add(new TextBlock
+            {
+                Text = $"Search failed for {root}: {ex.Message}",
+                Margin = new Thickness(8),
+                Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed),
+                TextWrapping = TextWrapping.Wrap
+            });
+            return;
+        }
+
+        projectExplorerPanel.Children.Add(new TextBlock
+        {
+            Text = $"{Path.GetFileName(root)} · {files.Length} match{(files.Length == 1 ? string.Empty : "es")}",
+            Margin = new Thickness(8, 5, 8, 5),
+            Foreground = MutedBrush,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+        });
+
+        foreach (var file in files)
+        {
+            var kind = ProjectFileKind(file);
+            var entry = new ForgeProjectEntry(root, file, kind);
+            var (prefix, brush) = ProjectFilePresentation(kind);
+            projectExplorerPanel.Children.Add(CreateProjectRow(
+                entry,
+                0,
+                $"{prefix} {Path.GetRelativePath(root, file)}",
+                brush));
         }
     }
 
