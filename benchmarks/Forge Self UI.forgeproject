@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "Forge Self UI",
+  "description": "Forge uses Forge to design its own next application shell.",
+  "screens": [
+    {
+      "name": "Forge Workbench",
+      "xaml": "forge-self-host-ui-v1/Screen.xaml",
+      "sidecar": "forge-self-host-ui-v1/Screen.forge.json",
+      "viewport": {
+        "width": 1672,
+        "height": 941
+      }
+    }
+  ]
+}
