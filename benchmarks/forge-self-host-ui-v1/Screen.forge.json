@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "case": "forge-self-host-ui-v1",
+  "viewport": {
+    "width": 1672,
+    "height": 941
+  },
+  "semanticElements": {
+    "menu": "MenuRegion",
+    "toolbar": "ToolbarRegion",
+    "workspace": "Workbench",
+    "activityRail": "ActivityRail",
+    "projects": "ProjectsPanel",
+    "source": "SourcePanel",
+    "designer": "DesignerPanel",
+    "inspector": "InspectorPanel",
+    "status": "StatusBar"
+  }
+}
