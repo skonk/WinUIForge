@@ -1352,7 +1352,6 @@ public sealed class MainWindow : Window
     async Task OpenProjectXamlAsync(string xamlPath)
     {
         LoadSourceFile(xamlPath, readOnly: false);
-        leftPaneTabs.SelectedIndex = 1;
 
         if (projectScreensByPath.TryGetValue(Path.GetFullPath(xamlPath), out var screen))
         {
@@ -1390,7 +1389,6 @@ public sealed class MainWindow : Window
             File.Exists(screen.XamlPath))
         {
             LoadSourceFile(screen.XamlPath, readOnly: false);
-            leftPaneTabs.SelectedIndex = 1;
             await LoadReferenceFromPathAsync(referencePath, adoptViewport: false);
 
             if (screen.ViewportWidth is > 0 && screen.ViewportHeight is > 0)
