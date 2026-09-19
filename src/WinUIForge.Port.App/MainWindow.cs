@@ -371,6 +371,69 @@ public sealed class MainWindow : Window
         }
     }
 
+    static AppBarButton ToolbarButton(string label, string glyph, bool enabled = true)
+    {
+        return new AppBarButton
+        {
+            Label = label,
+            Icon = new FontIcon { Glyph = glyph, FontSize = 14 },
+            IsEnabled = enabled
+        };
+    }
+
+    static Button IconButton(string glyph, string tooltip)
+    {
+        var button = new Button
+        {
+            Width = 26,
+            Height = 26,
+            Padding = new Thickness(0),
+            Content = new FontIcon
+            {
+                Glyph = glyph,
+                FontSize = 13
+            }
+        };
+        ToolTipService.SetToolTip(button, tooltip);
+        return button;
+    }
+
+    static Thumb Splitter() =>
+        new()
+        {
+            Background = BorderBrush,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
+        };
+
+    void LoadNewDocument()
+    {
+        currentSourceFilePath = null;
+        currentForgeSidecarPath = null;
+        currentSourceFileReadOnly = false;
+        referenceSourceFilePath = null;
+        lastSavedSourceText = SampleXaml;
+        semanticElements.Clear();
+        history.Clear();
+        selectedElementIdentity = null;
+
+        suppressSourceTextChanged = true;
+        try
+        {
+            sourceEditor.Text = SampleXaml;
+        }
+        finally
+        {
+            suppressSourceTextChanged = false;
+        }
+
+        ClearReference();
+        RenderSource();
+        UpdateHistoryButtons();
+        UpdateSourceFileButtons();
+        status.Text = "Created a new unsaved Forge UI document.";
+    }
+
     UIElement BuildShell()
     {
         shellRoot = new Grid
