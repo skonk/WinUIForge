@@ -22,7 +22,7 @@
         <RowDefinition Height="60"/>
         <RowDefinition Height="*"/>
         <RowDefinition Height="66"/>
-        <RowDefinition Height="57"/>
+        <RowDefinition Height="68"/>
     </Grid.RowDefinitions>
 
     <!-- Global shell -->
@@ -804,60 +804,136 @@
         </Grid>
     </Border>
 
-    <!-- Footer -->
-    <Border Grid.Row="3"
+    <!-- Shared workspace status footer -->
+    <Border x:Name="WorkspaceStatusFooter"
+            Grid.Row="3"
             Background="#101316"
             BorderBrush="{StaticResource BorderBrush}"
-            BorderThickness="0,1,0,0">
-        <Grid>
+            BorderThickness="0,1,0,0"
+            Padding="14,0">
+        <Grid ColumnSpacing="14">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="260"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
+            <!-- Product identity -->
             <StackPanel Grid.Column="0"
                         Orientation="Horizontal"
-                        Margin="28,0,0,0"
-                        Spacing="10"
+                        Spacing="9"
                         VerticalAlignment="Center">
-                <Border Width="28" Height="28" BorderBrush="{StaticResource AccentBrush}" BorderThickness="2" CornerRadius="4">
-                    <TextBlock Text="◇" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontSize="14"/>
+                <Border Width="26"
+                        Height="26"
+                        BorderBrush="{StaticResource AccentBrush}"
+                        BorderThickness="2"
+                        CornerRadius="4">
+                    <TextBlock Text="◇"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource AccentBrush}"
+                               FontSize="13"/>
                 </Border>
                 <StackPanel Spacing="-1">
-                    <TextBlock Text="JLA3D" Foreground="{StaticResource TextBrush}" FontSize="18" FontWeight="Bold"/>
-                    <TextBlock Text="DESIGN · CREATE · PRINT · PLAY" Foreground="{StaticResource MutedBrush}" FontSize="6"/>
+                    <TextBlock Text="WORKSHOP"
+                               Foreground="{StaticResource TextBrush}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               CharacterSpacing="90"/>
+                    <TextBlock Text="Workspace status"
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="9"/>
                 </StackPanel>
             </StackPanel>
 
+            <!-- Generic cross-workspace live status -->
             <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Spacing="0">
-                <TextBlock Text="W O R K S H O P"
-                           Foreground="{StaticResource AccentBrush}"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           CharacterSpacing="180"/>
-                <TextBlock Text="I D E A S   I N T O   A S S E T S"
-                           HorizontalAlignment="Center"
-                           Foreground="{StaticResource MutedBrush}"
-                           FontSize="7"
-                           CharacterSpacing="140"/>
+                        Spacing="8">
+                <Border x:Name="HostStatusChip"
+                        Padding="10,5"
+                        Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Border Width="7" Height="7" Background="{StaticResource GoodBrush}" CornerRadius="4"/>
+                        <TextBlock Text="Host ready"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="10"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="QueueStatusChip"
+                        Padding="10,5"
+                        Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Border Width="7" Height="7" Background="{StaticResource GoodBrush}" CornerRadius="4"/>
+                        <TextBlock Text="Queue healthy"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="10"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="ActiveTasksChip"
+                        Padding="10,5"
+                        Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="●"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   FontSize="10"/>
+                        <TextBlock Text="3 active tasks"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="10"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="StorageStatusChip"
+                        Padding="10,5"
+                        Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="▰"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   FontSize="10"/>
+                        <TextBlock Text="Storage 31%"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="10"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
+            <!-- Session / application state -->
             <StackPanel Grid.Column="2"
-                        HorizontalAlignment="Center"
+                        Orientation="Horizontal"
                         VerticalAlignment="Center"
-                        Spacing="2">
-                <TextBlock Text="A MORE POWERFUL"
+                        Spacing="14">
+                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                    <Border Width="6" Height="6" Background="{StaticResource GoodBrush}" CornerRadius="3"/>
+                    <TextBlock x:Name="SyncStatusText"
+                               Text="Synced"
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="9"/>
+                </StackPanel>
+                <TextBlock Text="Autosave on"
                            Foreground="{StaticResource MutedBrush}"
-                           FontSize="7"
-                           CharacterSpacing="120"/>
-                <TextBlock Text="PROCEDURAL WORKFLOW"
+                           FontSize="9"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="VersionText"
+                           Text="v2.0"
                            Foreground="#6C747D"
-                           FontSize="7"
-                           CharacterSpacing="100"/>
+                           FontSize="9"
+                           VerticalAlignment="Center"/>
             </StackPanel>
         </Grid>
     </Border>
