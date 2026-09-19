@@ -574,7 +574,7 @@ public sealed class MainWindow : Window
             Text = "WinUI Forge",
             Foreground = MutedBrush,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0)
+            Margin = new Thickness(12, 0, 12, 0)
         };
         Grid.SetColumn(productName, 1);
         menuGrid.Children.Add(productName);
@@ -804,7 +804,7 @@ public sealed class MainWindow : Window
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 1, 0, 0),
-            Padding = new Thickness(8, 0)
+            Padding = new Thickness(8, 0, 8, 0)
         };
         projectFooter.Child = new TextBlock
         {
@@ -835,7 +835,7 @@ public sealed class MainWindow : Window
             Background = PanelBrush,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(8, 0)
+            Padding = new Thickness(8, 0, 8, 0)
         };
         var sourceHeaderGrid = new Grid();
         sourceHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -868,7 +868,7 @@ public sealed class MainWindow : Window
         {
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 1, 0, 0),
-            Padding = new Thickness(8, 0)
+            Padding = new Thickness(8, 0, 8, 0)
         };
         diagnostics.Margin = new Thickness(0);
         diagnostics.Foreground = MutedBrush;
@@ -898,7 +898,7 @@ public sealed class MainWindow : Window
             Background = PanelBrush,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(8, 0)
+            Padding = new Thickness(8, 0, 8, 0)
         };
         var designerHeaderGrid = new Grid();
         designerHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1002,7 +1002,7 @@ public sealed class MainWindow : Window
             Background = PanelBrush,
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 1, 0, 0),
-            Padding = new Thickness(8, 0)
+            Padding = new Thickness(8, 0, 8, 0)
         };
         referenceInfo.FontSize = 10;
         referenceInfo.VerticalAlignment = VerticalAlignment.Center;
@@ -1093,7 +1093,7 @@ public sealed class MainWindow : Window
             Background = Brush(20, 23, 25),
             BorderBrush = BorderBrush,
             BorderThickness = new Thickness(0, 1, 0, 0),
-            Padding = new Thickness(8, 0)
+            Padding = new Thickness(8, 0, 8, 0)
         };
         var statusGrid = new Grid();
         statusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
