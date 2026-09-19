@@ -240,7 +240,33 @@ Add-Type -TypeDefinition $source -Language CSharp
 $resolvedExe = (Resolve-Path -LiteralPath $ExePath).Path
 $resolvedIcon = (Resolve-Path -LiteralPath $IconPath).Path
 
-[WorkshopExeIconPatcher]::Patch($resolvedExe, $resolvedIcon)
+# The Workshop runtime ICO is intentionally accepted by Windows but some icon
+# writers leave non-canonical directory offsets. Normalize it through
+# System.Drawing before parsing/stamping so the PE resource writer gets a
+# conventional ICO directory every time.
+Add-Type -AssemblyName System.Drawing
+
+$normalizedIconPath = Join-Path ([System.IO.Path]::GetTempPath()) "WinUIForge-Workshop-normalized.ico"
+$iconObject = New-Object System.Drawing.Icon -ArgumentList $resolvedIcon
+try {
+    $stream = [System.IO.File]::Create($normalizedIconPath)
+    try {
+        $iconObject.Save($stream)
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+finally {
+    $iconObject.Dispose()
+}
+
+try {
+    [WorkshopExeIconPatcher]::Patch($resolvedExe, $normalizedIconPath)
+}
+finally {
+    Remove-Item -LiteralPath $normalizedIconPath -Force -ErrorAction SilentlyContinue
+}
 
 Write-Host "Stamped Workshop icon resources into:" -ForegroundColor Green
 Write-Host "  $resolvedExe"
