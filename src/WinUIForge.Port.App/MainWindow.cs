@@ -752,6 +752,23 @@ public sealed class MainWindow : Window
         toolsPaneToggle.Checked += (_, _) => ApplyWorkspacePanelVisibility();
         toolsPaneToggle.Unchecked += (_, _) => ApplyWorkspacePanelVisibility();
 
+        sourcePreviewSplitter.DragDelta += (_, e) => ResizeSourcePane(e.HorizontalChange);
+        sourcePreviewSplitter.DragCompleted += (_, _) => SaveWorkspaceSettings();
+        previewToolsSplitter.DragDelta += (_, e) => ResizeToolsPane(e.HorizontalChange);
+        previewToolsSplitter.DragCompleted += (_, _) => SaveWorkspaceSettings();
+
+        toolsTabs.SelectionChanged += (_, _) =>
+        {
+            userSettings.ToolsTabIndex = toolsTabs.SelectedIndex;
+            userSettings.Save();
+        };
+
+        Closed += (_, _) => SaveWorkspaceSettings();
+
+        addProjectFolderButton.Click += async (_, _) => await AddProjectFolderAsync();
+        removeProjectFolderButton.Click += (_, _) => RemoveSelectedProjectFolder();
+        refreshProjectsButton.Click += (_, _) => RebuildProjectExplorer();
+
         undoButton.Click += (_, _) => Undo();
         redoButton.Click += (_, _) => Redo();
         deleteButton.Click += (_, _) => DeleteSelected();
@@ -792,8 +809,6 @@ public sealed class MainWindow : Window
         reloadSourceFileButton.Click += (_, _) => ReloadCurrentSourceFile();
         saveSourceFileButton.Click += (_, _) => SaveCurrentSourceFile();
 
-        loadWorkshopBenchmarkButton.Click += (_, _) => LoadWorkshopBenchmark();
-        loadWorkshopSettingsBenchmarkButton.Click += (_, _) => LoadWorkshopSettingsBenchmark();
         loadReferenceButton.Click += async (_, _) => await LoadReferenceAsync();
         exportReviewPackageButton.Click += async (_, _) => await ExportReviewPackageAsync();
         referenceVisibleCheckBox.Checked += (_, _) => UpdateReferenceOverlay();
@@ -816,32 +831,46 @@ public sealed class MainWindow : Window
             true);
     }
 
-    void ApplyWorkspacePanelVisibility()
+    void ApplyWorkspacePanelVisibility(bool persist = true)
     {
-        if (sourcePaneHost is null || toolsPaneHost is null)
+        if (sourcePaneHost is null ||
+            toolsPaneHost is null ||
+            sourcePreviewSplitter is null ||
+            previewToolsSplitter is null)
             return;
 
         var showSource = sourcePaneToggle.IsChecked == true;
         var showTools = toolsPaneToggle.IsChecked == true;
 
-        sourcePaneHost.Visibility = showSource
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        sourceWorkspaceColumn.MinWidth = showSource ? 360 : 0;
+        sourcePaneHost.Visibility = showSource ? Visibility.Visible : Visibility.Collapsed;
+        sourcePreviewSplitter.Visibility = showSource ? Visibility.Visible : Visibility.Collapsed;
+        sourceWorkspaceColumn.MinWidth = showSource ? 280 : 0;
         sourceWorkspaceColumn.Width = showSource
-            ? new GridLength(0.86, GridUnitType.Star)
+            ? new GridLength(Math.Clamp(userSettings.SourcePaneWidth, 280, 900))
+            : new GridLength(0);
+        sourceSplitterColumn.Width = showSource
+            ? new GridLength(6)
             : new GridLength(0);
 
-        toolsPaneHost.Visibility = showTools
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        toolsWorkspaceColumn.MinWidth = showTools ? 350 : 0;
+        toolsPaneHost.Visibility = showTools ? Visibility.Visible : Visibility.Collapsed;
+        previewToolsSplitter.Visibility = showTools ? Visibility.Visible : Visibility.Collapsed;
+        toolsWorkspaceColumn.MinWidth = showTools ? 280 : 0;
         toolsWorkspaceColumn.Width = showTools
-            ? new GridLength(410)
+            ? new GridLength(Math.Clamp(userSettings.ToolsPaneWidth, 280, 900))
+            : new GridLength(0);
+        toolsSplitterColumn.Width = showTools
+            ? new GridLength(6)
             : new GridLength(0);
 
         previewWorkspaceColumn.MinWidth = 500;
-        previewWorkspaceColumn.Width = new GridLength(1.22, GridUnitType.Star);
+        previewWorkspaceColumn.Width = new GridLength(1, GridUnitType.Star);
+
+        if (persist)
+        {
+            userSettings.SourcePaneVisible = showSource;
+            userSettings.ToolsPaneVisible = showTools;
+            userSettings.Save();
+        }
 
         previewStage.DispatcherQueue.TryEnqueue(() =>
         {
@@ -852,105 +881,66 @@ public sealed class MainWindow : Window
 
         status.Text = (showSource, showTools) switch
         {
-            (true, true) => "Source and Tools panes visible.",
-            (false, true) => "Source pane hidden · designer expanded.",
-            (true, false) => "Tools pane hidden · designer expanded.",
-            (false, false) => "Source and Tools panes hidden · designer focus mode."
+            (true, true) => "Source/Projects and Inspector/Tools panes visible.",
+            (false, true) => "Left pane hidden · designer expanded.",
+            (true, false) => "Inspector/Tools pane hidden · designer expanded.",
+            (false, false) => "Side panes hidden · designer focus mode."
         };
     }
 
-    void LoadWorkshopBenchmark()
+    void ResizeSourcePane(double horizontalChange)
     {
-        try
-        {
-            var repositoryPath = FindRepositoryFile(
-                "benchmarks",
-                "workshop-dashboard-v1",
-                "Screen.xaml");
+        if (sourcePaneToggle.IsChecked != true || Math.Abs(horizontalChange) < 0.01)
+            return;
 
-            var packagedPath = Path.Combine(
-                AppContext.BaseDirectory,
-                "Benchmarks",
-                "workshop-dashboard-v1",
-                "Screen.xaml");
+        var toolsWidth = toolsPaneToggle.IsChecked == true
+            ? toolsWorkspaceColumn.ActualWidth + toolsSplitterColumn.ActualWidth
+            : 0;
+        var maximum = Math.Max(
+            280,
+            Math.Min(900, workspaceGrid.ActualWidth - toolsWidth - previewWorkspaceColumn.MinWidth - 12));
+        var width = Math.Clamp(
+            sourceWorkspaceColumn.ActualWidth + horizontalChange,
+            280,
+            maximum);
 
-            var path = repositoryPath ?? packagedPath;
-            if (!File.Exists(path))
-                throw new FileNotFoundException("The Workshop dashboard benchmark XAML was not found.", path);
-
-            visualTreeFilter.Text = string.Empty;
-            visualTreeNamedOnly.IsChecked = true;
-
-            LoadSourceFile(
-                path,
-                readOnly: repositoryPath is null);
-
-            SetBenchmarkViewport(1672, 941);
-            viewportDisplayMode.SelectedItem = "Fit";
-
-            if (referenceOverlay.Source is null)
-            {
-                referenceInfo.Text =
-                    "W2 benchmark loaded · now load W2-01-dashboard.png as the reference overlay";
-            }
-
-            status.Text = repositoryPath is null
-                ? "Workshop dashboard benchmark loaded from packaged copy · viewport 1672 × 941."
-                : "Workshop dashboard benchmark loaded from live repository XAML · edit/save/reload requires no Forge rebuild.";
-        }
-        catch (Exception ex)
-        {
-            diagnostics.Text = "Benchmark load error: " + ex;
-            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
-            status.Text = "Could not load Workshop dashboard benchmark: " + ex.Message;
-        }
+        sourceWorkspaceColumn.Width = new GridLength(width);
+        userSettings.SourcePaneWidth = width;
     }
 
-    void LoadWorkshopSettingsBenchmark()
+    void ResizeToolsPane(double horizontalChange)
     {
-        try
-        {
-            var repositoryPath = FindRepositoryFile(
-                "benchmarks",
-                "workshop-storage-settings-v1",
-                "Screen.xaml");
+        if (toolsPaneToggle.IsChecked != true || Math.Abs(horizontalChange) < 0.01)
+            return;
 
-            var packagedPath = Path.Combine(
-                AppContext.BaseDirectory,
-                "Benchmarks",
-                "workshop-storage-settings-v1",
-                "Screen.xaml");
+        var sourceWidth = sourcePaneToggle.IsChecked == true
+            ? sourceWorkspaceColumn.ActualWidth + sourceSplitterColumn.ActualWidth
+            : 0;
+        var maximum = Math.Max(
+            280,
+            Math.Min(900, workspaceGrid.ActualWidth - sourceWidth - previewWorkspaceColumn.MinWidth - 12));
+        var width = Math.Clamp(
+            toolsWorkspaceColumn.ActualWidth - horizontalChange,
+            280,
+            maximum);
 
-            var path = repositoryPath ?? packagedPath;
-            if (!File.Exists(path))
-                throw new FileNotFoundException("The Workshop Storage & Settings benchmark XAML was not found.", path);
+        toolsWorkspaceColumn.Width = new GridLength(width);
+        userSettings.ToolsPaneWidth = width;
+    }
 
-            visualTreeFilter.Text = string.Empty;
-            visualTreeNamedOnly.IsChecked = true;
+    void SaveWorkspaceSettings()
+    {
+        userSettings.SourcePaneVisible = sourcePaneToggle.IsChecked == true;
+        userSettings.ToolsPaneVisible = toolsPaneToggle.IsChecked == true;
+        userSettings.ToolsTabIndex = toolsTabs?.SelectedIndex ?? userSettings.ToolsTabIndex;
 
-            LoadSourceFile(
-                path,
-                readOnly: repositoryPath is null);
+        if (sourcePaneToggle.IsChecked == true && sourceWorkspaceColumn.ActualWidth >= 280)
+            userSettings.SourcePaneWidth = sourceWorkspaceColumn.ActualWidth;
 
-            SetBenchmarkViewport(1672, 941);
-            viewportDisplayMode.SelectedItem = "Fit";
+        if (toolsPaneToggle.IsChecked == true && toolsWorkspaceColumn.ActualWidth >= 280)
+            userSettings.ToolsPaneWidth = toolsWorkspaceColumn.ActualWidth;
 
-            if (referenceOverlay.Source is null)
-            {
-                referenceInfo.Text =
-                    "W2 Storage & Settings loaded · now load W2-14-storage-settings.png as the reference overlay";
-            }
-
-            status.Text = repositoryPath is null
-                ? "Workshop Storage & Settings benchmark loaded from packaged copy · viewport 1672 × 941."
-                : "Workshop Storage & Settings benchmark loaded from live repository XAML · edit/save/reload requires no Forge rebuild.";
-        }
-        catch (Exception ex)
-        {
-            diagnostics.Text = "Settings benchmark load error: " + ex;
-            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
-            status.Text = "Could not load Workshop Storage & Settings benchmark: " + ex.Message;
-        }
+        userSettings.Save();
     }
 
     async Task OpenSourceFileAsync()
