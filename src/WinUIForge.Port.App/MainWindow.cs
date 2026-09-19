@@ -81,7 +81,8 @@ public sealed class MainWindow : Window
     readonly TextBlock referenceInfo = new()
     {
         Text = "No reference image loaded.",
-        TextWrapping = TextWrapping.Wrap
+        TextWrapping = TextWrapping.NoWrap,
+        TextTrimming = TextTrimming.CharacterEllipsis
     };
     readonly TextBox viewportWidthBox = new()
     {
@@ -587,8 +588,17 @@ public sealed class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center
         });
         referenceCommands.Children.Add(referenceOpacitySlider);
-        Grid.SetColumn(referenceCommands, 1);
-        referenceTools.Children.Add(referenceCommands);
+        var referenceCommandScroller = new ScrollViewer
+        {
+            Content = referenceCommands,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollMode = ScrollMode.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollMode = ScrollMode.Disabled,
+            MaxHeight = 58
+        };
+        Grid.SetColumn(referenceCommandScroller, 1);
+        referenceTools.Children.Add(referenceCommandScroller);
         Grid.SetRow(referenceTools, 1);
         previewHost.Children.Add(referenceTools);
 
@@ -618,8 +628,17 @@ public sealed class MainWindow : Window
         viewportCommands.Children.Add(viewportDisplayMode);
         viewportCommands.Children.Add(applyViewportButton);
         viewportCommands.Children.Add(useReferenceSizeButton);
-        Grid.SetColumn(viewportCommands, 1);
-        viewportTools.Children.Add(viewportCommands);
+        var viewportCommandScroller = new ScrollViewer
+        {
+            Content = viewportCommands,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollMode = ScrollMode.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollMode = ScrollMode.Disabled,
+            MaxHeight = 76
+        };
+        Grid.SetColumn(viewportCommandScroller, 1);
+        viewportTools.Children.Add(viewportCommandScroller);
         Grid.SetRow(viewportTools, 2);
         previewHost.Children.Add(viewportTools);
 
