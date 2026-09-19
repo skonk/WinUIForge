@@ -777,11 +777,15 @@ public sealed class MainWindow : Window
 
     void WireEvents()
     {
+        projectsPaneToggle.Checked += (_, _) => ApplyWorkspacePanelVisibility();
+        projectsPaneToggle.Unchecked += (_, _) => ApplyWorkspacePanelVisibility();
         sourcePaneToggle.Checked += (_, _) => ApplyWorkspacePanelVisibility();
         sourcePaneToggle.Unchecked += (_, _) => ApplyWorkspacePanelVisibility();
         toolsPaneToggle.Checked += (_, _) => ApplyWorkspacePanelVisibility();
         toolsPaneToggle.Unchecked += (_, _) => ApplyWorkspacePanelVisibility();
 
+        projectsSourceSplitter.DragDelta += (_, e) => ResizeProjectsPane(e.HorizontalChange);
+        projectsSourceSplitter.DragCompleted += (_, _) => SaveWorkspaceSettings();
         sourcePreviewSplitter.DragDelta += (_, e) => ResizeSourcePane(e.HorizontalChange);
         sourcePreviewSplitter.DragCompleted += (_, _) => SaveWorkspaceSettings();
         previewToolsSplitter.DragDelta += (_, e) => ResizeToolsPane(e.HorizontalChange);
@@ -863,20 +867,33 @@ public sealed class MainWindow : Window
 
     void ApplyWorkspacePanelVisibility(bool persist = true)
     {
-        if (sourcePaneHost is null ||
+        if (projectsPaneHost is null ||
+            sourcePaneHost is null ||
             toolsPaneHost is null ||
+            projectsSourceSplitter is null ||
             sourcePreviewSplitter is null ||
             previewToolsSplitter is null)
             return;
 
+        var showProjects = projectsPaneToggle.IsChecked == true;
         var showSource = sourcePaneToggle.IsChecked == true;
         var showTools = toolsPaneToggle.IsChecked == true;
 
+        projectsPaneHost.Visibility = showProjects ? Visibility.Visible : Visibility.Collapsed;
+        projectsSourceSplitter.Visibility = showProjects ? Visibility.Visible : Visibility.Collapsed;
+        projectsWorkspaceColumn.MinWidth = showProjects ? 220 : 0;
+        projectsWorkspaceColumn.Width = showProjects
+            ? new GridLength(Math.Clamp(userSettings.ProjectsPaneWidth, 220, 700))
+            : new GridLength(0);
+        projectsSplitterColumn.Width = showProjects
+            ? new GridLength(6)
+            : new GridLength(0);
+
         sourcePaneHost.Visibility = showSource ? Visibility.Visible : Visibility.Collapsed;
         sourcePreviewSplitter.Visibility = showSource ? Visibility.Visible : Visibility.Collapsed;
-        sourceWorkspaceColumn.MinWidth = showSource ? 280 : 0;
+        sourceWorkspaceColumn.MinWidth = showSource ? 300 : 0;
         sourceWorkspaceColumn.Width = showSource
-            ? new GridLength(Math.Clamp(userSettings.SourcePaneWidth, 280, 900))
+            ? new GridLength(Math.Clamp(userSettings.SourcePaneWidth, 300, 900))
             : new GridLength(0);
         sourceSplitterColumn.Width = showSource
             ? new GridLength(6)
@@ -897,6 +914,7 @@ public sealed class MainWindow : Window
 
         if (persist)
         {
+            userSettings.ProjectsPaneVisible = showProjects;
             userSettings.SourcePaneVisible = showSource;
             userSettings.ToolsPaneVisible = showTools;
             userSettings.Save();
@@ -909,13 +927,23 @@ public sealed class MainWindow : Window
             DrawSelection();
         });
 
-        status.Text = (showSource, showTools) switch
-        {
-            (true, true) => "Source/Projects and Inspector/Tools panes visible.",
-            (false, true) => "Left pane hidden · designer expanded.",
-            (true, false) => "Inspector/Tools pane hidden · designer expanded.",
-            (false, false) => "Side panes hidden · designer focus mode."
-        };
+        status.Text = $"Projects {(showProjects ? "visible" : "hidden")} · " +
+                      $"Source {(showSource ? "visible" : "hidden")} · " +
+                      $"Inspector/Tools {(showTools ? "visible" : "hidden")}.";
+    }
+
+    void ResizeProjectsPane(double horizontalChange)
+    {
+        if (projectsPaneToggle.IsChecked != true || Math.Abs(horizontalChange) < 0.01)
+            return;
+
+        var width = Math.Clamp(
+            projectsWorkspaceColumn.ActualWidth + horizontalChange,
+            220,
+            700);
+
+        projectsWorkspaceColumn.Width = new GridLength(width);
+        userSettings.ProjectsPaneWidth = width;
     }
 
     void ResizeSourcePane(double horizontalChange)
@@ -923,15 +951,18 @@ public sealed class MainWindow : Window
         if (sourcePaneToggle.IsChecked != true || Math.Abs(horizontalChange) < 0.01)
             return;
 
+        var projectsWidth = projectsPaneToggle.IsChecked == true
+            ? projectsWorkspaceColumn.ActualWidth + projectsSplitterColumn.ActualWidth
+            : 0;
         var toolsWidth = toolsPaneToggle.IsChecked == true
             ? toolsWorkspaceColumn.ActualWidth + toolsSplitterColumn.ActualWidth
             : 0;
         var maximum = Math.Max(
-            280,
-            Math.Min(900, workspaceGrid.ActualWidth - toolsWidth - previewWorkspaceColumn.MinWidth - 12));
+            300,
+            Math.Min(900, workspaceGrid.ActualWidth - projectsWidth - toolsWidth - previewWorkspaceColumn.MinWidth - 18));
         var width = Math.Clamp(
             sourceWorkspaceColumn.ActualWidth + horizontalChange,
-            280,
+            300,
             maximum);
 
         sourceWorkspaceColumn.Width = new GridLength(width);
@@ -943,12 +974,15 @@ public sealed class MainWindow : Window
         if (toolsPaneToggle.IsChecked != true || Math.Abs(horizontalChange) < 0.01)
             return;
 
+        var projectsWidth = projectsPaneToggle.IsChecked == true
+            ? projectsWorkspaceColumn.ActualWidth + projectsSplitterColumn.ActualWidth
+            : 0;
         var sourceWidth = sourcePaneToggle.IsChecked == true
             ? sourceWorkspaceColumn.ActualWidth + sourceSplitterColumn.ActualWidth
             : 0;
         var maximum = Math.Max(
             280,
-            Math.Min(900, workspaceGrid.ActualWidth - sourceWidth - previewWorkspaceColumn.MinWidth - 12));
+            Math.Min(900, workspaceGrid.ActualWidth - projectsWidth - sourceWidth - previewWorkspaceColumn.MinWidth - 18));
         var width = Math.Clamp(
             toolsWorkspaceColumn.ActualWidth - horizontalChange,
             280,
@@ -960,11 +994,15 @@ public sealed class MainWindow : Window
 
     void SaveWorkspaceSettings()
     {
+        userSettings.ProjectsPaneVisible = projectsPaneToggle.IsChecked == true;
         userSettings.SourcePaneVisible = sourcePaneToggle.IsChecked == true;
         userSettings.ToolsPaneVisible = toolsPaneToggle.IsChecked == true;
         userSettings.ToolsTabIndex = toolsTabs?.SelectedIndex ?? userSettings.ToolsTabIndex;
 
-        if (sourcePaneToggle.IsChecked == true && sourceWorkspaceColumn.ActualWidth >= 280)
+        if (projectsPaneToggle.IsChecked == true && projectsWorkspaceColumn.ActualWidth >= 220)
+            userSettings.ProjectsPaneWidth = projectsWorkspaceColumn.ActualWidth;
+
+        if (sourcePaneToggle.IsChecked == true && sourceWorkspaceColumn.ActualWidth >= 300)
             userSettings.SourcePaneWidth = sourceWorkspaceColumn.ActualWidth;
 
         if (toolsPaneToggle.IsChecked == true && toolsWorkspaceColumn.ActualWidth >= 280)
