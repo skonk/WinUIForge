@@ -16,7 +16,6 @@
     <RootNamespace>WinUIForge.Port.App</RootNamespace>
     <AssemblyName>WinUIForge.Port.App</AssemblyName>
     <ApplicationIcon>..\..\assets\workshop-ui\app-icon\Workshop.ico</ApplicationIcon>
-    <Win32Icon>..\..\assets\workshop-ui\app-icon\Workshop.ico</Win32Icon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
