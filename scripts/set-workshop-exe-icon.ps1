@@ -16,7 +16,9 @@ if (-not (Test-Path -LiteralPath $IconPath)) {
     throw "Icon was not found: $IconPath"
 }
 
-$source = @"
+# Keep this source compatible with the C# compiler used by Windows PowerShell
+# Add-Type. Avoid newer syntax such as interpolated strings and using declarations.
+$source = @'
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -44,7 +46,10 @@ public static class WorkshopExeIconPatcher
     [DllImport("kernel32.dll", SetLastError = true)]
     static extern bool EndUpdateResourceW(IntPtr hUpdate, bool fDiscard);
 
-    static IntPtr MakeIntResource(ushort value) => (IntPtr)value;
+    static IntPtr MakeIntResource(ushort value)
+    {
+        return (IntPtr)value;
+    }
 
     sealed class IconEntry
     {
@@ -57,13 +62,13 @@ public static class WorkshopExeIconPatcher
         public uint BytesInRes;
         public uint ImageOffset;
         public ushort ResourceId;
-        public byte[] ImageData = Array.Empty<byte>();
+        public byte[] ImageData = new byte[0];
     }
 
     public static void Patch(string exePath, string iconPath)
     {
-        var iconBytes = File.ReadAllBytes(iconPath);
-        var entries = ParseIcon(iconBytes);
+        byte[] iconBytes = File.ReadAllBytes(iconPath);
+        List<IconEntry> entries = ParseIcon(iconBytes);
 
         IntPtr update = BeginUpdateResourceW(exePath, false);
         if (update == IntPtr.Zero)
@@ -72,7 +77,7 @@ public static class WorkshopExeIconPatcher
         bool completed = false;
         try
         {
-            foreach (var entry in entries)
+            foreach (IconEntry entry in entries)
             {
                 if (!UpdateResourceW(
                     update,
@@ -82,13 +87,12 @@ public static class WorkshopExeIconPatcher
                     entry.ImageData,
                     (uint)entry.ImageData.Length))
                 {
-                    ThrowLastWin32($"UpdateResourceW RT_ICON {entry.ResourceId}");
+                    ThrowLastWin32("UpdateResourceW RT_ICON " + entry.ResourceId);
                 }
             }
 
-            var groupData = BuildGroupIcon(entries);
+            byte[] groupData = BuildGroupIcon(entries);
 
-            // IDI_APPLICATION is what the .NET apphost itself looks for.
             if (!UpdateResourceW(
                 update,
                 MakeIntResource(RT_GROUP_ICON),
@@ -100,8 +104,7 @@ public static class WorkshopExeIconPatcher
                 ThrowLastWin32("UpdateResourceW RT_GROUP_ICON IDI_APPLICATION");
             }
 
-            // Also add resource ID 1. Explorer commonly selects the lowest
-            // group-icon resource when displaying an executable.
+            // Explorer often chooses the lowest group-icon resource.
             if (!UpdateResourceW(
                 update,
                 MakeIntResource(RT_GROUP_ICON),
@@ -127,82 +130,110 @@ public static class WorkshopExeIconPatcher
 
     static List<IconEntry> ParseIcon(byte[] bytes)
     {
-        using var stream = new MemoryStream(bytes, writable: false);
-        using var reader = new BinaryReader(stream);
-
-        ushort reserved = reader.ReadUInt16();
-        ushort type = reader.ReadUInt16();
-        ushort count = reader.ReadUInt16();
-
-        if (reserved != 0 || type != 1 || count == 0)
-            throw new InvalidDataException("The ICO file has an invalid ICONDIR header.");
-
-        var entries = new List<IconEntry>(count);
-        for (ushort i = 0; i < count; i++)
+        MemoryStream stream = new MemoryStream(bytes, false);
+        try
         {
-            entries.Add(new IconEntry
+            BinaryReader reader = new BinaryReader(stream);
+            try
             {
-                Width = reader.ReadByte(),
-                Height = reader.ReadByte(),
-                ColorCount = reader.ReadByte(),
-                Reserved = reader.ReadByte(),
-                Planes = reader.ReadUInt16(),
-                BitCount = reader.ReadUInt16(),
-                BytesInRes = reader.ReadUInt32(),
-                ImageOffset = reader.ReadUInt32(),
-                ResourceId = checked((ushort)(i + 1))
-            });
-        }
+                ushort reserved = reader.ReadUInt16();
+                ushort type = reader.ReadUInt16();
+                ushort count = reader.ReadUInt16();
 
-        foreach (var entry in entries)
+                if (reserved != 0 || type != 1 || count == 0)
+                    throw new InvalidDataException("The ICO file has an invalid ICONDIR header.");
+
+                List<IconEntry> entries = new List<IconEntry>(count);
+                ushort i;
+                for (i = 0; i < count; i++)
+                {
+                    IconEntry entry = new IconEntry();
+                    entry.Width = reader.ReadByte();
+                    entry.Height = reader.ReadByte();
+                    entry.ColorCount = reader.ReadByte();
+                    entry.Reserved = reader.ReadByte();
+                    entry.Planes = reader.ReadUInt16();
+                    entry.BitCount = reader.ReadUInt16();
+                    entry.BytesInRes = reader.ReadUInt32();
+                    entry.ImageOffset = reader.ReadUInt32();
+                    entry.ResourceId = checked((ushort)(i + 1));
+                    entries.Add(entry);
+                }
+
+                foreach (IconEntry entry in entries)
+                {
+                    ulong end = (ulong)entry.ImageOffset + (ulong)entry.BytesInRes;
+                    if (end > (ulong)bytes.Length)
+                        throw new InvalidDataException("The ICO file contains an out-of-range image entry.");
+
+                    entry.ImageData = new byte[checked((int)entry.BytesInRes)];
+                    Buffer.BlockCopy(
+                        bytes,
+                        checked((int)entry.ImageOffset),
+                        entry.ImageData,
+                        0,
+                        checked((int)entry.BytesInRes));
+                }
+
+                return entries;
+            }
+            finally
+            {
+                reader.Dispose();
+            }
+        }
+        finally
         {
-            if (entry.ImageOffset + entry.BytesInRes > bytes.Length)
-                throw new InvalidDataException("The ICO file contains an out-of-range image entry.");
-
-            entry.ImageData = new byte[entry.BytesInRes];
-            Buffer.BlockCopy(
-                bytes,
-                checked((int)entry.ImageOffset),
-                entry.ImageData,
-                0,
-                checked((int)entry.BytesInRes));
+            stream.Dispose();
         }
-
-        return entries;
     }
 
     static byte[] BuildGroupIcon(List<IconEntry> entries)
     {
-        using var stream = new MemoryStream();
-        using var writer = new BinaryWriter(stream);
-
-        writer.Write((ushort)0); // reserved
-        writer.Write((ushort)1); // icon
-        writer.Write(checked((ushort)entries.Count));
-
-        foreach (var entry in entries)
+        MemoryStream stream = new MemoryStream();
+        try
         {
-            writer.Write(entry.Width);
-            writer.Write(entry.Height);
-            writer.Write(entry.ColorCount);
-            writer.Write(entry.Reserved);
-            writer.Write(entry.Planes);
-            writer.Write(entry.BitCount);
-            writer.Write(entry.BytesInRes);
-            writer.Write(entry.ResourceId);
-        }
+            BinaryWriter writer = new BinaryWriter(stream);
+            try
+            {
+                writer.Write((ushort)0);
+                writer.Write((ushort)1);
+                writer.Write(checked((ushort)entries.Count));
 
-        writer.Flush();
-        return stream.ToArray();
+                foreach (IconEntry entry in entries)
+                {
+                    writer.Write(entry.Width);
+                    writer.Write(entry.Height);
+                    writer.Write(entry.ColorCount);
+                    writer.Write(entry.Reserved);
+                    writer.Write(entry.Planes);
+                    writer.Write(entry.BitCount);
+                    writer.Write(entry.BytesInRes);
+                    writer.Write(entry.ResourceId);
+                }
+
+                writer.Flush();
+                return stream.ToArray();
+            }
+            finally
+            {
+                writer.Dispose();
+            }
+        }
+        finally
+        {
+            stream.Dispose();
+        }
     }
 
     static void ThrowLastWin32(string operation)
     {
         int error = Marshal.GetLastWin32Error();
-        throw new InvalidOperationException($"{operation} failed with Win32 error {error}.");
+        throw new InvalidOperationException(
+            operation + " failed with Win32 error " + error + ".");
     }
 }
-"@
+'@
 
 Add-Type -TypeDefinition $source -Language CSharp
 
