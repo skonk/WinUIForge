@@ -195,49 +195,81 @@
               Grid.Column="1"
               Background="{StaticResource PanelAltBrush}">
             <Grid.RowDefinitions>
-                <RowDefinition Height="36"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="32"/>
             </Grid.RowDefinitions>
 
-            <Border Background="{StaticResource PanelBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="0,0,0,1"
-                    Padding="8,0">
-                <Grid>
-                    <TextBlock Text="PROJECTS"
-                               Foreground="{StaticResource MutedBrush}"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"/>
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                Spacing="2">
-                        <Button Width="26"
-                                Height="26"
-                                Padding="0"
-                                ToolTipService.ToolTip="Add folder">
-                            <FontIcon Glyph="&#xE8F4;"
-                                      FontSize="13"/>
-                        </Button>
-                        <Button Width="26"
-                                Height="26"
-                                Padding="0"
-                                ToolTipService.ToolTip="Refresh">
-                            <FontIcon Glyph="&#xE72C;"
-                                      FontSize="13"/>
-                        </Button>
-                        <Button Width="26"
-                                Height="26"
-                                Padding="0"
-                                ToolTipService.ToolTip="More">
-                            <FontIcon Glyph="&#xE712;"
-                                      FontSize="13"/>
-                        </Button>
-                    </StackPanel>
-                </Grid>
+            <!-- Project panel identity and explanatory text get their own rows
+                 so toolbar controls never compete with labels for width. -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource PanelBrush}"
+                    Padding="10,8,10,3">
+                <TextBlock Text="PROJECTS"
+                           Foreground="{StaticResource TextBrush}"
+                           FontSize="14"
+                           FontWeight="SemiBold"/>
             </Border>
 
-            <StackPanel Grid.Row="1"
+            <Border Grid.Row="1"
+                    Background="{StaticResource PanelBrush}"
+                    Padding="10,0,10,7">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Open UI files and paired references from project folders."
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="11"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="1 project folder · UI files and references paired by project metadata."
+                               Foreground="{StaticResource MutedBrush}"
+                               FontSize="10"
+                               Opacity="0.78"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Contextual project actions live on a dedicated toolbar row. -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource PanelBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="8,5">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Left"
+                            Spacing="4">
+                    <Button Height="28"
+                            Padding="8,0"
+                            ToolTipService.ToolTip="Add project folder">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <FontIcon Glyph="&#xE8F4;" FontSize="12"/>
+                            <TextBlock Text="Add folder" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Height="28"
+                            Padding="8,0"
+                            ToolTipService.ToolTip="Remove selected project folder">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <FontIcon Glyph="&#xE74D;" FontSize="12"/>
+                            <TextBlock Text="Remove" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Width="28"
+                            Height="28"
+                            Padding="0"
+                            ToolTipService.ToolTip="Refresh projects">
+                        <FontIcon Glyph="&#xE72C;" FontSize="12"/>
+                    </Button>
+                    <Button Width="28"
+                            Height="28"
+                            Padding="0"
+                            ToolTipService.ToolTip="Project options">
+                        <FontIcon Glyph="&#xE712;" FontSize="12"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Row="3"
                         Padding="8,8"
                         Spacing="3">
                 <TextBlock Text="▼ WORKSHOP UI"
@@ -263,7 +295,7 @@
                            Margin="0,6,0,0"/>
             </StackPanel>
 
-            <Border Grid.Row="2"
+            <Border Grid.Row="4"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="8,0">
