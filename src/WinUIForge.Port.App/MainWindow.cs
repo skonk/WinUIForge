@@ -153,7 +153,8 @@ public sealed class MainWindow : Window
     readonly TextBlock diagnostics = new() { TextWrapping = TextWrapping.Wrap };
     readonly TextBlock status = new() { TextWrapping = TextWrapping.NoWrap };
 
-    readonly ToggleButton sourcePaneToggle = new() { Content = "Source / Projects", IsChecked = true };
+    readonly ToggleButton projectsPaneToggle = new() { Content = "Projects", IsChecked = true };
+    readonly ToggleButton sourcePaneToggle = new() { Content = "Source", IsChecked = true };
     readonly ToggleButton toolsPaneToggle = new() { Content = "Inspector / Tools", IsChecked = true };
     readonly Button openSourceFileButton = new() { Content = "Open XAML…" };
     readonly Button reloadSourceFileButton = new() { Content = "Reload XAML", IsEnabled = false };
@@ -172,15 +173,18 @@ public sealed class MainWindow : Window
 
     Grid shellRoot = null!;
     Grid workspaceGrid = null!;
+    ColumnDefinition projectsWorkspaceColumn = null!;
+    ColumnDefinition projectsSplitterColumn = null!;
     ColumnDefinition sourceWorkspaceColumn = null!;
     ColumnDefinition sourceSplitterColumn = null!;
     ColumnDefinition previewWorkspaceColumn = null!;
     ColumnDefinition toolsSplitterColumn = null!;
     ColumnDefinition toolsWorkspaceColumn = null!;
+    FrameworkElement projectsPaneHost = null!;
     FrameworkElement sourcePaneHost = null!;
     FrameworkElement toolsPaneHost = null!;
-    TabView leftPaneTabs = null!;
     TabView toolsTabs = null!;
+    Thumb projectsSourceSplitter = null!;
     Thumb sourcePreviewSplitter = null!;
     Thumb previewToolsSplitter = null!;
     ForgeXamlDocument? document;
@@ -284,6 +288,7 @@ public sealed class MainWindow : Window
         viewportDisplayMode.ItemsSource = new[] { "Fit", "Fill", "1:1" };
         viewportDisplayMode.SelectedIndex = 0;
 
+        projectsPaneToggle.IsChecked = userSettings.ProjectsPaneVisible;
         sourcePaneToggle.IsChecked = userSettings.SourcePaneVisible;
         toolsPaneToggle.IsChecked = userSettings.ToolsPaneVisible;
 
@@ -409,6 +414,7 @@ public sealed class MainWindow : Window
         renderButton.Background = AccentBrush;
         renderButton.Foreground = WindowBrush;
 
+        commands.Children.Add(projectsPaneToggle);
         commands.Children.Add(sourcePaneToggle);
         commands.Children.Add(toolsPaneToggle);
         commands.Children.Add(openSourceFileButton);
@@ -423,10 +429,17 @@ public sealed class MainWindow : Window
         shellRoot.Children.Add(header);
 
         workspaceGrid = new Grid { Background = BorderBrush };
+
+        projectsWorkspaceColumn = new ColumnDefinition
+        {
+            Width = new GridLength(Math.Clamp(userSettings.ProjectsPaneWidth, 220, 700)),
+            MinWidth = 220
+        };
+        projectsSplitterColumn = new ColumnDefinition { Width = new GridLength(6) };
         sourceWorkspaceColumn = new ColumnDefinition
         {
-            Width = new GridLength(Math.Clamp(userSettings.SourcePaneWidth, 280, 900)),
-            MinWidth = 280
+            Width = new GridLength(Math.Clamp(userSettings.SourcePaneWidth, 300, 900)),
+            MinWidth = 300
         };
         sourceSplitterColumn = new ColumnDefinition { Width = new GridLength(6) };
         previewWorkspaceColumn = new ColumnDefinition
@@ -440,6 +453,9 @@ public sealed class MainWindow : Window
             Width = new GridLength(Math.Clamp(userSettings.ToolsPaneWidth, 280, 900)),
             MinWidth = 280
         };
+
+        workspaceGrid.ColumnDefinitions.Add(projectsWorkspaceColumn);
+        workspaceGrid.ColumnDefinitions.Add(projectsSplitterColumn);
         workspaceGrid.ColumnDefinitions.Add(sourceWorkspaceColumn);
         workspaceGrid.ColumnDefinitions.Add(sourceSplitterColumn);
         workspaceGrid.ColumnDefinitions.Add(previewWorkspaceColumn);
@@ -447,22 +463,6 @@ public sealed class MainWindow : Window
         workspaceGrid.ColumnDefinitions.Add(toolsWorkspaceColumn);
         Grid.SetRow(workspaceGrid, 1);
         shellRoot.Children.Add(workspaceGrid);
-
-        var editorHost = new Grid { Background = PanelBrush };
-        editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        editorHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        editorHost.Children.Add(SectionHeader(
-            "XAML source",
-            "The source remains authoritative. Forge authoring commands make deterministic source edits."));
-        Grid.SetRow(sourceEditor, 1);
-        editorHost.Children.Add(sourceEditor);
-
-        diagnostics.Margin = new Thickness(12, 8, 12, 10);
-        diagnostics.Foreground = MutedBrush;
-        diagnostics.MaxHeight = 86;
-        Grid.SetRow(diagnostics, 2);
-        editorHost.Children.Add(diagnostics);
 
         var projectHost = new Grid { Background = PanelBrush };
         projectHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -487,7 +487,7 @@ public sealed class MainWindow : Window
         });
         projectTitle.Children.Add(new TextBlock
         {
-            Text = "Folders stay on disk. XAML opens in Forge; project images load as visual references.",
+            Text = "Open UI files and paired references from project folders.",
             Foreground = MutedBrush,
             TextWrapping = TextWrapping.Wrap
         });
@@ -496,7 +496,7 @@ public sealed class MainWindow : Window
         var projectButtons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6,
+            Spacing = 4,
             VerticalAlignment = VerticalAlignment.Top
         };
         projectButtons.Children.Add(addProjectFolderButton);
@@ -519,26 +519,37 @@ public sealed class MainWindow : Window
         Grid.SetRow(projectScroll, 2);
         projectHost.Children.Add(projectScroll);
 
-        leftPaneTabs = new TabView
+        projectsPaneHost = projectHost;
+        workspaceGrid.Children.Add(projectHost);
+
+        projectsSourceSplitter = new Thumb
         {
-            IsAddTabButtonVisible = false,
-            Background = PanelBrush
+            Background = BorderBrush,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
         };
-        leftPaneTabs.TabItems.Add(new TabViewItem
-        {
-            Header = "Projects",
-            IsClosable = false,
-            Content = projectHost
-        });
-        leftPaneTabs.TabItems.Add(new TabViewItem
-        {
-            Header = "Source",
-            IsClosable = false,
-            Content = editorHost
-        });
-        leftPaneTabs.SelectedIndex = 1;
-        sourcePaneHost = leftPaneTabs;
-        workspaceGrid.Children.Add(leftPaneTabs);
+        Grid.SetColumn(projectsSourceSplitter, 1);
+        workspaceGrid.Children.Add(projectsSourceSplitter);
+
+        var editorHost = new Grid { Background = PanelBrush };
+        editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        editorHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        editorHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        editorHost.Children.Add(SectionHeader(
+            "XAML source",
+            "Authoritative source. Designer edits update this document."));
+        Grid.SetRow(sourceEditor, 1);
+        editorHost.Children.Add(sourceEditor);
+
+        diagnostics.Margin = new Thickness(12, 8, 12, 10);
+        diagnostics.Foreground = MutedBrush;
+        diagnostics.MaxHeight = 86;
+        Grid.SetRow(diagnostics, 2);
+        editorHost.Children.Add(diagnostics);
+
+        sourcePaneHost = editorHost;
+        Grid.SetColumn(editorHost, 2);
+        workspaceGrid.Children.Add(editorHost);
 
         sourcePreviewSplitter = new Thumb
         {
@@ -546,7 +557,7 @@ public sealed class MainWindow : Window
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
-        Grid.SetColumn(sourcePreviewSplitter, 1);
+        Grid.SetColumn(sourcePreviewSplitter, 3);
         workspaceGrid.Children.Add(sourcePreviewSplitter);
 
         var previewHost = new Grid { Background = WindowBrush };
@@ -662,7 +673,7 @@ public sealed class MainWindow : Window
         previewFrame.Child = previewViewportShell;
         Grid.SetRow(previewFrame, 3);
         previewHost.Children.Add(previewFrame);
-        Grid.SetColumn(previewHost, 2);
+        Grid.SetColumn(previewHost, 4);
         workspaceGrid.Children.Add(previewHost);
 
         previewToolsSplitter = new Thumb
@@ -671,7 +682,7 @@ public sealed class MainWindow : Window
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
-        Grid.SetColumn(previewToolsSplitter, 3);
+        Grid.SetColumn(previewToolsSplitter, 5);
         workspaceGrid.Children.Add(previewToolsSplitter);
 
         toolsTabs = new TabView
@@ -746,7 +757,7 @@ public sealed class MainWindow : Window
         toolsTabs.TabItems.Add(treeTab);
         toolsTabs.TabItems.Add(inspectorTab);
         toolsTabs.SelectedIndex = Math.Clamp(userSettings.ToolsTabIndex, 0, 2);
-        Grid.SetColumn(toolsTabs, 4);
+        Grid.SetColumn(toolsTabs, 6);
         workspaceGrid.Children.Add(toolsTabs);
 
         var statusBorder = new Border
