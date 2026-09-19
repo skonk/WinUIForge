@@ -6,8 +6,10 @@ internal sealed class ForgeUserSettings
 {
     const string SettingsFileName = "settings.json";
 
+    public bool ProjectsPaneVisible { get; set; } = true;
     public bool SourcePaneVisible { get; set; } = true;
     public bool ToolsPaneVisible { get; set; } = true;
+    public double ProjectsPaneWidth { get; set; } = 300;
     public double SourcePaneWidth { get; set; } = 430;
     public double ToolsPaneWidth { get; set; } = 410;
     public int ToolsTabIndex { get; set; } = 1;
