@@ -327,7 +327,8 @@
                                FontSize="11"
                                FontWeight="SemiBold"/>
 
-                    <Border Padding="9,8"
+                    <Border HorizontalAlignment="Stretch"
+                            Padding="9,8"
                             Background="#30231D"
                             BorderBrush="#5F341E"
                             BorderThickness="1"
@@ -344,30 +345,35 @@
                     </Border>
 
                     <Button Content="▦   Recent Jobs"
+                            HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
                             FontSize="13"/>
                     <Button Content="□   Projects"
+                            HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
                             FontSize="13"/>
                     <Button Content="◇   Assets"
+                            HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
                             FontSize="13"/>
                     <Button Content="▤   Reports"
+                            HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
                             Foreground="{StaticResource MutedBrush}"
                             FontSize="13"/>
                     <Button Content="⌁   Analytics"
+                            HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
@@ -379,6 +385,7 @@
                             Background="{StaticResource BorderBrush}"/>
 
                     <Button Content="⚙   Settings"
+                            HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="9,7"
                             Background="Transparent"
