@@ -143,6 +143,7 @@
             <StackPanel Padding="8"
                         Spacing="4">
                 <Border x:Name="GeneralNavItem"
+                        HorizontalAlignment="Stretch"
                         Padding="10,8"
                         Background="#5A3928"
                         BorderBrush="#774725"
@@ -153,17 +154,17 @@
                         <TextBlock Text="General" Foreground="{StaticResource TextBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
-                <Button Content="◉   Appearance" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="□   Paths" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="▱   Storage" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="⚙   Workers" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="▥   Performance" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="⌘   Integrations" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="♙   Accounts" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="◈   Security" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="♧   Notifications" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="▱   Backups" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
-                <Button Content="ⓘ   About" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="◉   Appearance" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="□   Paths" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="▱   Storage" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="⚙   Workers" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="▥   Performance" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="⌘   Integrations" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="♙   Accounts" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="◈   Security" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="♧   Notifications" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="▱   Backups" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
+                <Button Content="ⓘ   About" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" Background="Transparent" Foreground="{StaticResource TextBrush}" FontSize="12"/>
             </StackPanel>
         </Border>
 
