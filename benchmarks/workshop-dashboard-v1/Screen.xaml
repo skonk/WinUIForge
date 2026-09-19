@@ -200,17 +200,52 @@
                         <RowDefinition Height="48"/>
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0"
-                                Orientation="Horizontal"
-                                Spacing="26"
-                                Margin="16,0"
-                                VerticalAlignment="Center">
-                        <TextBlock Text="File" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                        <TextBlock Text="Edit" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                        <TextBlock Text="View" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                        <TextBlock Text="Tools" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                        <TextBlock Text="Help" Foreground="{StaticResource TextBrush}" FontSize="13"/>
-                    </StackPanel>
+                    <!-- Workshop workspace menus use a real MenuBar so they
+                         behave like standard Windows menus: click to open,
+                         then hover across sibling menus to switch flyouts. -->
+                    <MenuBar x:Name="WorkspaceMenuBar"
+                             Grid.Row="0"
+                             Margin="8,0"
+                             VerticalAlignment="Center">
+                        <MenuBarItem Title="Create">
+                            <MenuFlyoutItem Text="3D Generation"/>
+                            <MenuFlyoutItem Text="Image Studio"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="New Project"/>
+                            <MenuFlyoutItem Text="Import Assets"/>
+                        </MenuBarItem>
+                        <MenuBarItem Title="Process">
+                            <MenuFlyoutItem Text="Create Job"/>
+                            <MenuFlyoutItem Text="Processing Queue"/>
+                            <MenuFlyoutItem Text="Worker Control"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Pause All"/>
+                            <MenuFlyoutItem Text="Resume All"/>
+                        </MenuBarItem>
+                        <MenuBarItem Title="Review">
+                            <MenuFlyoutItem Text="Review Desk"/>
+                            <MenuFlyoutItem Text="Reports"/>
+                            <MenuFlyoutItem Text="Recent Results"/>
+                        </MenuBarItem>
+                        <MenuBarItem Title="Library">
+                            <MenuFlyoutItem Text="Assets"/>
+                            <MenuFlyoutItem Text="Projects"/>
+                            <MenuFlyoutItem Text="Bundles"/>
+                            <MenuFlyoutItem Text="Published"/>
+                        </MenuBarItem>
+                        <MenuBarItem Title="Tools">
+                            <MenuFlyoutItem Text="Conduit"/>
+                            <MenuFlyoutItem Text="Beacon"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Storage &amp; Settings"/>
+                        </MenuBarItem>
+                        <MenuBarItem Title="Activity">
+                            <MenuFlyoutItem Text="Activity Console"/>
+                            <MenuFlyoutItem Text="Active Tasks"/>
+                            <MenuFlyoutItem Text="History"/>
+                            <MenuFlyoutItem Text="Warnings"/>
+                        </MenuBarItem>
+                    </MenuBar>
 
                     <Grid Grid.Row="1"
                           Margin="10,0">
