@@ -13,6 +13,7 @@
   "semanticElements": {
     "dashboard.root": "WorkshopDashboardBenchmark",
     "dashboard.toolbar": "TopCommandBar",
+    "dashboard.workspaceMenu": "WorkspaceMenuBar",
     "dashboard.workspace": "DashboardWorkspace",
     "dashboard.localPane": "LocalDashboardPane",
     "dashboard.main": "DashboardMain",
