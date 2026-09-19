@@ -943,6 +943,481 @@ public sealed class MainWindow : Window
         userSettings.Save();
     }
 
+    void EnsureDefaultProjectFolders()
+    {
+        userSettings.ProjectFolders = userSettings.ProjectFolders
+            .Where(Directory.Exists)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (userSettings.ProjectFolders.Count == 0)
+        {
+            var descriptor = FindRepositoryFile("benchmarks", "Workshop UI.forgeproject");
+            var benchmarkRoot = descriptor is null ? null : Path.GetDirectoryName(descriptor);
+            if (!string.IsNullOrWhiteSpace(benchmarkRoot) && Directory.Exists(benchmarkRoot))
+                userSettings.ProjectFolders.Add(benchmarkRoot);
+        }
+
+        foreach (var root in userSettings.ProjectFolders)
+            expandedProjectDirectories.Add(Path.GetFullPath(root));
+
+        userSettings.Save();
+    }
+
+    async Task AddProjectFolderAsync()
+    {
+        try
+        {
+            var picker = new FolderPicker(AppWindow.Id)
+            {
+                Title = "Add Forge project folder"
+            };
+
+            var result = await picker.PickSingleFolderAsync();
+            if (result is null)
+                return;
+
+            var path = Path.GetFullPath(result.Path);
+            if (!userSettings.ProjectFolders.Contains(path, StringComparer.OrdinalIgnoreCase))
+                userSettings.ProjectFolders.Add(path);
+
+            expandedProjectDirectories.Add(path);
+            selectedProjectRoot = path;
+            userSettings.Save();
+            RebuildProjectExplorer();
+
+            status.Text = $"Added project folder: {path}";
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Add project folder error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Could not add project folder: " + ex.Message;
+        }
+    }
+
+    void RemoveSelectedProjectFolder()
+    {
+        if (string.IsNullOrWhiteSpace(selectedProjectRoot))
+            return;
+
+        userSettings.ProjectFolders.RemoveAll(path =>
+            string.Equals(
+                Path.GetFullPath(path),
+                Path.GetFullPath(selectedProjectRoot),
+                StringComparison.OrdinalIgnoreCase));
+
+        expandedProjectDirectories.RemoveWhere(path =>
+            path.StartsWith(
+                Path.GetFullPath(selectedProjectRoot),
+                StringComparison.OrdinalIgnoreCase));
+
+        status.Text = $"Removed project folder: {selectedProjectRoot}";
+        selectedProjectRoot = null;
+        userSettings.Save();
+        RebuildProjectExplorer();
+    }
+
+    void RebuildProjectExplorer()
+    {
+        projectExplorerPanel.Children.Clear();
+        projectScreensByPath.Clear();
+
+        var roots = userSettings.ProjectFolders
+            .Where(Directory.Exists)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(Path.GetFullPath)
+            .ToList();
+
+        userSettings.ProjectFolders = roots;
+        userSettings.Save();
+
+        if (roots.Count == 0)
+        {
+            projectExplorerInfo.Text =
+                "No project folders yet. Add a folder containing XAML, Forge sidecars and reference images.";
+            removeProjectFolderButton.IsEnabled = false;
+            return;
+        }
+
+        projectExplorerInfo.Text =
+            $"{roots.Count} project folder{(roots.Count == 1 ? string.Empty : "s")} · " +
+            "UI files and references are paired by .forgeproject metadata when available.";
+
+        foreach (var root in roots)
+        {
+            LoadProjectDescriptors(root);
+            AddProjectDirectoryRows(root, root, depth: 0);
+        }
+
+        removeProjectFolderButton.IsEnabled = !string.IsNullOrWhiteSpace(selectedProjectRoot);
+    }
+
+    void LoadProjectDescriptors(string root)
+    {
+        IEnumerable<string> descriptors;
+        try
+        {
+            descriptors = Directory.EnumerateFiles(root, "*.forgeproject", SearchOption.TopDirectoryOnly);
+        }
+        catch
+        {
+            return;
+        }
+
+        foreach (var descriptorPath in descriptors)
+        {
+            try
+            {
+                using var json = JsonDocument.Parse(File.ReadAllText(descriptorPath));
+                var descriptorRoot = json.RootElement;
+
+                if (!descriptorRoot.TryGetProperty("screens", out var screens) ||
+                    screens.ValueKind != JsonValueKind.Array)
+                    continue;
+
+                foreach (var screen in screens.EnumerateArray())
+                {
+                    if (!screen.TryGetProperty("xaml", out var xamlElement) ||
+                        xamlElement.ValueKind != JsonValueKind.String)
+                        continue;
+
+                    var xamlRelative = xamlElement.GetString();
+                    if (string.IsNullOrWhiteSpace(xamlRelative))
+                        continue;
+
+                    var name = screen.TryGetProperty("name", out var nameElement) &&
+                               nameElement.ValueKind == JsonValueKind.String
+                        ? nameElement.GetString() ?? Path.GetFileNameWithoutExtension(xamlRelative)
+                        : Path.GetFileNameWithoutExtension(xamlRelative);
+
+                    var xamlPath = Path.GetFullPath(Path.Combine(root, xamlRelative));
+                    string? referencePath = null;
+                    if (screen.TryGetProperty("reference", out var referenceElement) &&
+                        referenceElement.ValueKind == JsonValueKind.String &&
+                        !string.IsNullOrWhiteSpace(referenceElement.GetString()))
+                    {
+                        referencePath = Path.GetFullPath(
+                            Path.Combine(root, referenceElement.GetString()!));
+                    }
+
+                    double? viewportWidth = null;
+                    double? viewportHeight = null;
+                    if (screen.TryGetProperty("viewport", out var viewport) &&
+                        viewport.ValueKind == JsonValueKind.Object)
+                    {
+                        if (viewport.TryGetProperty("width", out var width) && width.TryGetDouble(out var parsedWidth))
+                            viewportWidth = parsedWidth;
+                        if (viewport.TryGetProperty("height", out var height) && height.TryGetDouble(out var parsedHeight))
+                            viewportHeight = parsedHeight;
+                    }
+
+                    var projectScreen = new ForgeProjectScreen(
+                        name,
+                        xamlPath,
+                        referencePath,
+                        viewportWidth,
+                        viewportHeight);
+
+                    projectScreensByPath[xamlPath] = projectScreen;
+                    if (!string.IsNullOrWhiteSpace(referencePath))
+                        projectScreensByPath[referencePath] = projectScreen;
+                }
+            }
+            catch (Exception ex)
+            {
+                diagnostics.Text = $"Forge project warning ({Path.GetFileName(descriptorPath)}): {ex.Message}";
+                diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.Orange);
+            }
+        }
+    }
+
+    void AddProjectDirectoryRows(string root, string directory, int depth)
+    {
+        if (IsIgnoredProjectDirectory(directory))
+            return;
+
+        var fullDirectory = Path.GetFullPath(directory);
+        var expanded = expandedProjectDirectories.Contains(fullDirectory);
+        var isRoot = string.Equals(
+            Path.GetFullPath(root),
+            fullDirectory,
+            StringComparison.OrdinalIgnoreCase);
+
+        var folderEntry = new ForgeProjectEntry(
+            root,
+            fullDirectory,
+            ForgeProjectFileKind.Folder);
+
+        projectExplorerPanel.Children.Add(CreateProjectRow(
+            folderEntry,
+            depth,
+            isRoot ? $"▣ {Path.GetFileName(fullDirectory)}" : $"{(expanded ? "▾" : "▸")} {Path.GetFileName(fullDirectory)}",
+            isRoot ? AccentBrush : TextBrush));
+
+        if (!expanded)
+            return;
+
+        string[] directories;
+        string[] files;
+        try
+        {
+            directories = Directory.GetDirectories(fullDirectory)
+                .Where(path => !IsIgnoredProjectDirectory(path))
+                .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            files = Directory.GetFiles(fullDirectory)
+                .Where(IsVisibleProjectFile)
+                .OrderBy(ProjectFileSortOrder)
+                .ThenBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+        catch (Exception ex)
+        {
+            projectExplorerPanel.Children.Add(new TextBlock
+            {
+                Text = $"Cannot read {fullDirectory}: {ex.Message}",
+                Margin = new Thickness(12 + depth * 16, 4, 6, 4),
+                Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed),
+                TextWrapping = TextWrapping.Wrap
+            });
+            return;
+        }
+
+        foreach (var childDirectory in directories)
+            AddProjectDirectoryRows(root, childDirectory, depth + 1);
+
+        foreach (var file in files)
+        {
+            var kind = ProjectFileKind(file);
+            var entry = new ForgeProjectEntry(root, file, kind);
+            var (prefix, brush) = ProjectFilePresentation(kind);
+
+            projectExplorerPanel.Children.Add(CreateProjectRow(
+                entry,
+                depth + 1,
+                $"{prefix} {Path.GetFileName(file)}",
+                brush));
+        }
+    }
+
+    Button CreateProjectRow(
+        ForgeProjectEntry entry,
+        int depth,
+        string text,
+        Brush foreground)
+    {
+        var button = new Button
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(8 + depth * 16, 5, 8, 5),
+            Tag = entry,
+            Content = new TextBlock
+            {
+                Text = text,
+                Foreground = foreground,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            }
+        };
+
+        button.Click += async (_, _) => await OpenProjectEntryAsync(entry);
+        return button;
+    }
+
+    async Task OpenProjectEntryAsync(ForgeProjectEntry entry)
+    {
+        selectedProjectRoot = entry.RootPath;
+        removeProjectFolderButton.IsEnabled = true;
+
+        if (entry.Kind == ForgeProjectFileKind.Folder)
+        {
+            if (!expandedProjectDirectories.Add(entry.FullPath))
+                expandedProjectDirectories.Remove(entry.FullPath);
+
+            RebuildProjectExplorer();
+            return;
+        }
+
+        try
+        {
+            switch (entry.Kind)
+            {
+                case ForgeProjectFileKind.Xaml:
+                    await OpenProjectXamlAsync(entry.FullPath);
+                    break;
+
+                case ForgeProjectFileKind.ReferenceImage:
+                    await OpenProjectReferenceAsync(entry.FullPath);
+                    break;
+
+                case ForgeProjectFileKind.Sidecar:
+                    status.Text =
+                        $"{Path.GetFileName(entry.FullPath)} is Forge metadata and is loaded automatically with its XAML.";
+                    break;
+
+                case ForgeProjectFileKind.Project:
+                    status.Text =
+                        $"{Path.GetFileName(entry.FullPath)} defines XAML/reference pairings for this project.";
+                    break;
+
+                default:
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = entry.FullPath,
+                        UseShellExecute = true
+                    });
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Text = "Project open error: " + ex;
+            diagnostics.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            status.Text = "Could not open project item: " + ex.Message;
+        }
+    }
+
+    async Task OpenProjectXamlAsync(string xamlPath)
+    {
+        LoadSourceFile(xamlPath, readOnly: false);
+        leftPaneTabs.SelectedIndex = 1;
+
+        if (projectScreensByPath.TryGetValue(Path.GetFullPath(xamlPath), out var screen))
+        {
+            if (!string.IsNullOrWhiteSpace(screen.ReferencePath) && File.Exists(screen.ReferencePath))
+            {
+                await LoadReferenceFromPathAsync(screen.ReferencePath, adoptViewport: false);
+            }
+            else
+            {
+                ClearReference();
+            }
+
+            if (screen.ViewportWidth is > 0 && screen.ViewportHeight is > 0)
+                SetBenchmarkViewport(screen.ViewportWidth.Value, screen.ViewportHeight.Value);
+
+            viewportDisplayMode.SelectedItem = "Fit";
+            status.Text = !string.IsNullOrWhiteSpace(screen.ReferencePath) && File.Exists(screen.ReferencePath)
+                ? $"Loaded {screen.Name} · XAML + paired reference."
+                : $"Loaded {screen.Name} · reference image is not present in the project folder yet.";
+            return;
+        }
+
+        var siblingReference = FindSiblingReference(xamlPath);
+        if (siblingReference is not null)
+            await LoadReferenceFromPathAsync(siblingReference);
+        else
+            ClearReference();
+
+        status.Text = $"Loaded {Path.GetFileName(xamlPath)} from project.";
+    }
+
+    async Task OpenProjectReferenceAsync(string referencePath)
+    {
+        if (projectScreensByPath.TryGetValue(Path.GetFullPath(referencePath), out var screen) &&
+            File.Exists(screen.XamlPath))
+        {
+            LoadSourceFile(screen.XamlPath, readOnly: false);
+            leftPaneTabs.SelectedIndex = 1;
+            await LoadReferenceFromPathAsync(referencePath, adoptViewport: false);
+
+            if (screen.ViewportWidth is > 0 && screen.ViewportHeight is > 0)
+                SetBenchmarkViewport(screen.ViewportWidth.Value, screen.ViewportHeight.Value);
+
+            viewportDisplayMode.SelectedItem = "Fit";
+            status.Text = $"Loaded {screen.Name} · paired reference + XAML.";
+            return;
+        }
+
+        await LoadReferenceFromPathAsync(referencePath);
+        status.Text = $"Loaded reference image: {Path.GetFileName(referencePath)}";
+    }
+
+    string? FindSiblingReference(string xamlPath)
+    {
+        var directory = Path.GetDirectoryName(xamlPath);
+        if (string.IsNullOrWhiteSpace(directory))
+            return null;
+
+        var stem = Path.GetFileNameWithoutExtension(xamlPath);
+        foreach (var extension in new[] { ".png", ".jpg", ".jpeg", ".bmp", ".webp" })
+        {
+            var candidate = Path.Combine(directory, stem + extension);
+            if (File.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    static bool IsIgnoredProjectDirectory(string path)
+    {
+        var name = Path.GetFileName(path);
+        return name is ".git" or ".vs" or "bin" or "obj" or "node_modules";
+    }
+
+    static bool IsVisibleProjectFile(string path)
+    {
+        var fileName = Path.GetFileName(path);
+        var extension = Path.GetExtension(path);
+
+        return extension.Equals(".xaml", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".bmp", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".webp", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".md", StringComparison.OrdinalIgnoreCase) ||
+               fileName.EndsWith(".forge.json", StringComparison.OrdinalIgnoreCase) ||
+               fileName.EndsWith(".forgeproject", StringComparison.OrdinalIgnoreCase);
+    }
+
+    static int ProjectFileSortOrder(string path) =>
+        ProjectFileKind(path) switch
+        {
+            ForgeProjectFileKind.Xaml => 0,
+            ForgeProjectFileKind.ReferenceImage => 1,
+            ForgeProjectFileKind.Sidecar => 2,
+            ForgeProjectFileKind.Project => 3,
+            _ => 4
+        };
+
+    static ForgeProjectFileKind ProjectFileKind(string path)
+    {
+        var fileName = Path.GetFileName(path);
+        var extension = Path.GetExtension(path);
+
+        if (extension.Equals(".xaml", StringComparison.OrdinalIgnoreCase))
+            return ForgeProjectFileKind.Xaml;
+
+        if (extension is not null &&
+            new[] { ".png", ".jpg", ".jpeg", ".bmp", ".webp" }
+                .Contains(extension, StringComparer.OrdinalIgnoreCase))
+            return ForgeProjectFileKind.ReferenceImage;
+
+        if (fileName.EndsWith(".forge.json", StringComparison.OrdinalIgnoreCase))
+            return ForgeProjectFileKind.Sidecar;
+
+        if (fileName.EndsWith(".forgeproject", StringComparison.OrdinalIgnoreCase))
+            return ForgeProjectFileKind.Project;
+
+        return ForgeProjectFileKind.Other;
+    }
+
+    static (string Prefix, Brush Foreground) ProjectFilePresentation(ForgeProjectFileKind kind) =>
+        kind switch
+        {
+            ForgeProjectFileKind.Xaml => ("◇ UI", AccentBrush),
+            ForgeProjectFileKind.ReferenceImage => ("▣ REF", TextBrush),
+            ForgeProjectFileKind.Sidecar => ("· META", MutedBrush),
+            ForgeProjectFileKind.Project => ("◆ PROJECT", AccentBrush),
+            _ => ("·", MutedBrush)
+        };
+
     async Task OpenSourceFileAsync()
     {
         try
