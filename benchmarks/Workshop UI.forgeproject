@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "name": "Workshop UI",
+  "description": "Workshop UI benchmark screens and their visual references.",
+  "screens": [
+    {
+      "name": "Dashboard",
+      "xaml": "workshop-dashboard-v1/Screen.xaml",
+      "sidecar": "workshop-dashboard-v1/Screen.forge.json",
+      "reference": "workshop-dashboard-v1/W2-01-dashboard.png",
+      "viewport": {
+        "width": 1672,
+        "height": 941
+      }
+    },
+    {
+      "name": "Storage & Settings",
+      "xaml": "workshop-storage-settings-v1/Screen.xaml",
+      "sidecar": "workshop-storage-settings-v1/Screen.forge.json",
+      "reference": "workshop-storage-settings-v1/W2-14-storage-settings.png",
+      "viewport": {
+        "width": 1672,
+        "height": 941
+      }
+    }
+  ]
+}
