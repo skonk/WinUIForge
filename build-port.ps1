@@ -40,22 +40,6 @@ if (-not (Test-Path $exe)) {
     throw "Build succeeded but expected executable was not found at $exe"
 }
 
-$icon = Join-Path $root "assets\workshop-ui\app-icon\Workshop.ico"
-$iconStamper = Join-Path $root "scripts\set-workshop-exe-icon.ps1"
-
-if (-not (Test-Path $icon)) {
-    throw "Workshop icon was not found at $icon"
-}
-
-if (-not (Test-Path $iconStamper)) {
-    throw "Workshop executable icon stamper was not found at $iconStamper"
-}
-
-Write-Host ""
-Write-Host "Stamping Workshop icon into executable resources..." -ForegroundColor Cyan
-& $iconStamper -ExePath $exe -IconPath $icon
-if ($LASTEXITCODE -ne 0) { throw "Workshop executable icon stamping failed." }
-
 Write-Host ""
 Write-Host "Port proof build succeeded." -ForegroundColor Green
 Write-Host $exe
