@@ -156,13 +156,13 @@ public sealed class MainWindow : Window
     readonly ToggleButton projectsPaneToggle = new() { Content = "Projects", IsChecked = true };
     readonly ToggleButton sourcePaneToggle = new() { Content = "Source", IsChecked = true };
     readonly ToggleButton toolsPaneToggle = new() { Content = "Inspector / Tools", IsChecked = true };
-    readonly Button openSourceFileButton = new() { Content = "Open XAML…" };
-    readonly Button reloadSourceFileButton = new() { Content = "Reload XAML", IsEnabled = false };
-    readonly Button saveSourceFileButton = new() { Content = "Save XAML", IsEnabled = false };
-    readonly Button undoButton = new() { Content = "Undo", IsEnabled = false };
-    readonly Button redoButton = new() { Content = "Redo", IsEnabled = false };
-    readonly Button deleteButton = new() { Content = "Delete", IsEnabled = false };
-    readonly Button renderButton = new() { Content = "Render now" };
+    readonly AppBarButton openSourceFileButton = ToolbarButton("Open", "\uE8E5");
+    readonly AppBarButton reloadSourceFileButton = ToolbarButton("Reload", "\uE72C", enabled: false);
+    readonly AppBarButton saveSourceFileButton = ToolbarButton("Save", "\uE74E", enabled: false);
+    readonly AppBarButton undoButton = ToolbarButton("Undo", "\uE7A7", enabled: false);
+    readonly AppBarButton redoButton = ToolbarButton("Redo", "\uE7A6", enabled: false);
+    readonly AppBarButton deleteButton = ToolbarButton("Delete", "\uE74D", enabled: false);
+    readonly AppBarButton renderButton = ToolbarButton("Render", "\uE768");
 
     readonly ForgeUserSettings userSettings = ForgeUserSettings.Load();
     readonly ForgeRenderService renderService = new();
@@ -1581,7 +1581,7 @@ public sealed class MainWindow : Window
 
         reloadSourceFileButton.IsEnabled = hasPath;
         saveSourceFileButton.IsEnabled = hasPath && !currentSourceFileReadOnly && dirty;
-        saveSourceFileButton.Content = dirty ? "Save XAML *" : "Save XAML";
+        saveSourceFileButton.Label = dirty ? "Save *" : "Save";
     }
 
     static string? FindRepositoryFile(params string[] relativeSegments)
@@ -3293,8 +3293,8 @@ public sealed class MainWindow : Window
     {
         undoButton.IsEnabled = history.CanUndo;
         redoButton.IsEnabled = history.CanRedo;
-        undoButton.Content = history.UndoDescription is null ? "Undo" : $"Undo · {history.UndoDescription}";
-        redoButton.Content = history.RedoDescription is null ? "Redo" : $"Redo · {history.RedoDescription}";
+        undoButton.Label = history.UndoDescription is null ? "Undo" : $"Undo · {history.UndoDescription}";
+        redoButton.Label = history.RedoDescription is null ? "Redo" : $"Redo · {history.RedoDescription}";
     }
 
     void UpdateCommandButtons()
