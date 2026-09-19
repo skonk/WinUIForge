@@ -11,7 +11,14 @@
     "sourcePolicy": "visual-target-only"
   },
   "semanticElements": {
-    "dashboard.root": "WorkshopDashboardBenchmark",
+    
+    "workspace.statusFooter": "WorkspaceStatusFooter",
+    "workspace.status.host": "HostStatusChip",
+    "workspace.status.queue": "QueueStatusChip",
+    "workspace.status.activeTasks": "ActiveTasksChip",
+    "workspace.status.storage": "StorageStatusChip",
+    "workspace.status.sync": "SyncStatusText",
+    "workspace.status.version": "VersionText","dashboard.root": "WorkshopDashboardBenchmark",
     "dashboard.toolbar": "TopCommandBar",
     "dashboard.workspaceMenu": "WorkspaceMenuBar",
     "dashboard.workspace": "DashboardWorkspace",
