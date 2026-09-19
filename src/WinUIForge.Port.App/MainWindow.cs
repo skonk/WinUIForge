@@ -65,8 +65,6 @@ public sealed class MainWindow : Window
         Visibility = Visibility.Collapsed
     };
 
-    readonly Button loadWorkshopBenchmarkButton = new() { Content = "Load W2 dashboard" };
-    readonly Button loadWorkshopSettingsBenchmarkButton = new() { Content = "Load W2 settings" };
     readonly Button loadReferenceButton = new() { Content = "Load reference…" };
     readonly Button exportReviewPackageButton = new() { Content = "Export review package" };
     readonly CheckBox referenceVisibleCheckBox = new() { Content = "Overlay", IsEnabled = false };
@@ -142,11 +140,20 @@ public sealed class MainWindow : Window
 
     readonly StackPanel toolboxPanel = new() { Spacing = 6, Padding = new Thickness(8) };
     readonly StackPanel propertyPanel = new() { Spacing = 8 };
+    readonly StackPanel projectExplorerPanel = new() { Spacing = 2, Padding = new Thickness(6) };
+    readonly Button addProjectFolderButton = new() { Content = "Add folder…" };
+    readonly Button removeProjectFolderButton = new() { Content = "Remove folder", IsEnabled = false };
+    readonly Button refreshProjectsButton = new() { Content = "Refresh" };
+    readonly TextBlock projectExplorerInfo = new()
+    {
+        Foreground = MutedBrush,
+        TextWrapping = TextWrapping.Wrap
+    };
     readonly TextBlock diagnostics = new() { TextWrapping = TextWrapping.Wrap };
     readonly TextBlock status = new() { TextWrapping = TextWrapping.NoWrap };
 
-    readonly ToggleButton sourcePaneToggle = new() { Content = "Source pane", IsChecked = true };
-    readonly ToggleButton toolsPaneToggle = new() { Content = "Tools pane", IsChecked = true };
+    readonly ToggleButton sourcePaneToggle = new() { Content = "Source / Projects", IsChecked = true };
+    readonly ToggleButton toolsPaneToggle = new() { Content = "Inspector / Tools", IsChecked = true };
     readonly Button openSourceFileButton = new() { Content = "Open XAML…" };
     readonly Button reloadSourceFileButton = new() { Content = "Reload XAML", IsEnabled = false };
     readonly Button saveSourceFileButton = new() { Content = "Save XAML", IsEnabled = false };
@@ -155,6 +162,7 @@ public sealed class MainWindow : Window
     readonly Button deleteButton = new() { Content = "Delete", IsEnabled = false };
     readonly Button renderButton = new() { Content = "Render now" };
 
+    readonly ForgeUserSettings userSettings = ForgeUserSettings.Load();
     readonly ForgeRenderService renderService = new();
     readonly ForgeVisualCoordinator coordinator = new();
     readonly ForgeEditHistory history = new();
@@ -162,11 +170,18 @@ public sealed class MainWindow : Window
     readonly DispatcherTimer renderTimer = new() { Interval = TimeSpan.FromMilliseconds(550) };
 
     Grid shellRoot = null!;
+    Grid workspaceGrid = null!;
     ColumnDefinition sourceWorkspaceColumn = null!;
+    ColumnDefinition sourceSplitterColumn = null!;
     ColumnDefinition previewWorkspaceColumn = null!;
+    ColumnDefinition toolsSplitterColumn = null!;
     ColumnDefinition toolsWorkspaceColumn = null!;
     FrameworkElement sourcePaneHost = null!;
     FrameworkElement toolsPaneHost = null!;
+    TabView leftPaneTabs = null!;
+    TabView toolsTabs = null!;
+    Thumb sourcePreviewSplitter = null!;
+    Thumb previewToolsSplitter = null!;
     ForgeXamlDocument? document;
     string? selectedElementIdentity;
     FrameworkElement? selectedFrameworkElement;
@@ -176,6 +191,9 @@ public sealed class MainWindow : Window
     string currentReviewCase = "winui-forge-review";
     string lastSavedSourceText = string.Empty;
     readonly Dictionary<string, string> semanticElements = new(StringComparer.Ordinal);
+    readonly HashSet<string> expandedProjectDirectories = new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, ForgeProjectScreen> projectScreensByPath = new(StringComparer.OrdinalIgnoreCase);
+    string? selectedProjectRoot;
     bool currentSourceFileReadOnly;
     bool suppressSourceTextChanged;
     bool suppressTreeSelection;
