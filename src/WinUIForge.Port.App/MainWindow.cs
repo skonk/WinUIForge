@@ -4103,6 +4103,28 @@ public sealed class MainWindow : Window
     static SolidColorBrush Brush(byte r, byte g, byte b) =>
         new(Color.FromArgb(255, r, g, b));
 
+    enum ForgeProjectFileKind
+    {
+        Folder,
+        Xaml,
+        ReferenceImage,
+        Sidecar,
+        Project,
+        Other
+    }
+
+    sealed record ForgeProjectEntry(
+        string RootPath,
+        string FullPath,
+        ForgeProjectFileKind Kind);
+
+    sealed record ForgeProjectScreen(
+        string Name,
+        string XamlPath,
+        string? ReferencePath,
+        double? ViewportWidth,
+        double? ViewportHeight);
+
     sealed record PropertyEditContext(
         string ElementIdentity,
         string AttributeName,
